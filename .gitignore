@@ -8,4 +8,5 @@ read_CR_v1.py
 read_CR_display.py
 plot_20200325.py
 *.csv
+demo/
 
