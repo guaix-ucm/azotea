@@ -21,7 +21,8 @@ DEPENDENCIES = [
                   'numpy',
                   'matplotlib',
                   'rawpy',
-                  'exifread'
+                  'exifread',
+                  'opencv-python'
 ]
 
 CLASSIFIERS  = [
@@ -37,6 +38,10 @@ CLASSIFIERS  = [
     'Development Status :: 4 - Beta',
 ]
 
+# Additional data inside the package
+PACKAGE_DATA = {
+    'azotea': ['data/demo/*.CR2'],
+}
 
 SCRIPTS = [
     'files/azotea'
