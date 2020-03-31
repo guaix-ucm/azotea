@@ -74,9 +74,10 @@ def metadata_multiple(directory, options):
     data = []
     file_list = glob.glob(directory + '/' + options.filter)
     maxsize = len(file_list)
-    logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, imgfilter))
+    logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, options.filter))
     for filename in file_list:
         image = CameraImage(filename, options)
+        dict_exif = image.loadEXIF()
         row = [image.name()]   
         if sys.version_info[0] < 3:
             row.extend([ value for key, value in sorted(dict_exif.iteritems()) if key in EXIF_HEADERS])

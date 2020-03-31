@@ -90,6 +90,9 @@ def createParser():
   
     subparser = parser_meta.add_subparsers(dest='subcommand')
     mdi = subparser.add_parser('display',  help='display image metadata')
+    mdi.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
+    mdi.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=Rect( Point(), Point(DEF_WIDTH, DEF_HEIGHT) ), help='Optional foreground region')
+    mdi.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=Rect( Point(400,200), Point(550,350) ), help='Optional background region')
     mdiex = mdi.add_mutually_exclusive_group(required=True)
     mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
     mdiex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
