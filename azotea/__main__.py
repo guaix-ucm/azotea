@@ -50,9 +50,8 @@ def configureLogging(options):
 
 
 def mkpoint(text):
-    print("=================================== CUCU")
     l = chop(text,',')
-    return Point(x=l[0], y=l[1])
+    return Point(x=int(l[0]), y=int(l[1]))
 
 
 # =================== #

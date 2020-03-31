@@ -111,8 +111,8 @@ class CameraImage(object):
         self.bgregion   = Rect(options.bg_point1, options.bg_point2)  # background rectangular region were bias is estimated
         self.k          = [ Point(), Point(), Point(), Point()] # Array of Points to properly read each channel
         self.step       = [ 2, 2, 2, 2]
-        logging.info("{0}: <<Background  region of interest is {1}>>".format(self._name, self.bgregion))
-        
+       
+
     def name(self):
         return self._name
 
@@ -158,20 +158,13 @@ class CameraImage(object):
         logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
 
 
-    def background_region(self, x1, x2, y1, y2):
-        self.bgregion.P1.x = x1
-        self.bgregion.P1.y = y1
-        self.bgregion.P2.x = x2
-        self.bgregion.P2.y = y2
-        logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
-
-
     def region_stats(self, data, region):
         r = data[region.P1.y:region.P2.y, region.P1.x:region.P2.x]
         return round(r.mean(),1), round(r.std(),1)
        
 
     def extract_background(self):
+        logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
         self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
         self.background.append(self.signal[G2][-410: , -610:])
         self.background.append(self.signal[G3][-410: , -610:])
@@ -232,9 +225,6 @@ class CameraImage(object):
         self.doRead()
         self.extract_background()
         self.foreground_region()
-        #self.background_region(BG_X1, BG_X2, BG_Y1, BG_Y2)
-        self.background_region(self.bgregion.P1.x, self.bgregion.P2.x, self.bgregion.P1.y, self.bgregion.P2.y)
-        
 
 
 
