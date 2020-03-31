@@ -176,7 +176,9 @@ class CameraImage(object):
         logging.info("{0}: Light region of interest is {1}".format(self._name, self.fgregion))
         logging.info("{0}: Backg region of interest is {1}".format(self._name, self.bgregion))
         logging.info("{0}: Computing stats".format(self._name))
-        return self.stats()
+        R = self.stats()
+        print(R)
+        return R 
 
 
 
