@@ -59,18 +59,33 @@ def stats_single(filepath, options):
     stats = image.stats()
 
 
-def stats_multiple(directory, options):
-    directory = directory[:-1] if os.path.basename(directory) == '' else directory
-    outname = os.path.basename(directory) + '.csv'
-    logging.info("CSV file is {0}".format(outname))
-    with open(outname, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
-        writer.writeheader()
-        for filename in glob.glob(directory + '/' + options.filter):
-            image = CameraImage(filename, options)
-            image.read()
-            writer.writerow(image.stats())
-    logging.info("Saved all to CSV file {0}".format(outname))
+if sys.version_info[0] < 3:
+    def stats_multiple(directory, options):
+        directory = directory[:-1] if os.path.basename(directory) == '' else directory
+        outname = os.path.basename(directory) + '.csv'
+        logging.info("CSV file is {0}".format(outname))
+        with open(outname, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
+            writer.writeheader()
+            for filename in glob.glob(directory + '/' + options.filter):
+                image = CameraImage(filename, options)
+                image.read()
+                writer.writerow(image.stats())
+        logging.info("Saved all to CSV file {0}".format(outname))
+else:
+    def stats_multiple(directory, options):
+        directory = directory[:-1] if os.path.basename(directory) == '' else directory
+        outname = os.path.basename(directory) + '.csv'
+        logging.info("CSV file is {0}".format(outname))
+        with open(outname, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
+            writer.writeheader()
+            for filename in glob.glob(directory + '/' + options.filter):
+                image = CameraImage(filename, options)
+                image.read()
+                writer.writerow(image.stats())
+        logging.info("Saved all to CSV file {0}".format(outname))
+
         
 
 # =====================

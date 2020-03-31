@@ -26,7 +26,7 @@ import traceback
 from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG
 from .metadata import metadata_display
 from .stats    import stats_compute
-from .utils    import chop, Point
+from .utils    import chop, Point, Rect
 
 
 #
@@ -49,9 +49,15 @@ def configureLogging(options):
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
 
 
-def mkpoint(text):
+def mkrect1(text):
+    '''Make a rectangle of width and height'''
     l = chop(text,',')
-    return Point(x=int(l[0]), y=int(l[1]))
+    return Rect( Point(), Point(x=int(l[0]), y=int(l[1])))
+
+def mkrect2(text):
+    '''make rectangle with bounding corners'''
+    l = chop(text,',')
+    return Rect( Point(x=int(l[0]), y=int(l[2]) ), Point(x=int(l[1]), y=int(l[3])) )
 
 
 # =================== #
@@ -97,8 +103,8 @@ def createParser():
     sdy = subparser.add_parser('compute',  help='compute image statistics')
     sdy.add_argument('--width',  type=int, default=DEF_WIDTH,  help='Optional image center width')
     sdy.add_argument('--height', type=int, default=DEF_HEIGHT, help='Optional image center height')
-    sdy.add_argument('--bg-point1', type=mkpoint, default=Point(400,200), help='Optional background corner 1')
-    sdy.add_argument('--bg-point2', type=mkpoint, default=Point(550,350), help='Optional background corner 2')
+    sdy.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=Rect( Point(), Point(DEF_WIDTH, DEF_HEIGHT) ), help='Optional foreground region')
+    sdy.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=Rect( Point(400,200), Point(550,350) ), help='Optional background region')
     sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
     sdyex = sdy.add_mutually_exclusive_group(required=True)
     sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')

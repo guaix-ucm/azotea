@@ -70,6 +70,10 @@ class Rect:
         self.P1 = p1
         self.P2 = p2
 
+    def dimensions(self):
+        '''returns width and height'''
+        return abs(self.P1.x-self.P2.x), abs(self.P1.y-self.P2.y)
+        
     def __repr__(self):
         return "[{0} - {1}]".format(self.P1, self.P2)
 

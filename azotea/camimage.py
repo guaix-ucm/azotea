@@ -95,11 +95,15 @@ class CameraImage(object):
             'stdev_background_B4',
         ]
 
+    # ========== #
+    # Public API #
+    # ========== #
+
     def __init__(self, filepath, options):
         self.filepath   = filepath
         self.configpath = options.config
-        self.width      = options.width     # Width of iluminated area around the center
-        self.height     = options.height    # height of iluminated area around the center      
+        self.fgregion   = options.fg_region  # foreground rectangular region where signal is estimated
+        self.bgregion   = options.bg_region  # background rectangular region where bias is estimated
         self.metadata   = None
         self.image      = None
         self.model      = None
@@ -107,80 +111,45 @@ class CameraImage(object):
         self.signal     = []    # Array of Bayer signal
         self.background = []    # Array of Bayer background
         self.path       = filepath  
-        self.fgregion   = Rect()  # foreground rectangular region
-        self.bgregion   = Rect(options.bg_point1, options.bg_point2)  # background rectangular region were bias is estimated
         self.k          = [ Point(), Point(), Point(), Point()] # Array of Points to properly read each channel
         self.step       = [ 2, 2, 2, 2]
-       
+    
 
     def name(self):
         return self._name
 
 
-    def loadEXIF(self):   
-        logging.info("{0}: Loading EXIF metadata".format(self._name))
+    def loadEXIF(self):
+        '''Load EXIF metadata'''   
+        logging.debug("{0}: Loading EXIF metadata".format(self._name))
         with open(self.filepath, "rb") as f:
             self.metadata = exifread.process_file(f)
         self.model = str(self.metadata.get('Image Model'))
         return self.metadata
 
 
-    def lookup(self):
-        '''
-        Load camera configuration from configuration file
-        '''
-        if not (os.path.exists(self.configpath)):
-            raise IOError(errno.ENOENT,"No such file or directory", path)
-
-        parser  =  ConfigParser.RawConfigParser()
-        # str is for case sensitive options
-        parser.optionxform = str
-        parser.read(self.configpath)
-        if not parser.has_section(self.model):
-            raise ConfigError(self.model)
-
-        r1 = chop(parser.get(self.model,"R1"),',')
-        g2 = chop(parser.get(self.model,"G2"),',')
-        g3 = chop(parser.get(self.model,"G3"),',')
-        b4 = chop(parser.get(self.model,"B4"),',')
-        self.k[R1].x, self.k[R1].y, self.step[R1] = int(r1[0]), int(r1[1]), int(r1[2])
-        self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
-        self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
-        self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
-            
-
-
-    def foreground_region(self):
-        self.fgregion.P1.x = np.int(self.signal[G2].shape[1] / 2 - self.width//2)   # atento: eje X  shape[1]
-        self.fgregion.P1.y = np.int(self.signal[G2].shape[0] / 2 - self.height//2)  # atento: eje Y  shape[0]
-        self.fgregion.P2.x = self.fgregion.P1.x + self.width
-        self.fgregion.P2.y = self.fgregion.P1.y + self.height
-        logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
-
-
-    def region_stats(self, data, region):
-        r = data[region.P1.y:region.P2.y, region.P1.x:region.P2.x]
-        return round(r.mean(),1), round(r.std(),1)
-       
-
-    def extract_background(self):
-        logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
-        self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
-        self.background.append(self.signal[G2][-410: , -610:])
-        self.background.append(self.signal[G3][-410: , -610:])
-        self.background.append(self.signal[B4][-410: , -610:])
-
+    def read(self):
+        '''Read RAW data''' 
+        self.loadEXIF()
+        self._lookup()
+        logging.info("{0}: Loading RAW data from {1}".format(self._name, self.model))
+        self.image = rawpy.imread(self.filepath)
+        logging.debug("{0}: Color description is {1}".format(self._name, self.image.color_desc))
+        self._read()
+        
         
     def stats(self):
-        logging.info("{0}: Computing stats".format(self._name))
-        r1_mean_center, r1_std_center = self.region_stats(self.signal[R1],     self.fgregion)
-        r1_mean_back,   r1_std_back   = self.region_stats(self.background[R1], self.bgregion)
-        g2_mean_center, g2_std_center = self.region_stats(self.signal[G2],     self.fgregion)
-        g2_mean_back,   g2_std_back   = self.region_stats(self.background[G2], self.bgregion)
-        g3_mean_center, g3_std_center = self.region_stats(self.signal[G3],     self.fgregion)
-        g3_mean_back,   g3_std_back   = self.region_stats(self.background[G3], self.bgregion)
-        b4_mean_center, b4_std_center = self.region_stats(self.signal[B4],     self.fgregion)
-        b4_mean_back,   b4_std_back   = self.region_stats(self.background[B4], self.bgregion)
+        logging.debug("{0}: Computing stats".format(self._name))
+        self._extract_background()
+        self._foreground_region()
+        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1],     self.fgregion)
+        r1_mean_back,   r1_std_back   = self._region_stats(self.background[R1], self.bgregion)
+        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2],     self.fgregion)
+        g2_mean_back,   g2_std_back   = self._region_stats(self.background[G2], self.bgregion)
+        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3],     self.fgregion)
+        g3_mean_back,   g3_std_back   = self._region_stats(self.background[G3], self.bgregion)
+        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4],     self.fgregion)
+        b4_mean_back,   b4_std_back   = self._region_stats(self.background[B4], self.bgregion)
         return {
             'name'               : self._name,
             'date'               : self.metadata.get('Image DateTime'),
@@ -205,7 +174,57 @@ class CameraImage(object):
             'stdev_background_B4': b4_std_back,
         }
     
-    def doRead(self):
+
+    # ============== #
+    # helper methods #
+    # ============== #
+
+    def _lookup(self):
+        '''
+        Load camera configuration from configuration file
+        '''
+        if not (os.path.exists(self.configpath)):
+            raise IOError(errno.ENOENT,"No such file or directory", path)
+
+        parser  =  ConfigParser.RawConfigParser()
+        # str is for case sensitive options
+        parser.optionxform = str
+        parser.read(self.configpath)
+        if not parser.has_section(self.model):
+            raise ConfigError(self.model)
+
+        r1 = chop(parser.get(self.model,"R1"),',')
+        g2 = chop(parser.get(self.model,"G2"),',')
+        g3 = chop(parser.get(self.model,"G3"),',')
+        b4 = chop(parser.get(self.model,"B4"),',')
+        self.k[R1].x, self.k[R1].y, self.step[R1] = int(r1[0]), int(r1[1]), int(r1[2])
+        self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
+        self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
+        self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
+
+    def _region_stats(self, data, region):
+        r = data[region.P1.y:region.P2.y, region.P1.x:region.P2.x]
+        return round(r.mean(),1), round(r.std(),1)
+       
+
+    def _foreground_region(self):
+        width, height = self.fgregion.dimensions()
+        self.fgregion.P1.x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
+        self.fgregion.P1.y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
+        self.fgregion.P2.x = self.fgregion.P1.x + width
+        self.fgregion.P2.y = self.fgregion.P1.y + height
+        logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
+
+
+    def _extract_background(self):
+        logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
+        self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
+        self.background.append(self.signal[G2][-410: , -610:])
+        self.background.append(self.signal[G3][-410: , -610:])
+        self.background.append(self.signal[B4][-410: , -610:])
+
+
+    def _read(self):
         # R1 channel
         self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
         # G2 channel
@@ -216,15 +235,6 @@ class CameraImage(object):
         self.signal.append(self.image.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
        
 
-    def read(self):
-        self.loadEXIF()
-        self.lookup()
-        logging.info("{0}: Loading RAW data from {1}".format(self._name, self.model))
-        self.image = rawpy.imread(self.filepath)
-        logging.info("{0}: Color description is {1}".format(self._name, self.image.color_desc))
-        self.doRead()
-        self.extract_background()
-        self.foreground_region()
 
 
 
