@@ -30,7 +30,7 @@ from pkg_resources import resource_filename
 
 from . import __version__
 
-from .camimage import  CanonEOS450EDImage, CanonEOS550EDImage
+from .camimage import  CameraImage
 
 from .utils import  paging
 
@@ -54,8 +54,8 @@ EXIF_HEADERS = [
 # Module global functions
 # -----------------------
 
-def metadata_single(filename):
-    image = CanonEOS450EDImage(filename)
+def metadata_single(filename, options):
+    image = CanonEOS450EDImage(filename, options.config)
     dict_exif = image.loadEXIF()
     headers = ["File Name"]
     headers.extend(sorted(EXIF_HEADERS))
@@ -68,15 +68,15 @@ def metadata_single(filename):
     paging(data, headers)
 
 
-def metadata_multiple(directory, imgfilter):
+def metadata_multiple(directory, options):
     headers = ["File Name"]
     headers.extend(sorted(EXIF_HEADERS))
     data = []
-    file_list = glob.glob(directory + '/' + imgfilter)
+    file_list = glob.glob(directory + '/' + options.filter)
     maxsize = len(file_list)
     logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, imgfilter))
     for filename in file_list:
-        image = CanonEOS450EDImage(filename)
+        image = CanonEOS450EDImage(filename, options.config)
         dict_exif = image.loadEXIF()
         row = [image.name()]   
         if sys.version_info[0] < 3:
@@ -92,6 +92,6 @@ def metadata_multiple(directory, imgfilter):
 
 def metadata_display(options):
     if options.input_file is not None:
-        metadata_single(options.input_file)
+        metadata_single(options.input_file, options)
     else:
-        metadata_multiple(options.work_dir, options.filter)
+        metadata_multiple(options.work_dir, options)
