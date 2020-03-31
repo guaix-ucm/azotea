@@ -55,7 +55,7 @@ EXIF_HEADERS = [
 # -----------------------
 
 def metadata_single(filename, options):
-    image = CanonEOS450EDImage(filename, options.config)
+    image = CameraImage(filename, options)
     dict_exif = image.loadEXIF()
     headers = ["File Name"]
     headers.extend(sorted(EXIF_HEADERS))
@@ -76,8 +76,7 @@ def metadata_multiple(directory, options):
     maxsize = len(file_list)
     logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, imgfilter))
     for filename in file_list:
-        image = CanonEOS450EDImage(filename, options.config)
-        dict_exif = image.loadEXIF()
+        image = CameraImage(filename, options)
         row = [image.name()]   
         if sys.version_info[0] < 3:
             row.extend([ value for key, value in sorted(dict_exif.iteritems()) if key in EXIF_HEADERS])

@@ -56,22 +56,22 @@ except:
 
 class Point:
     """ Point class represents and manipulates x,y coords. """
-    def __init__(self):
+    def __init__(self, x=0, y=0):
         """ Create a new point at the origin """
-        self.x = 0
-        self.y = 0
+        self.x = x
+        self.y = y
 
     def __repr__(self):
         return "(x={0},y={1})".format(self.x, self.y)
 
 class Rect:
     """ Rectangle defined by opposite points. """
-    def __init__(self):
-        self.P0 = Point()
-        self.P1 = Point()
+    def __init__(self, p1=Point(), p2=Point()):
+        self.P1 = p1
+        self.P2 = p2
 
     def __repr__(self):
-        return "[{0} - {1}]".format(self.P0, self.P1)
+        return "[{0} - {1}]".format(self.P1, self.P2)
 
 # -----------------------
 # Module global functions

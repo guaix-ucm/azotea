@@ -54,7 +54,7 @@ from .camimage import  CameraImage
 # -----------------------
 
 def stats_single(filepath, options):
-    image = CameraImage(filepath, options.config)
+    image = CameraImage(filepath, options)
     image.read()
     stats = image.stats()
 
@@ -67,9 +67,10 @@ def stats_multiple(directory, options):
         writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
         writer.writeheader()
         for filename in glob.glob(directory + '/' + options.filter):
-            image = CameraImage(filename, options.config)
+            image = CameraImage(filename, options)
             image.read()
             writer.writerow(image.stats())
+    logging.info("Saved all to CSV file {0}".format(outname))
         
 
 # =====================

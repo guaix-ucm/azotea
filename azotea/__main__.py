@@ -18,27 +18,18 @@ import os.path
 import logging
 import traceback
 
-# Access  template withing the package
-from pkg_resources import resource_filename
 
 #--------------
 # other imports
 # -------------
 
-from . import __version__
+from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG
 from .metadata import metadata_display
 from .stats    import stats_compute
+from .utils    import chop, Point
 
 
-# ----------------
-# Module constants
-# ----------------
-
-DEF_WIDTH  = 500
-DEF_HEIGHT = 400
-
-DEF_CONFIG = resource_filename(__name__, 'data/camera.ini')
-
+#
 # -----------------------
 # Module global variables
 # -----------------------
@@ -56,6 +47,12 @@ def configureLogging(options):
     else:
         level = logging.INFO
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
+
+
+def mkpoint(text):
+    print("=================================== CUCU")
+    l = chop(text,',')
+    return Point(x=l[0], y=l[1])
 
 
 # =================== #
@@ -89,8 +86,8 @@ def createParser():
     subparser = parser_meta.add_subparsers(dest='subcommand')
     mdi = subparser.add_parser('display',  help='display image metadata')
     mdiex = mdi.add_mutually_exclusive_group(required=True)
-    mdiex.add_argument('--input-file', type=str, help='Input file')
-    mdiex.add_argument('-w','--work-dir',  type=str, help='Input working directory')
+    mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
+    mdiex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
     mdi.add_argument('--filter', type=str, default='*.CR2', help='Optional input glob-style filter if input directory')
 
     # ---------------------------------------
@@ -99,12 +96,14 @@ def createParser():
   
     subparser = parser_stats.add_subparsers(dest='subcommand')
     sdy = subparser.add_parser('compute',  help='compute image statistics')
-    sdy.add_argument('--width',  type=int, default=DEF_WIDTH,   help='Optional image center width')
+    sdy.add_argument('--width',  type=int, default=DEF_WIDTH,  help='Optional image center width')
     sdy.add_argument('--height', type=int, default=DEF_HEIGHT, help='Optional image center height')
+    sdy.add_argument('--bg-point1', type=mkpoint, default=Point(400,200), help='Optional background corner 1')
+    sdy.add_argument('--bg-point2', type=mkpoint, default=Point(550,350), help='Optional background corner 2')
     sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
     sdyex = sdy.add_mutually_exclusive_group(required=True)
-    sdyex.add_argument('-i','--input-file', type=str, help='Input file')
-    sdyex.add_argument('-w','--work-dir',  type=str, help='Input working directory')
+    sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')
+    sdyex.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')
     sdy.add_argument('--filter', type=str, default='*.CR2', help='Optional input glob-style filter if input directory')
 
     return parser

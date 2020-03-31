@@ -59,9 +59,6 @@ BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
 
-WIDTH  = 500
-HEIGHT = 400
-
 class ConfigError(Exception):
     '''This camera model is not supported by AZOTEA'''
     def __str__(self):
@@ -98,9 +95,11 @@ class CameraImage(object):
             'stdev_background_B4',
         ]
 
-    def __init__(self, filepath, configpath):
+    def __init__(self, filepath, options):
         self.filepath   = filepath
-        self.configpath = configpath
+        self.configpath = options.config
+        self.width      = options.width     # Width of iluminated area around the center
+        self.height     = options.height    # height of iluminated area around the center      
         self.metadata   = None
         self.image      = None
         self.model      = None
@@ -109,9 +108,11 @@ class CameraImage(object):
         self.background = []    # Array of Bayer background
         self.path       = filepath  
         self.fgregion   = Rect()  # foreground rectangular region
-        self.bgregion   = Rect()  # background rectangular region were bias is estimated
+        self.bgregion   = Rect(options.bg_point1, options.bg_point2)  # background rectangular region were bias is estimated
         self.k          = [ Point(), Point(), Point(), Point()] # Array of Points to properly read each channel
-        self.step      =  [ 2, 2, 2, 2]
+        self.step       = [ 2, 2, 2, 2]
+        logging.info("{0}: <<Background  region of interest is {1}>>".format(self._name, self.bgregion))
+        
     def name(self):
         return self._name
 
@@ -135,7 +136,6 @@ class CameraImage(object):
         # str is for case sensitive options
         parser.optionxform = str
         parser.read(self.configpath)
-        print(parser.sections())
         if not parser.has_section(self.model):
             raise ConfigError(self.model)
 
@@ -150,24 +150,24 @@ class CameraImage(object):
             
 
 
-    def foreground_region(self, width, height):
-        self.fgregion.P0.x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
-        self.fgregion.P0.y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
-        self.fgregion.P1.x = self.fgregion.P0.x + width
-        self.fgregion.P1.y = self.fgregion.P0.y + height
+    def foreground_region(self):
+        self.fgregion.P1.x = np.int(self.signal[G2].shape[1] / 2 - self.width//2)   # atento: eje X  shape[1]
+        self.fgregion.P1.y = np.int(self.signal[G2].shape[0] / 2 - self.height//2)  # atento: eje Y  shape[0]
+        self.fgregion.P2.x = self.fgregion.P1.x + self.width
+        self.fgregion.P2.y = self.fgregion.P1.y + self.height
         logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
 
 
     def background_region(self, x1, x2, y1, y2):
-        self.bgregion.P0.x = x1
-        self.bgregion.P0.y = y1
-        self.bgregion.P1.x = x2
-        self.bgregion.P1.y = y2
+        self.bgregion.P1.x = x1
+        self.bgregion.P1.y = y1
+        self.bgregion.P2.x = x2
+        self.bgregion.P2.y = y2
         logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
 
 
     def region_stats(self, data, region):
-        r = data[region.P0.y:region.P1.y,region.P0.x:region.P1.x]
+        r = data[region.P1.y:region.P2.y, region.P1.x:region.P2.x]
         return round(r.mean(),1), round(r.std(),1)
        
 
@@ -231,8 +231,9 @@ class CameraImage(object):
         logging.info("{0}: Color description is {1}".format(self._name, self.image.color_desc))
         self.doRead()
         self.extract_background()
-        self.foreground_region(WIDTH, HEIGHT)
-        self.background_region(BG_X1, BG_X2, BG_Y1, BG_Y2)
+        self.foreground_region()
+        #self.background_region(BG_X1, BG_X2, BG_Y1, BG_Y2)
+        self.background_region(self.bgregion.P1.x, self.bgregion.P2.x, self.bgregion.P1.y, self.bgregion.P2.y)
         
 
 
