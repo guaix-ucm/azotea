@@ -40,7 +40,7 @@ CLASSIFIERS  = [
 
 # Additional data inside the package
 PACKAGE_DATA = {
-    'azotea': ['data/demo/*.CR2'],
+    'azotea': ['data/camera.ini'],
 }
 
 SCRIPTS = [
