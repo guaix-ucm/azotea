@@ -224,6 +224,7 @@ class CameraImage(object):
 
     def read(self):
         self.loadEXIF()
+        self.lookup()
         logging.info("{0}: Loading RAW data from {1}".format(self._name, self.model))
         self.image = rawpy.imread(self.filepath)
         logging.info("{0}: Color description is {1}".format(self._name, self.image.color_desc))
