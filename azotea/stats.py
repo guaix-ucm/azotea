@@ -17,6 +17,7 @@ import os
 import os.path
 import glob
 import logging
+import csv
 import traceback
 
 # ---------------------
@@ -37,14 +38,12 @@ from   matplotlib.colors       import LogNorm
 # local imports
 # -------------
 
-from . import __version__
-from .camimage import  CanonEOS450EDImage, CanonEOS550EDImage
+from .camimage import  CameraImage
 
 
 # ----------------
 # Module constants
 # ----------------
-
 
 # -----------------------
 # Module global variables
@@ -54,26 +53,32 @@ from .camimage import  CanonEOS450EDImage, CanonEOS550EDImage
 # Module global functions
 # -----------------------
 
-def stats_single(filename, options):
-    image = CanonEOS450EDImage(filename)
+def stats_single(filepath, options):
+    image = CameraImage(filepath, options.config)
     image.read()
+    stats = image.stats()
 
 
-def stats_multiple(directory, imgfilter):
-    for filename in glob.glob(directory + '/' + imgfilter):
-        image = CanonEOS450EDImage(filename)
-        image.read()
+def stats_multiple(directory, options):
+    directory = directory[:-1] if os.path.basename(directory) == '' else directory
+    outname = os.path.basename(directory) + '.csv'
+    logging.info("CSV file is {0}".format(outname))
+    with open(outname, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
+        writer.writeheader()
+        for filename in glob.glob(directory + '/' + options.filter):
+            image = CameraImage(filename, options.config)
+            image.read()
+            writer.writerow(image.stats())
         
 
 # =====================
 # Command esntry points
 # =====================
 
-def stats_compute(options):
-    pass
 
 def stats_compute(options):
     if options.input_file is not None:
-        stats_single(options.input_file)
+        stats_single(options.input_file, options)
     else:
-        stats_multiple(options.work_dir, options.filter)
+        stats_multiple(options.work_dir, options)

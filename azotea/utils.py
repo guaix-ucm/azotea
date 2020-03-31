@@ -50,9 +50,41 @@ except:
 # Module global variables
 # -----------------------
 
+# ----------------------
+# Module utility classes
+# ----------------------
+
+class Point:
+    """ Point class represents and manipulates x,y coords. """
+    def __init__(self):
+        """ Create a new point at the origin """
+        self.x = 0
+        self.y = 0
+
+    def __repr__(self):
+        return "(x={0},y={1})".format(self.x, self.y)
+
+class Rect:
+    """ Rectangle defined by opposite points. """
+    def __init__(self):
+        self.P0 = Point()
+        self.P1 = Point()
+
+    def __repr__(self):
+        return "[{0} - {1}]".format(self.P0, self.P1)
+
 # -----------------------
 # Module global functions
 # -----------------------
+
+def chop(string, sep=None):
+    '''Chop a list of strings, separated by sep and 
+    strips individual string items from leading and trailing blanks'''
+    chopped = [ elem.strip() for elem in string.split(sep) ]
+    if len(chopped) == 1 and chopped[0] == '':
+        chopped = []
+    return chopped
+
 
 if sys.version_info[0] < 3:
     # Python 2 version

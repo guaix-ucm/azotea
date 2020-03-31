@@ -37,6 +37,8 @@ from .stats    import stats_compute
 DEF_WIDTH  = 500
 DEF_HEIGHT = 400
 
+DEF_CONFIG = resource_filename(__name__, 'data/camera.ini')
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -97,8 +99,9 @@ def createParser():
   
     subparser = parser_stats.add_subparsers(dest='subcommand')
     sdy = subparser.add_parser('compute',  help='compute image statistics')
-    sdy.add_argument('--width', type=int, default=DEF_WIDTH,   help='Optional image center width')
+    sdy.add_argument('--width',  type=int, default=DEF_WIDTH,   help='Optional image center width')
     sdy.add_argument('--height', type=int, default=DEF_HEIGHT, help='Optional image center height')
+    sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
     sdyex = sdy.add_mutually_exclusive_group(required=True)
     sdyex.add_argument('-i','--input-file', type=str, help='Input file')
     sdyex.add_argument('-w','--work-dir',  type=str, help='Input working directory')
