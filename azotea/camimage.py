@@ -38,7 +38,7 @@ import numpy as np
 # local imports
 # -------------
 
-from .utils import Point, Rect
+from .utils import chop, Point, Rect
 
 # ----------------
 # Module constants
@@ -120,7 +120,7 @@ class CameraImage(object):
         logging.info("{0}: Loading EXIF metadata".format(self._name))
         with open(self.filepath, "rb") as f:
             self.metadata = exifread.process_file(f)
-        self.model = self.metadata.get('Image Model')
+        self.model = str(self.metadata.get('Image Model'))
         return self.metadata
 
 
@@ -133,10 +133,11 @@ class CameraImage(object):
 
         parser  =  ConfigParser.RawConfigParser()
         # str is for case sensitive options
-        #parser.optionxform = str
-        parser.read(path)
+        parser.optionxform = str
+        parser.read(self.configpath)
+        print(parser.sections())
         if not parser.has_section(self.model):
-            raise ConfigError(camera)
+            raise ConfigError(self.model)
 
         r1 = chop(parser.get(self.model,"R1"),',')
         g2 = chop(parser.get(self.model,"G2"),',')
