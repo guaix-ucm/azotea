@@ -173,12 +173,10 @@ class CameraImage(object):
         self.extract_background()
         self.foreground_region(WIDTH, HEIGHT)
         self.background_region(BG_X1, BG_X2, BG_Y1, BG_Y2)
-        logging.info("{0}: Light region of interest is {1}".format(self._name, self.fgregion))
-        logging.info("{0}: Backg region of interest is {1}".format(self._name, self.bgregion))
+        logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
+        logging.info("{0}: Background region of interest is {1}".format(self._name, self.bgregion))
         logging.info("{0}: Computing stats".format(self._name))
-        R = self.stats()
-        print(R)
-        return R 
+        return self.stats()
 
 
 

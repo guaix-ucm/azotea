@@ -72,7 +72,10 @@ def metadata_multiple(directory, imgfilter):
     headers = ["File Name"]
     headers.extend(sorted(EXIF_HEADERS))
     data = []
-    for filename in glob.glob(directory + '/' + imgfilter):
+    file_list = glob.glob(directory + '/' + imgfilter)
+    maxsize = len(file_list)
+    logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, imgfilter))
+    for filename in file_list:
         image = CanonEOS450EDImage(filename)
         dict_exif = image.loadEXIF()
         row = [image.name()]   
@@ -81,7 +84,7 @@ def metadata_multiple(directory, imgfilter):
         else:
             row.extend([ value for key, value in sorted(dict_exif.items()) if key in EXIF_HEADERS])
         data.append(row)
-    paging(data, headers)
+    paging(data, headers, maxsize=maxsize)
 
 # =====================
 # Command esntry points
