@@ -111,7 +111,7 @@ class CameraImage(object):
         self.fgregion.P1.y = self.fgregion.P0.y + height
 
 
-    def background_region(self, x1, y1, x2, y2):
+    def background_region(self, x1, x2, y1, y2):
         self.bgregion.P0.x = x1
         self.bgregion.P0.y = y1
         self.bgregion.P1.x = x2
