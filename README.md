@@ -4,6 +4,12 @@ Pipeline Python de reducción de datos para [AZOTEA](https://guaix.ucm.es/AZOTEA
 
 Esta es una herramienta de línea de comandos.
 
+# Modelos de cámara
+
+De momento solo se soportan los siguientes modelos sin especificar un fichero de configuración externo:
+
+* Canon EOS 450D
+
 # Comandos
 
 1. Version del programa
