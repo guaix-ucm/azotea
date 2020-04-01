@@ -63,6 +63,7 @@ setup(
     classifiers      = CLASSIFIERS,
     packages         = PACKAGES,
     install_requires = DEPENDENCIES,
+    package_data     = PACKAGE_DATA,
     scripts          = SCRIPTS
 )
  
