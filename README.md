@@ -95,11 +95,11 @@ Se puede especificar una anchura central region de iluminación a medida con `--
 
 Se puede especificar una zona rectangular para medir el nivel de oscuro con `--bg-region x1,x2,y1,y2`
 
-# Fichewro CSV de salida
+# Fichero CSV de salida
 
-El comando `stats compute` genera un fichero CSV tanto si es una sola imagen como si es un directorio de ellas. Para incluir los metadatos de observador, su organización y su localización, se debe organizar el directorio de imágenes así:
+El comando `stats compute` genera un fichero CSV tanto si es una sola imagen como si es un directorio de ellas. Para incluir los metadatos de observador, su organización y su localidad, se debe organizar el directorio de imágenes así:
 
-	`<organización>/<observador>/<loacalización>/`
+	`<organización>/<observador>/<localidad>/`
 
 Ejemplo:
 
