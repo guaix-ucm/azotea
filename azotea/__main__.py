@@ -26,7 +26,7 @@ import traceback
 from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG
 from .metadata import metadata_display
 from .stats    import stats_compute
-from .utils    import chop, Point, Rect
+from .utils    import chop, Point, ROI
 
 
 #
@@ -52,12 +52,12 @@ def configureLogging(options):
 def mkrect1(text):
     '''Make a rectangle of width and height'''
     l = chop(text,',')
-    return Rect( x1=0, x2=int(l[0]), y1=0, y2=int(l[1]))
+    return ROI( x1=0, x2=int(l[0]), y1=0, y2=int(l[1]))
 
 def mkrect2(text):
     '''make rectangle with bounding corners'''
     l = chop(text,',')
-    return Rect( x1=int(l[0]), y1=int(l[2]), x2=int(l[1]), y2=int(l[3]))
+    return ROI( x1=int(l[0]), y1=int(l[2]), x2=int(l[1]), y2=int(l[3]))
 
 
 # =================== #
@@ -91,8 +91,8 @@ def createParser():
     subparser = parser_meta.add_subparsers(dest='subcommand')
     mdi = subparser.add_parser('display',  help='display image metadata')
     mdi.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
-    mdi.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=Rect(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
-    mdi.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=Rect( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
+    mdi.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=ROI(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
+    mdi.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=ROI( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
     mdiex = mdi.add_mutually_exclusive_group(required=True)
     mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
     mdiex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
@@ -106,8 +106,8 @@ def createParser():
     sdy = subparser.add_parser('compute',  help='compute image statistics')
     sdy.add_argument('--width',  type=int, default=DEF_WIDTH,  help='Optional image center width')
     sdy.add_argument('--height', type=int, default=DEF_HEIGHT, help='Optional image center height')
-    sdy.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=Rect(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
-    sdy.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=Rect( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
+    sdy.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=ROI(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
+    sdy.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=ROI( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
     sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
     sdyex = sdy.add_mutually_exclusive_group(required=True)
     sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')

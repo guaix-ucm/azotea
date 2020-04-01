@@ -38,7 +38,7 @@ import numpy as np
 # local imports
 # -------------
 
-from .utils import chop, Point, Rect
+from .utils import chop, Point, ROI
 
 # ----------------
 # Module constants
@@ -102,8 +102,8 @@ class CameraImage(object):
     def __init__(self, filepath, options):
         self.filepath   = filepath
         self.configpath = options.config
-        self.fgregion   = options.fg_region  # foreground rectangular region where signal is estimated
-        self.bgregion   = options.bg_region  # background rectangular region where bias is estimated
+        self.roi        = options.fg_region  # foreground rectangular region where signal is estimated
+        self.bgroi      = options.bg_region  # background rectangular region where bias is estimated
         self.metadata   = None
         self.image      = None
         self.model      = None
@@ -141,15 +141,15 @@ class CameraImage(object):
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
         self._extract_background()
-        self._foreground_region()
-        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1],     self.fgregion)
-        r1_mean_back,   r1_std_back   = self._region_stats(self.background[R1], self.bgregion)
-        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2],     self.fgregion)
-        g2_mean_back,   g2_std_back   = self._region_stats(self.background[G2], self.bgregion)
-        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3],     self.fgregion)
-        g3_mean_back,   g3_std_back   = self._region_stats(self.background[G3], self.bgregion)
-        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4],     self.fgregion)
-        b4_mean_back,   b4_std_back   = self._region_stats(self.background[B4], self.bgregion)
+        self._center_roi()
+        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1],     self.roi)
+        r1_mean_back,   r1_std_back   = self._region_stats(self.background[R1], self.bgroi)
+        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2],     self.roi)
+        g2_mean_back,   g2_std_back   = self._region_stats(self.background[G2], self.bgroi)
+        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3],     self.roi)
+        g3_mean_back,   g3_std_back   = self._region_stats(self.background[G3], self.bgroi)
+        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4],     self.roi)
+        b4_mean_back,   b4_std_back   = self._region_stats(self.background[B4], self.bgroi)
         return {
             'name'               : self._name,
             'date'               : self.metadata.get('Image DateTime'),
@@ -207,16 +207,17 @@ class CameraImage(object):
         return round(r.mean(),1), round(r.std(),1)
 
 
-    def _foreground_region(self):
-        width, height = self.fgregion.dimensions()
+    def _center_roi(self):
+        '''Sets the Region of interest around the image center'''
+        width, height = self.roi.dimensions()
         x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
         y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
-        self.fgregion += Point(x,y)
-        logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
+        self.roi += Point(x,y)  # Shift ROI using this point
+        logging.info("{0}: Illuminated Region of Interest is {1}".format(self._name, self.roi))
 
 
     def _extract_background(self):
-        logging.info("{0}: Background  region of interest is {1}".format(self._name, self.bgregion))
+        logging.info("{0}: Background  Region of Interest is {1}".format(self._name, self.bgroi))
         self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
         self.background.append(self.signal[G2][-410: , -610:])
         self.background.append(self.signal[G3][-410: , -610:])

@@ -65,10 +65,10 @@ class Point:
         return NotImplemented
 
     def __repr__(self):
-        return "(x={0},y={1})".format(self.x, self.y)
+        return "({0},{1})".format(self.x, self.y)
 
-class Rect:
-    """ Rectangle defined by opposite points. """
+class ROI:
+    """ Region of interest  """
     def __init__(self, x1 ,x2, y1, y2):
         self.x1 = min(x1,x2)
         self.y1 = min(y1,y2)
@@ -80,7 +80,7 @@ class Rect:
         return abs(self.x2 - self.x1), abs(self.y2 - self.y1)
 
     def __add__(self, point):
-        return Rect(self.x1 + point.x, self.x2 + point.x, self.y1 + point.y, self.y2 + point.y)
+        return ROI(self.x1 + point.x, self.x2 + point.x, self.y1 + point.y, self.y2 + point.y)
 
     def __radd__(self, point):
         return self.__add__(point)
