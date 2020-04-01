@@ -76,6 +76,8 @@ class CameraImage(object):
             'name'               ,
             'model'              ,
             'ISO'                ,
+            'roi'                ,
+            'bg_roi'             ,
             'exposure'           ,
             'mean_signal_R1'     ,
             'stdev_signal_R1'    ,
@@ -142,6 +144,7 @@ class CameraImage(object):
         logging.debug("{0}: Computing stats".format(self._name))
         self._extract_background()
         self._center_roi()
+        logging.info("{0}: ROI = {1}, Background ROI = {2}".format(self._name, self.roi, self.bgroi))
         r1_mean_center, r1_std_center = self._region_stats(self.signal[R1],     self.roi)
         r1_mean_back,   r1_std_back   = self._region_stats(self.background[R1], self.bgroi)
         g2_mean_center, g2_std_center = self._region_stats(self.signal[G2],     self.roi)
@@ -156,6 +159,8 @@ class CameraImage(object):
             'model'              : self.model,
             'ISO'                : self.metadata.get('EXIF ISOSpeedRatings'),
             'exposure'           : self.metadata.get('EXIF ExposureTime'),
+            'roi'                : str(self.roi),
+            'bg_roi'             : str(self.bgroi),
             'mean_signal_R1'     : r1_mean_center,
             'stdev_signal_R1'    : r1_std_center,
             'mean_signal_G2'     : g2_mean_center,
@@ -213,11 +218,9 @@ class CameraImage(object):
         x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
         y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
         self.roi += Point(x,y)  # Shift ROI using this point
-        logging.info("{0}: Illuminated Region of Interest is {1}".format(self._name, self.roi))
-
+        
 
     def _extract_background(self):
-        logging.info("{0}: Background  Region of Interest is {1}".format(self._name, self.bgroi))
         self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
         self.background.append(self.signal[G2][-410: , -610:])
         self.background.append(self.signal[G3][-410: , -610:])
