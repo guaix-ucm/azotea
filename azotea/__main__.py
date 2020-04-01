@@ -96,7 +96,7 @@ def createParser():
     mdiex = mdi.add_mutually_exclusive_group(required=True)
     mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
     mdiex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    mdi.add_argument('--filter', type=str, default='*.CR2', help='Optional input glob-style filter if input directory')
+    mdi.add_argument('--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
 
     # ---------------------------------------
     # Create second level parsers for 'stats'
