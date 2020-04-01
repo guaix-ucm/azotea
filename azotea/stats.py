@@ -53,40 +53,57 @@ from .camimage import  CameraImage
 # Module global functions
 # -----------------------
 
+def myopen(name, *args):
+    if sys.version_info[0] < 3:
+        return open(name, *args)
+    else:
+        return open(name,  *args, newline='')
+
+
 def stats_single(filepath, options):
     image = CameraImage(filepath, options)
-    image.read()
-    stats = image.stats()
+    remaining    = os.path.dirname(filepath)
+    location     = os.path.basename(remaining)
+    remaining    = os.path.dirname(remaining)
+    observer     = os.path.basename(remaining)
+    remaining    = os.path.dirname(remaining)
+    organization = os.path.basename(remaining)
+    fieldnames = ["observer","organization","location"]
+    fieldnames.extend(CameraImage.HEADERS)
+    metadata = {'observer': observer, 'organization': organization, 'location': location}
+    with myopen(options.csv_file, 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=fieldnames)
+        writer.writeheader()
+        image = CameraImage(filepath, options)
+        image.read()
+        row = image.stats()
+        row.update(metadata)
+        writer.writerow(row)
+    logging.info("Saved image stats to CSV file {0}".format(options.csv_file))
 
 
-if sys.version_info[0] < 3:
-    def stats_multiple(directory, options):
-        directory = directory[:-1] if os.path.basename(directory) == '' else directory
-        outname = os.path.basename(directory) + '.csv'
-        logging.info("CSV file is {0}".format(outname))
-        with open(outname, 'w') as csvfile:
-            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
-            writer.writeheader()
-            for filename in glob.glob(directory + '/' + options.filter):
-                image = CameraImage(filename, options)
-                image.read()
-                writer.writerow(image.stats())
-        logging.info("Saved all to CSV file {0}".format(outname))
-else:
-    def stats_multiple(directory, options):
-        directory = directory[:-1] if os.path.basename(directory) == '' else directory
-        outname = os.path.basename(directory) + '.csv'
-        logging.info("CSV file is {0}".format(outname))
-        with open(outname, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=CameraImage.HEADERS)
-            writer.writeheader()
-            for filename in glob.glob(directory + '/' + options.filter):
-                image = CameraImage(filename, options)
-                image.read()
-                writer.writerow(image.stats())
-        logging.info("Saved all to CSV file {0}".format(outname))
+def stats_multiple(directory, options):
+    directory = directory[:-1] if os.path.basename(directory) == '' else directory
+    location     = os.path.basename(directory)
+    remaining    = os.path.dirname(directory)
+    observer     = os.path.basename(remaining)
+    remaining    = os.path.dirname(remaining)
+    organization = os.path.basename(remaining)
+    fieldnames   = ["observer","organization","location"]
+    fieldnames.extend(CameraImage.HEADERS)
+    metadata = {'observer': observer, 'organization': organization, 'location': location} 
+    logging.info("CSV file is {0}".format(options.csv_file))
+    with myopen(options.csv_file, 'w') as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=fieldnames)
+        writer.writeheader()
+        for filename in glob.glob(directory + '/' + options.filter):
+            image = CameraImage(filename, options)
+            image.read()
+            row = image.stats()
+            row.update(metadata)
+            writer.writerow(row)
+    logging.info("Saved all to CSV file {0}".format(options.csv_file))
 
-        
 
 # =====================
 # Command esntry points

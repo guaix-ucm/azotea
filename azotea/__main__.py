@@ -23,7 +23,7 @@ import traceback
 # other imports
 # -------------
 
-from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG
+from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG, DEF_CSV
 from .metadata import metadata_display
 from .stats    import stats_compute
 from .utils    import chop, Point, ROI
@@ -109,6 +109,7 @@ def createParser():
     sdy.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=ROI(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
     sdy.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=ROI( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
     sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
+    sdy.add_argument('--csv-file', type=str, default=DEF_CSV, help='Optional output CSV file')
     sdyex = sdy.add_mutually_exclusive_group(required=True)
     sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')
     sdyex.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')

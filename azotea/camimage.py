@@ -72,29 +72,29 @@ class ConfigError(Exception):
 class CameraImage(object):
 
     HEADERS = [
-            'date'               ,
-            'name'               ,
-            'model'              ,
-            'ISO'                ,
-            'roi'                ,
-            'bg_roi'             ,
-            'exposure'           ,
-            'mean_signal_R1'     ,
-            'stdev_signal_R1'    ,
-            'mean_background_R1' ,
-            'stdev_background_R1',
-            'mean_signal_G2'     ,
-            'stdev_signal_G2'    ,
-            'mean_background_G2' ,
-            'stdev_background_G2',
-            'mean_signal_G3'     ,
-            'stdev_signal_G3'    ,
-            'mean_background_G3' ,
-            'stdev_background_G3',
-            'mean_signal_B4'     ,
-            'stdev_signal_B4'    ,
-            'mean_background_B4' ,
-            'stdev_background_B4',
+            'date'           ,
+            'name'           ,
+            'model'          ,
+            'ISO'            ,
+            'roi'            ,
+            'dk_roi'         ,
+            'exposure'       ,
+            'mean_signal_R1' ,
+            'stdev_signal_R1',
+            'mean_dark_R1'   ,
+            'stdev_dark_R1'  ,
+            'mean_signal_G2' ,
+            'stdev_signal_G2',
+            'mean_dark_G2'   ,
+            'stdev_dark_G2'  ,
+            'mean_signal_G3' ,
+            'stdev_signal_G3',
+            'mean_dark_G3'   ,
+            'stdev_dark_G3'  ,
+            'mean_signal_B4' ,
+            'stdev_signal_B4',
+            'mean_dark_B4'   ,
+            'stdev_dark_B4'  ,
         ]
 
     # ========== #
@@ -105,16 +105,16 @@ class CameraImage(object):
         self.filepath   = filepath
         self.configpath = options.config
         self.roi        = options.fg_region  # foreground rectangular region where signal is estimated
-        self.bgroi      = options.bg_region  # background rectangular region where bias is estimated
+        self.dkroi      = options.bg_region  # dark rectangular region where bias is estimated
         self.metadata   = None
         self.image      = None
         self.model      = None
         self._name      = os.path.basename(filepath)
-        self.signal     = []    # Array of Bayer signal
-        self.background = []    # Array of Bayer background
+        self.signal     = []    # Bayer array for signal ROI
+        self.dark       = []    # Bayer array for dark ROI
         self.path       = filepath  
         self.k          = [ Point(), Point(), Point(), Point()] # Array of Points to properly read each channel
-        self.step       = [ 2, 2, 2, 2]
+        self.step       = [2, 2, 2, 2]
     
 
     def name(self):
@@ -134,7 +134,7 @@ class CameraImage(object):
         '''Read RAW data''' 
         self.loadEXIF()
         self._lookup()
-        logging.info("{0}: Loading RAW data from {1}".format(self._name, self.model))
+        logging.debug("{0}: Loading RAW data from {1}".format(self._name, self.model))
         self.image = rawpy.imread(self.filepath)
         logging.debug("{0}: Color description is {1}".format(self._name, self.image.color_desc))
         self._read()
@@ -142,41 +142,41 @@ class CameraImage(object):
         
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
-        self._extract_background()
+        self._extract_dark()
         self._center_roi()
-        logging.info("{0}: ROI = {1}, Background ROI = {2}".format(self._name, self.roi, self.bgroi))
-        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1],     self.roi)
-        r1_mean_back,   r1_std_back   = self._region_stats(self.background[R1], self.bgroi)
-        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2],     self.roi)
-        g2_mean_back,   g2_std_back   = self._region_stats(self.background[G2], self.bgroi)
-        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3],     self.roi)
-        g3_mean_back,   g3_std_back   = self._region_stats(self.background[G3], self.bgroi)
-        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4],     self.roi)
-        b4_mean_back,   b4_std_back   = self._region_stats(self.background[B4], self.bgroi)
+        logging.info("{0}: {3}, ROI = {1}, Dk. ROI = {2}".format(self._name, self.roi, self.dkroi, self.model))
+        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1], self.roi)
+        r1_mean_dark,   r1_std_dark   = self._region_stats(self.dark[R1], self.dkroi)
+        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2], self.roi)
+        g2_mean_dark,   g2_std_dark   = self._region_stats(self.dark[G2], self.dkroi)
+        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3], self.roi)
+        g3_mean_dark,   g3_std_dark   = self._region_stats(self.dark[G3], self.dkroi)
+        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4], self.roi)
+        b4_mean_dark,   b4_std_dark   = self._region_stats(self.dark[B4], self.dkroi)
         return {
-            'name'               : self._name,
-            'date'               : self.metadata.get('Image DateTime'),
-            'model'              : self.model,
-            'ISO'                : self.metadata.get('EXIF ISOSpeedRatings'),
-            'exposure'           : self.metadata.get('EXIF ExposureTime'),
-            'roi'                : str(self.roi),
-            'bg_roi'             : str(self.bgroi),
-            'mean_signal_R1'     : r1_mean_center,
-            'stdev_signal_R1'    : r1_std_center,
-            'mean_signal_G2'     : g2_mean_center,
-            'stdev_signal_G2'    : g2_std_center,
-            'mean_signal_G3'     : g3_mean_center,
-            'stdev_signal_G3'    : g3_std_center,
-            'mean_signal_B4'     : b4_mean_center,
-            'stdev_signal_B4'    : b4_std_center,
-            'mean_background_R1' : r1_mean_back,
-            'stdev_background_R1': r1_std_back,
-            'mean_background_G2' : g2_mean_back,
-            'stdev_background_G2': g2_std_back,
-            'mean_background_G3' : g3_mean_back,
-            'stdev_background_G3': g3_std_back,
-            'mean_background_B4' : b4_mean_back,
-            'stdev_background_B4': b4_std_back,
+            'name'            : self._name,
+            'date'            : self.metadata.get('Image DateTime'),
+            'model'           : self.model,
+            'ISO'             : self.metadata.get('EXIF ISOSpeedRatings'),
+            'exposure'        : self.metadata.get('EXIF ExposureTime'),
+            'roi'             : str(self.roi),
+            'dk_roi'          : str(self.dkroi),
+            'mean_signal_R1'  : r1_mean_center,
+            'stdev_signal_R1' : r1_std_center,
+            'mean_signal_G2'  : g2_mean_center,
+            'stdev_signal_G2' : g2_std_center,
+            'mean_signal_G3'  : g3_mean_center,
+            'stdev_signal_G3' : g3_std_center,
+            'mean_signal_B4'  : b4_mean_center,
+            'stdev_signal_B4' : b4_std_center,
+            'mean_dark_R1'    : r1_mean_dark,
+            'stdev_dark_R1'   : r1_std_dark,
+            'mean_dark_G2'    : g2_mean_dark,
+            'stdev_dark_G2'   : g2_std_dark,
+            'mean_dark_G3'    : g3_mean_dark,
+            'stdev_dark_G3'   : g3_std_dark,
+            'mean_dark_B4'    : b4_mean_dark,
+            'stdev_dark_B4'   : b4_std_dark,
         }
     
 
@@ -220,11 +220,11 @@ class CameraImage(object):
         self.roi += Point(x,y)  # Shift ROI using this point
         
 
-    def _extract_background(self):
-        self.background.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
-        self.background.append(self.signal[G2][-410: , -610:])
-        self.background.append(self.signal[G3][-410: , -610:])
-        self.background.append(self.signal[B4][-410: , -610:])
+    def _extract_dark(self):
+        self.dark.append(self.signal[R1][-410: , -610:])   # No se de donde salen estos numeros
+        self.dark.append(self.signal[G2][-410: , -610:])
+        self.dark.append(self.signal[G3][-410: , -610:])
+        self.dark.append(self.signal[B4][-410: , -610:])
 
 
     def _read(self):
