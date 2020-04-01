@@ -9,7 +9,7 @@ Esta es una herramienta de línea de comandos.
 1. Version del programa
 
 ```bash 
-python -m azotea --version```
+python -m azotea --version
 ```
 
 2. Comandos
@@ -74,21 +74,15 @@ python -m azotea metadata display --work-dir demo/test
 2. Calcular estadistca de una serie de imagenes en un directorio y guardarlas en un fichero
 
 ```bash
-python -m azotea stats compute  --work-dir demo/test
+python -m azotea stats compute  --work-dir demo/test --csv-file azotea.csv
 ```
 
 ```
-2020-03-31 23:21:58,510 [INFO] CSV file is test.csv
-2020-03-31 23:21:58,557 [INFO] 2020_03_2600_17_409999.CR2: Loading RAW data from Canon EOS 450D
-2020-03-31 23:21:58,917 [INFO] 2020_03_2600_17_409999.CR2: Background  region of interest is [(x=400,y=200) - (x=550,y=350)]
-2020-03-31 23:21:58,917 [INFO] 2020_03_2600_17_409999.CR2: Illuminated region of interest is [(x=828,y=519) - (x=1328,y=919)]
-2020-03-31 23:21:58,969 [INFO] 2020_03_2600_18_459999.CR2: Loading RAW data from Canon EOS 450D
-2020-03-31 23:21:59,326 [INFO] 2020_03_2600_18_459999.CR2: Background  region of interest is [(x=400,y=200) - (x=550,y=350)]
-2020-03-31 23:21:59,327 [INFO] 2020_03_2600_18_459999.CR2: Illuminated region of interest is [(x=828,y=519) - (x=1328,y=919)]
-2020-03-31 23:21:59,377 [INFO] 2020_03_2605_30_079999.CR2: Loading RAW data from Canon EOS 450D
-2020-03-31 23:21:59,689 [INFO] 2020_03_2605_30_079999.CR2: Background  region of interest is [(x=400,y=200) - (x=550,y=350)]
-2020-03-31 23:21:59,689 [INFO] 2020_03_2605_30_079999.CR2: Illuminated region of interest is [(x=828,y=519) - (x=1328,y=919)]
-2020-03-31 23:21:59,693 [INFO] Saved all to CSV file test.csv
+2020-04-01 12:56:44,361 [INFO] CSV file is /home/rafa/repos/azotea/azotea.csv
+2020-04-01 12:56:44,751 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dk. ROI = [400:550,200:350]
+2020-04-01 12:56:45,144 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dk. ROI = [400:550,200:350]
+2020-04-01 12:56:45,487 [INFO] 2020_03_2605_30_079999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dk. ROI = [400:550,200:350]
+2020-04-01 12:56:45,491 [INFO] Saved all to CSV file /home/rafa/repos/azotea/azotea.csv
 ```
 
 Se puede especificar una anchura central region de iluminación a medida con `--fg-region ancho,alto`
