@@ -94,4 +94,5 @@ python -m azotea stats compute  --work-dir demo/test
 ```
 
 Se puede especificar una anchura central region de iluminación a medida con `--fg-region ancho,alto`
+
 Se puede especificar una zona rectangular para medir el nivel de oscuro con `--bg-region x1,x2,y1,y2`
