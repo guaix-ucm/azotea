@@ -188,7 +188,6 @@ class CameraImage(object):
         '''
         Load camera configuration from configuration file
         '''
-        logging.info("Camera configuration file is {0}".format(self.configpath))
         if not (os.path.exists(self.configpath)):
             raise IOError(errno.ENOENT,"No such file or directory", path)
 
