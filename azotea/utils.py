@@ -61,21 +61,32 @@ class Point:
         self.x = x
         self.y = y
 
+    def __add__(self, rect):
+        return NotImplemented
+
     def __repr__(self):
         return "(x={0},y={1})".format(self.x, self.y)
 
 class Rect:
     """ Rectangle defined by opposite points. """
-    def __init__(self, p1=Point(), p2=Point()):
-        self.P1 = p1
-        self.P2 = p2
+    def __init__(self, x1 ,x2, y1, y2):
+        self.x1 = min(x1,x2)
+        self.y1 = min(y1,y2)
+        self.x2 = max(x1,x2)
+        self.y2 = max(y1,y2)
 
     def dimensions(self):
         '''returns width and height'''
-        return abs(self.P1.x-self.P2.x), abs(self.P1.y-self.P2.y)
+        return abs(self.x2 - self.x1), abs(self.y2 - self.y1)
+
+    def __add__(self, point):
+        return Rect(self.x1 + point.x, self.x2 + point.x, self.y1 + point.y, self.y2 + point.y)
+
+    def __radd__(self, point):
+        return self.__add__(point)
         
     def __repr__(self):
-        return "[{0} - {1}]".format(self.P1, self.P2)
+        return "[{0}:{1},{2}:{3}]".format(self.x1, self.x2, self.y1, self.y2)
 
 # -----------------------
 # Module global functions

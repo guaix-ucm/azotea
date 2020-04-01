@@ -203,16 +203,15 @@ class CameraImage(object):
         self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
 
     def _region_stats(self, data, region):
-        r = data[region.P1.y:region.P2.y, region.P1.x:region.P2.x]
+        r = data[region.y1:region.y2, region.x1:region.x2]
         return round(r.mean(),1), round(r.std(),1)
-       
+
 
     def _foreground_region(self):
         width, height = self.fgregion.dimensions()
-        self.fgregion.P1.x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
-        self.fgregion.P1.y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
-        self.fgregion.P2.x = self.fgregion.P1.x + width
-        self.fgregion.P2.y = self.fgregion.P1.y + height
+        x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
+        y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
+        self.fgregion += Point(x,y)
         logging.info("{0}: Illuminated region of interest is {1}".format(self._name, self.fgregion))
 
 
