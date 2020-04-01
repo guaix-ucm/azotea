@@ -96,6 +96,9 @@ def stats_multiple(directory, options):
     with myopen(options.csv_file, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=fieldnames)
         writer.writeheader()
+        file_list = glob.glob(directory + '/' + options.filter)
+        maxsize = len(file_list)
+        logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, options.filter))
         for filename in glob.glob(directory + '/' + options.filter):
             image = CameraImage(filename, options)
             image.read()

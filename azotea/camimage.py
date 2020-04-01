@@ -59,7 +59,7 @@ BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
 
-class ConfigError(Exception):
+class ConfigError(ValueError):
     '''This camera model is not supported by AZOTEA'''
     def __str__(self):
         s = self.__doc__

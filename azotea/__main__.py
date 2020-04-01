@@ -113,7 +113,7 @@ def createParser():
     sdyex = sdy.add_mutually_exclusive_group(required=True)
     sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')
     sdyex.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')
-    sdy.add_argument('--filter', type=str, default='*.CR2', help='Optional input glob-style filter if input directory')
+    sdy.add_argument('--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
 
     return parser
 
