@@ -156,7 +156,7 @@ def stats_scan(connection, directory, session, options):
 
 
 def classification_algorithm1(name, file_path, options):
-    if name.startswith("dark"):
+    if name.upper().startswith("DARK"):
         result = {'name': name, 'type': "DARK"}
     else:
         result = {'name': name, 'type': "LIGHT"}
