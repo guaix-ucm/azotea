@@ -102,7 +102,7 @@ def insert_new_images(connection, rows):
 def candidates(directory, options):
     '''candidate list of images to be inserted in the database'''
     file_list = glob.glob(directory + '/' + options.filter)
-    logging.info("Counting {0} candidate images".format(len(file_list)))
+    logging.info("Found {0} candidate images".format(len(file_list)))
     return file_list
 
 
@@ -152,6 +152,7 @@ def stats_scan(connection, directory, session, options):
         metadata['roi']       = str(image.center_roi())
         row   = merge_two_dicts(metadata, exif_metadata)
         rows.append(row)
+        logging.info("{0} Registered".format(image.name()))
     insert_new_images(connection, rows)
 
 
