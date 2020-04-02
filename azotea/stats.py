@@ -66,7 +66,7 @@ def stats_analyze(directory, options):
     metadata = {'session': tstamp, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
     rows = []
     file_list = glob.iglob(directory + '/' + options.filter)
-    logging.info("Analyzing {0} files".format(len(file_list)))
+    #logging.info("Analyzing {0} files".format(len(file_list)))
     for filename in file_list:
         image = CameraImage(filename, options)
         image.loadEXIF()
@@ -105,10 +105,7 @@ def stats_write(rows, options):
     logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 
-def stats_move(file_list, options):
-    if not file_list:
-        return
-    directory = os.path.dirname(file_list[0])   # Pick one file to get the directory
+def stats_move(directory, options):
     new_dir   = os.path.join(directory, "processed")
     try:
         os.mkdir(new_dir)
@@ -118,9 +115,10 @@ def stats_move(file_list, options):
         pass
 
     if (not options.do_not_move) and (not options.dry_run):
+        file_list = glob.iglob(directory + '/' + options.filter)
         for f in file_list:
             shutil.move(f, new_dir)
-        logging.info("Moved {0} files to {1}".format(len(file_list), new_dir))
+        logging.info("Moved files to {0}".format(new_dir))
 
 
 
@@ -130,6 +128,6 @@ def stats_move(file_list, options):
 
 
 def stats_compute(connection, options):
-    rows, file_list = stats_analyze(options.work_dir, options)
+    rows = stats_analyze(options.work_dir, options)
     stats_write(rows, options)
-    stats_move(file_list, options)
+    stats_move(options.work_dir, options)
