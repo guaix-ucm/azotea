@@ -351,7 +351,7 @@ def stats_export(connection, session, options):
             writer = csv.writer(csvfile, delimiter=';')
             #writer.writeheader()
             writer.writerows(export_global_iterable(connection))
-        logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+        logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
 
 
 
