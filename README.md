@@ -55,7 +55,7 @@ Los modelos de camara soportados hasta el momento se pueden ver listando el fich
 python -m azotea config camera --list
 ```
 
-***Uso Avanzado, no recomendadp***: Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él y luego editarlo de manera análoga a la configuración global. Este fichero no es para todo el mundo, sólo los que entienden cómo funciona el software deben hacerlo.
+***Uso Avanzado, no recomendado***: Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él y luego editarlo de manera análoga a la configuración global. Este fichero no es para todo el mundo, sólo los que entienden cómo funciona el software deben hacerlo.
 
 
 ```bash
@@ -66,6 +66,12 @@ python -m azotea config camera --create
 2020-04-01 19:25:12,998 [INFO] Created /home/rafa/camera.ini file
 ```
 
+Para probar la cámara comn este nuevo fichero en todos los comandos `azotea` posteriores hay que especificarlo como opción global antes de los comandos. Ejemplo:
+
+
+```bash
+python -m azotea --camera mycamera.ini stats compute
+```
 
 # Operativa
 
