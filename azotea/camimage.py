@@ -16,6 +16,7 @@ import os
 import os.path
 import logging
 import errno
+import datetime
 import traceback
 
 try:
@@ -38,7 +39,7 @@ import numpy as np
 # local imports
 # -------------
 
-from .      import DEF_CAMERA
+from .      import DEF_CAMERA, DEF_TSTAMP
 from .utils import chop, Point, ROI
 
 # ----------------
@@ -60,6 +61,10 @@ BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
 
+# ----------
+# Exceptions
+# ----------
+
 class ConfigError(ValueError):
     '''This camera model is not supported by AZOTEA'''
     def __str__(self):
@@ -78,12 +83,19 @@ class MetadataError(ValueError):
         s = '{0}.'.format(s)
         return s
 
-
+class TimestampError(ValueError):
+    '''EXIF timestamp not supported by AZOTEA'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0}: '{1}'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
 
 class CameraImage(object):
 
     HEADERS = [
-            'date'           ,
+            'tstamp'         ,
             'name'           ,
             'model'          ,
             'ISO'            ,
@@ -110,10 +122,10 @@ class CameraImage(object):
         self.extended   = options.extended
         self.roi        = options.roi  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
-        self.metadata   = None
+        self.exif       = None
         self.image      = None
-        self.model      = None
-        self._name      = os.path.basename(filepath)
+        self.metadata   = {}  # Subset of EXIF metadata we are interested in
+        self._name      = os.path.basename(self.filepath)
         self.signal     = []    # Bayer array for signal ROI
         self.dark       = []    # Bayer array for dark ROI
         self.path       = filepath  
@@ -129,16 +141,21 @@ class CameraImage(object):
         '''Load EXIF metadata'''   
         logging.debug("{0}: Loading EXIF metadata".format(self._name))
         with open(self.filepath, "rb") as f:
-            self.metadata = exifread.process_file(f)
-        if not self.metadata:
+            self.exif = exifread.process_file(f)
+        if not self.exif:
             raise MetadataError(self.filepath)
-        self.model = str(self.metadata.get('Image Model'))
+        self.model = str(self.exif.get('Image Model'))
+        self.metadata['name']      = self._name
+        self.metadata['file_path'] = self.filepath
+        self.metadata['model']     = self.model
+        self.metadata['tstamp']    = self._iso8601(str(self.exif.get('Image DateTime')))
+        self.metadata['exposure']  = str(self.exif.get('EXIF ExposureTime'))
+        self.metadata['iso']       = str(self.exif.get('EXIF ISOSpeedRatings'))
         return self.metadata
 
 
     def read(self):
         '''Read RAW data''' 
-        self.loadEXIF()
         self._lookup()
         logging.debug("{0}: Loading RAW data from {1}".format(self._name, self.model))
         self.image = rawpy.imread(self.filepath)
@@ -154,11 +171,11 @@ class CameraImage(object):
         g3_mean, g3_std = self._region_stats(self.signal[G3], self.roi)
         b4_mean, b4_std = self._region_stats(self.signal[B4], self.roi)
         result = {
-            'name'            : self._name,
-            'date'            : self.metadata.get('Image DateTime'),
-            'model'           : self.model,
-            'ISO'             : self.metadata.get('EXIF ISOSpeedRatings'),
-            'exposure'        : self.metadata.get('EXIF ExposureTime'),
+            'name'            : self.metadata['name'],
+            'tstamp'          : self.metadata['tstamp'],
+            'model'           : self.metadata['model'],
+            'ISO'             : self.metadata['iso'],
+            'exposure'        : self.metadata['exposure'],
             'roi'             : str(self.roi),
             'dark_roi'        : str(self.dkroi),
             'mean_signal_R1'  : r1_mean,
@@ -184,6 +201,20 @@ class CameraImage(object):
     # helper methods #
     # ============== #
 
+    def _iso8601(self, tstamp):
+        date = None
+        for fmt in ["%Y:%m:%d %H:%M:%S", "%Y:%m:%d %H:%M:%S"]:
+            try:
+                date = datetime.datetime.strptime(tstamp, fmt)
+            except ValueError:
+                continue
+            else:
+                break
+        if not date:
+            raise TimestampError(tstamp)
+        else:
+            return date.strftime(DEF_TSTAMP)
+
     def _lookup(self):
         '''
         Load camera configuration from configuration file
@@ -196,7 +227,7 @@ class CameraImage(object):
         # str is for case sensitive options
         parser.optionxform = str
         parser.read(self.camerapath)
-        if not parser.has_section(self.model):
+        if not parser.has_section(self.metadata['model']):
             raise ConfigError(self.model)
 
         r1 = chop(parser.get(self.model,"R1"),',')

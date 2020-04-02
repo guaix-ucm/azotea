@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS image_t
     mean_signal_B4      REAL,
     stdev_signal_B4     REAL,
     -- Processing state columns
-    filepath            TEXT  NOT NULL,    -- original absolute file path
+    file_path           TEXT  NOT NULL,    -- original absolute file path
     session             TEXT  NOT NULL,    -- Session id
     type                TEXT,              -- LIGHT or DARK
     state               TEXT,              -- NULL = UNPROCESSED, "DARK SUBSTRACTED"

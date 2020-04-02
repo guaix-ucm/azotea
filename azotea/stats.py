@@ -69,6 +69,7 @@ def stats_analyze(directory, options):
     logging.info("Analyzing {0} files".format(len(file_list)))
     for filename in file_list:
         image = CameraImage(filename, options)
+        image.loadEXIF()
         image.read()
         row = image.stats()
         row.update(metadata)

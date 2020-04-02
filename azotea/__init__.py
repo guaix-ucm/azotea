@@ -44,6 +44,7 @@ DEF_CONFIG     = os.path.join(os.path.expanduser("~"), os.path.basename(DEF_CONF
 DEF_GLOBAL_CSV = os.path.join(os.path.expanduser("~"), "azotea.csv")
 DEF_DBASE      = os.path.join(os.path.expanduser("~"), "azotea.db")
 
+DEF_TSTAMP = "%Y-%m-%dT%H:%M:%S"
 # -----------------------
 # Module global variables
 # -----------------------

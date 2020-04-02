@@ -28,7 +28,8 @@ from .config   import load_config_file, merge_options
 from .metadata import metadata_display
 from .stats    import stats_compute
 from .utils    import chop, Point, ROI, open_database, create_database
-from .cfgcmds  import config_global, config_camera 
+from .cfgcmds  import config_global, config_camera
+from .dbase    import dbase_clear, dbase_purge
 
 #
 # -----------------------
@@ -86,6 +87,18 @@ def createParser():
     parser_meta   = subparser.add_parser('metadata', help='metadata commands')
     parser_stats  = subparser.add_parser('stats', help='stats commands')
     parser_config = subparser.add_parser('config', help='config commands')
+    parser_dbase  = subparser.add_parser('dbase', help='database commands (MAINTENANCE ONLY!)')
+
+
+    # -----------------------------------------
+    # Create second level parsers for 'dbase'
+    # -----------------------------------------
+
+    subparser = parser_dbase.add_subparsers(dest='subcommand')
+
+    dbc = subparser.add_parser('clear',  help="Clears the database (MAINTENANCE ONLY!)")
+    
+    dbp = subparser.add_parser('purge',  help="Purge the database  (MAINTENANCE ONLY!)")
 
     # -----------------------------------------
     # Create second level parsers for 'config'

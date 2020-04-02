@@ -171,6 +171,7 @@ El fichero CSV tiene una cabecera con los nombres de las columnas, a saber:
 | name            | Nombre de la imagen (=nombre del fichero sin la ruta.) |
 | model           | Modelo de cámara.                                      |
 | ISO             | Sensibilidad ISO de la toma.                           |
+| tstamp          | Fecha y hora de la imagen, formato ISO 8601
 | exposure        | Tiempo de exposicion                                   |
 | roi             | Region de interés [x1:x2, y1:y2]                       |
 | dark_roi        | Region de interes para medida oscura [x1:x2, y1:y2]    |
