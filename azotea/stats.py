@@ -77,6 +77,7 @@ def insert_new_images(connection, rows):
             observer, 
             organization, 
             location, 
+            roi,
             tstamp, 
             model, 
             iso, 
@@ -88,7 +89,8 @@ def insert_new_images(connection, rows):
             :session, 
             :observer, 
             :organization, 
-            :location, 
+            :location,
+            :roi,
             :tstamp, 
             :model, 
             :iso, 
@@ -109,21 +111,72 @@ def insert_list(connection, directory, options):
     return list(set(candidates(directory, options)) - set(already_in_database(connection)))
 
 
+def to_classify_iterable(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT name, file_path
+        FROM image_t
+        WHERE type IS NULL
+        ''')
+    return cursor
+
+def update_type(connection, rows):
+    cursor = connection.cursor()
+    cursor.executemany(
+        '''
+        UPDATE image_t
+        SET type = :type
+        WHERE name = :name
+        AND type IS NULL
+        ''', rows)
+    connection.commit()
+
+
 def stats_scan(connection, directory, session, options):
     file_list = insert_list(connection, directory, options)
     logging.info("Registering {0} new images".format(len(file_list)))
-    metadata = {'session': session, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
+    metadata = {
+        'session'     : session, 
+        'observer'    : options.observer, 
+        'organization': options.organization, 
+        'location'    : options.location,
+    }
     rows = []
     for file_path in file_list:
         image = CameraImage(file_path, options)
+        exif_metadata = image.loadEXIF()
+        image.read()
         metadata['file_path'] = file_path
         metadata['hash']      = image.hash()
-        row   = merge_two_dicts(metadata, image.loadEXIF())
+        metadata['roi']       = str(image.center_roi())
+        row   = merge_two_dicts(metadata, exif_metadata)
         rows.append(row)
     insert_new_images(connection, rows)
 
 
-def stats_analyze(directory, options):
+def classification_algorithm1(name, file_path, options):
+    if name.startswith("dark"):
+        result = {'name': name, 'type': "DARK"}
+    else:
+        result = {'name': name, 'type': "LIGHT"}
+    return result
+
+
+def stats_classify(connection, options):
+    rows = []
+    for name, file_path in to_classify_iterable(connection):
+        row = classification_algorithm1(name, file_path, options)
+        logging.info("{0} is type {1}".format(name,row['type']))
+        rows.append(row)
+    if rows:
+        update_type(connection, rows)
+
+
+
+
+
+def stats_stats(directory, options):
     tstamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     directory = directory[:-1] if os.path.basename(directory) == '' else directory  
     metadata = {'session': tstamp, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
@@ -178,4 +231,5 @@ def stats_write(rows, options):
 def stats_compute(connection, options):
     session = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     stats_scan(connection, options.work_dir, session, options)
+    stats_classify(connection, options)
 

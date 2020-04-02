@@ -140,6 +140,7 @@ class CameraImage(object):
         return self._name
 
 
+
     def hash(self):
         BLOCK_SIZE = 65536*65536 # The size of each read from the file
         file_hash = hashlib.sha256()
@@ -167,6 +168,12 @@ class CameraImage(object):
         self.metadata['iso']       = str(self.exif.get('EXIF ISOSpeedRatings'))
         return self.metadata
 
+    def center_roi(self):
+        '''image needs to be read'''
+        if self.roi.x1 == 0 and self.roi.y1 == 0:
+            self._center_roi()
+        return self.roi
+   
 
     def read(self):
         '''Read RAW data''' 
@@ -175,11 +182,11 @@ class CameraImage(object):
         self.image = rawpy.imread(self.filepath)
         logging.debug("{0}: Color description is {1}".format(self._name, self.image.color_desc))
         self._read()
+        self._center_roi()
         
         
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
-        self._center_roi()
         r1_mean, r1_std = self._region_stats(self.signal[R1], self.roi)
         g2_mean, g2_std = self._region_stats(self.signal[G2], self.roi)
         g3_mean, g3_std = self._region_stats(self.signal[G3], self.roi)
@@ -209,11 +216,11 @@ class CameraImage(object):
             logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(
                 self._name, [r1_mean, g2_mean, g3_mean, b4_mean],[r1_std, g2_std, g3_std, b4_std]))
         return result
-    
 
     # ============== #
     # helper methods #
     # ============== #
+
 
     def _iso8601(self, tstamp):
         date = None
@@ -252,6 +259,7 @@ class CameraImage(object):
         self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
         self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
         self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
+
 
     def _region_stats(self, data, region):
         r = data[region.y1:region.y2, region.x1:region.x2]
