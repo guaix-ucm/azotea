@@ -168,6 +168,7 @@ class CameraImage(object):
         self.metadata['iso']       = str(self.exif.get('EXIF ISOSpeedRatings'))
         return self.metadata
 
+
     def center_roi(self):
         '''image needs to be read'''
         if self.roi.x1 == 0 and self.roi.y1 == 0:
@@ -192,13 +193,7 @@ class CameraImage(object):
         g3_mean, g3_std = self._region_stats(self.signal[G3], self.roi)
         b4_mean, b4_std = self._region_stats(self.signal[B4], self.roi)
         result = {
-            'name'            : self.metadata['name'],
-            'tstamp'          : self.metadata['tstamp'],
-            'model'           : self.metadata['model'],
-            'ISO'             : self.metadata['iso'],
-            'exposure'        : self.metadata['exposure'],
-            'roi'             : str(self.roi),
-            'dark_roi'        : str(self.dkroi),
+            'name'            : self._name,
             'mean_signal_R1'  : r1_mean,
             'stdev_signal_R1' : r1_std,
             'mean_signal_G2'  : g2_mean,

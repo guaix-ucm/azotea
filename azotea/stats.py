@@ -38,6 +38,12 @@ from .utils    import merge_two_dicts
 # Module constants
 # ----------------
 
+# values for the 'state' column in table
+
+UNPROCESSED      = None
+RAW_STATS        = "RAW STATS"
+DARK_SUBSTRACTED = "DARK SUBSTRACTED"
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -49,9 +55,13 @@ if sys.version_info[0] == 2:
         def __init__(self, msg):
             super(FileExistsError, self).__init__(errno.EEXIST, msg)
 
-# -----------------------
+# =======================
 # Module global functions
-# -----------------------
+# =======================
+
+# -----------------
+# Utility functions
+# -----------------
 
 def myopen(name, *args):
     if sys.version_info[0] < 3:
@@ -64,6 +74,127 @@ def already_in_database(connection):
     cursor = connection.cursor()
     cursor.execute("SELECT file_path FROM image_t")
     return [item[0] for item in cursor]
+
+
+def candidates(directory, options):
+    '''candidate list of images to be inserted in the database'''
+    file_list = glob.glob(directory + '/' + options.filter)
+    logging.info("Found {0} candidate images".format(len(file_list)))
+    return file_list
+
+
+def insert_list(connection, directory, options):
+    '''Returns the list of file mpaths that must be really inserted in the database'''
+    return list(set(candidates(directory, options)) - set(already_in_database(connection)))
+
+
+def classification_algorithm1(name, file_path, options):
+    if name.upper().startswith("DARK"):
+        result = {'name': name, 'type': "DARK"}
+    else:
+        result = {'name': name, 'type': "LIGHT"}
+    return result
+
+def session_processed(connection, session):
+    row = {'session': session}
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT COUNT(*) 
+        FROM image_t 
+        WHERE state IS NOT NULL
+        AND session = :session
+        ''',row)
+    return cursor.fetchone()[0]
+
+# ------------------
+# Database iterables
+# ------------------
+
+def to_classify_iterable(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT name, file_path
+        FROM image_t
+        WHERE type IS NULL
+        ''')
+    return cursor
+
+
+def unprocessed_iterable(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT name, file_path
+        FROM image_t
+        WHERE state IS NULL
+        ''')
+    return cursor
+
+
+def export_session_iterable(connection, session):
+    row = {'session': session}
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT  session,
+                observer,
+                organization,
+                location,
+                type,
+                tstamp, 
+                name, 
+                model, 
+                iso, 
+                roi,
+                dark_roi,
+                exposure, 
+                mean_signal_R1, 
+                stdev_signal_R1, 
+                mean_signal_G2, 
+                stdev_signal_G2, 
+                mean_signal_G3, 
+                stdev_signal_G3, 
+                mean_signal_B4, 
+                stdev_signal_B4
+        FROM image_t
+        WHERE state IS NOT NULL
+        AND   session = :session
+        ''', row)
+    return cursor
+
+def export_global_iterable(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+       SELECT   session,
+                observer,
+                organization,
+                location,
+                type,
+                tstamp, 
+                name, 
+                model, 
+                iso, 
+                roi,
+                dark_roi,
+                exposure, 
+                mean_signal_R1, 
+                stdev_signal_R1, 
+                mean_signal_G2, 
+                stdev_signal_G2, 
+                mean_signal_G3, 
+                stdev_signal_G3, 
+                mean_signal_B4, 
+                stdev_signal_B4
+        FROM image_t
+        WHERE state IS NOT NULL
+        ''')
+    return cursor
+
+# ------------------
+# Database inserters
+# ------------------
 
 def insert_new_images(connection, rows):
     cursor = connection.cursor()
@@ -99,27 +230,7 @@ def insert_new_images(connection, rows):
         ''', rows)
     connection.commit()
 
-def candidates(directory, options):
-    '''candidate list of images to be inserted in the database'''
-    file_list = glob.glob(directory + '/' + options.filter)
-    logging.info("Found {0} candidate images".format(len(file_list)))
-    return file_list
 
-
-def insert_list(connection, directory, options):
-    '''Returns the list of file mpaths that must be really inserted in the database'''
-    return list(set(candidates(directory, options)) - set(already_in_database(connection)))
-
-
-def to_classify_iterable(connection):
-    cursor = connection.cursor()
-    cursor.execute(
-        '''
-        SELECT name, file_path
-        FROM image_t
-        WHERE type IS NULL
-        ''')
-    return cursor
 
 def update_type(connection, rows):
     cursor = connection.cursor()
@@ -128,10 +239,31 @@ def update_type(connection, rows):
         UPDATE image_t
         SET type = :type
         WHERE name = :name
-        AND type IS NULL
         ''', rows)
     connection.commit()
 
+
+def update_stats(connection, rows):
+    cursor = connection.cursor()
+    cursor.executemany(
+        '''
+        UPDATE image_t
+        SET state           = :state, 
+            mean_signal_R1  = :mean_signal_R1, 
+            mean_signal_G2  = :mean_signal_G2, 
+            mean_signal_G3  = :mean_signal_G3,
+            mean_signal_B4  = :mean_signal_B4,
+            stdev_signal_R1 = :stdev_signal_R1,
+            stdev_signal_G2 = :stdev_signal_G2,
+            stdev_signal_G3 = :stdev_signal_G3,
+            stdev_signal_B4 = :stdev_signal_B4 
+        WHERE name = :name
+        ''', rows)
+    connection.commit()
+
+# ----------------
+# Processing steps
+# ----------------
 
 def stats_scan(connection, directory, session, options):
     file_list = insert_list(connection, directory, options)
@@ -152,16 +284,9 @@ def stats_scan(connection, directory, session, options):
         metadata['roi']       = str(image.center_roi())
         row   = merge_two_dicts(metadata, exif_metadata)
         rows.append(row)
-        logging.info("{0} Registered".format(image.name()))
+        logging.info("{0} registered in database".format(image.name()))
     insert_new_images(connection, rows)
 
-
-def classification_algorithm1(name, file_path, options):
-    if name.upper().startswith("DARK"):
-        result = {'name': name, 'type': "DARK"}
-    else:
-        result = {'name': name, 'type': "LIGHT"}
-    return result
 
 
 def stats_classify(connection, options):
@@ -172,55 +297,47 @@ def stats_classify(connection, options):
         rows.append(row)
     if rows:
         update_type(connection, rows)
+    else:
+        logging.info("No image type classification is needed")
 
 
 
-
-
-def stats_stats(directory, options):
-    tstamp = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    directory = directory[:-1] if os.path.basename(directory) == '' else directory  
-    metadata = {'session': tstamp, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
+def stats_stats(connection, options):
     rows = []
-    file_list = glob.iglob(directory + '/' + options.filter)
-    #logging.info("Analyzing {0} files".format(len(file_list)))
-    for filename in file_list:
-        image = CameraImage(filename, options)
-        image.loadEXIF()
+    for name, file_path in unprocessed_iterable(connection):
+        image = CameraImage(file_path, options)
+        image.loadEXIF()    # we need to find out the camera model before reading
         image.read()
         row = image.stats()
-        row.update(metadata)
+        row['state'] = RAW_STATS
         rows.append(row)
-    return rows, file_list
+    if rows:
+        update_stats(connection, rows)
+    else:
+        logging.info("No image statistics to be computed")
 
-    
-def stats_write(rows, options):
-    if not rows:
-        logging.warning("No files to analyze.")
-        return
+
+def stats_export(connection, session, options):
     if options.dry_run:
         logging.info("Dry run, do not generate/update CSV files")
         return
-    fieldnames = ["session","observer","organization","location"]
+    fieldnames = ["session","observer","organization","location", "type"]
     fieldnames.extend(CameraImage.HEADERS)
-    # Write a session CSV file
-    session_csv_file = os.path.join(os.path.expanduser("~"), rows[0]['session'] + '.csv')
-    with myopen(session_csv_file, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=fieldnames)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
-    logging.info("Saved data to session CSV file {0}".format(session_csv_file))
-    # Update the global CSV file
-    writeheader = not os.path.exists(options.global_csv_file)
-    with myopen(options.global_csv_file, 'a') as csvfile:
-        writer = csv.DictWriter(csvfile, delimiter=';', fieldnames=fieldnames)
-        if writeheader:
-            writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
-    logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
-
+    if session_processed(connection, session):
+        # Write a session CSV file
+        session_csv_file = os.path.join(os.path.expanduser("~"), session + '.csv')
+        with myopen(session_csv_file, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            #writer.writeheader()
+            writer.writerows(export_session_iterable(connection, session))
+        logging.info("Saved data to session CSV file {0}".format(session_csv_file))
+        # Update the global CSV file
+        writeheader = not os.path.exists(options.global_csv_file)
+        with myopen(options.global_csv_file, 'w') as csvfile:
+            writer = csv.writer(csvfile, delimiter=';')
+            #writer.writeheader()
+            writer.writerows(export_global_iterable(connection))
+        logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 
 
@@ -233,4 +350,6 @@ def stats_compute(connection, options):
     session = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     stats_scan(connection, options.work_dir, session, options)
     stats_classify(connection, options)
+    stats_stats(connection, options)
+    stats_export(connection, session, options)
 
