@@ -87,13 +87,13 @@ Si no queremos calcular la estadistica de todas las imagenes del directorio de t
 ```bash
 python -m azotea stats compute  --work-dir demo/test --filter *2600*.CR2 --dry-run
 ```
-`
+```
 2020-04-02 12:29:56,277 [INFO] Opening configuration file /home/rafa/azotea.ini
 2020-04-02 12:29:56,277 [INFO] Analyzing 2 files
 2020-04-02 12:29:56,693 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
 2020-04-02 12:29:57,104 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
 2020-04-02 12:29:57,105 [INFO] Dry run, do not generate/update CSV files
-`
+```
 
 Finalmente si estamos listos para procesar el directorio de trabajo, tecleamos:
 
@@ -139,7 +139,7 @@ El fichero CSV tiene una cabecera con los nombres de las columnas, a saber:
 | ISO             | Sensibilidad ISO de la toma.                           |
 | exposure        | Tiempo de exposicion                                   |
 | roi             | Region de interés [x1:x2, y1:y2]                       |
-| darkk_roi       | Region de interes para medida oscura [x1:x2, y1:y2]    |
+| dark_roi        | Region de interes para medida oscura [x1:x2, y1:y2]    |
 | mean_signal_R1  | Promedio de señal canal R.                             |
 | stdev_signal_R1 | Desviación tipica señal del canal R.                   |
 | mean_signal_G2  | Promedio de señal en un canal G.                       |
