@@ -31,6 +31,7 @@ import datetime
 # -------------
 
 from .camimage import  CameraImage
+from .utils    import merge_two_dicts
 
 
 # ----------------
@@ -58,6 +59,65 @@ def myopen(name, *args):
     else:
         return open(name,  *args, newline='')
 
+
+def already_in_database(connection):
+    cursor = connection.cursor()
+    cursor.execute("SELECT file_path FROM image_t")
+    return [item[0] for item in cursor]
+
+def insert_new_images(connection, rows):
+    cursor = connection.cursor()
+    cursor.executemany(
+        '''
+        INSERT INTO image_t (
+            name, 
+            file_path, 
+            session, 
+            observer, 
+            organization, 
+            location, 
+            tstamp, 
+            model, 
+            iso, 
+            exposure
+        ) VALUES (
+            :name, 
+            :file_path, 
+            :session, 
+            :observer, 
+            :organization, 
+            :location, 
+            :tstamp, 
+            :model, 
+            :iso, 
+            :exposure
+        )
+        ''', rows)
+    connection.commit()
+
+def candidates(directory, options):
+    '''candidate list of images to be inserted in the database'''
+    file_list = glob.glob(directory + '/' + options.filter)
+    logging.info("Counting {0} candidate images".format(len(file_list)))
+    return file_list
+
+
+def insert_list(connection, directory, options):
+    '''Returns the list of file mpaths that must be really inserted in the database'''
+    return list(set(candidates(directory, options)) - set(already_in_database(connection)))
+
+
+def stats_scan(connection, directory, session, options):
+    file_list = insert_list(connection, directory, options)
+    logging.info("Registering {0} new images".format(len(file_list)))
+    metadata = {'session': session, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
+    rows = []
+    for file_path in file_list:
+        metadata['file_path'] = file_path
+        image = CameraImage(file_path, options)
+        row   = merge_two_dicts(metadata, image.loadEXIF())
+        rows.append(row)
+    insert_new_images(connection, rows)
 
 
 def stats_analyze(directory, options):
@@ -105,21 +165,6 @@ def stats_write(rows, options):
     logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 
-def stats_move(directory, options):
-    new_dir   = os.path.join(directory, "processed")
-    try:
-        os.mkdir(new_dir)
-    except FileExistsError:
-        pass
-    except OSError:
-        pass
-
-    if (not options.do_not_move) and (not options.dry_run):
-        file_list = glob.iglob(directory + '/' + options.filter)
-        for f in file_list:
-            shutil.move(f, new_dir)
-        logging.info("Moved files to {0}".format(new_dir))
-
 
 
 # =====================
@@ -128,6 +173,5 @@ def stats_move(directory, options):
 
 
 def stats_compute(connection, options):
-    rows = stats_analyze(options.work_dir, options)
-    stats_write(rows, options)
-    stats_move(options.work_dir, options)
+    session = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    stats_scan(connection, options.work_dir, session, options)

@@ -9,13 +9,14 @@ CREATE TABLE IF NOT EXISTS image_t
     observer            TEXT  NOT NULL,   -- Observer name
     organization        TEXT,             -- Observer organization
     location            TEXT  NOT NULL,   -- location name
+    scale               REAL,             -- image scale in arcsec/pixel
+    model               TEXT  NOT NULL,   -- Camera Model
+    tstamp              TEXT  NOT NULL,   -- ISO 8601 timestamp
+    iso                 TEXT  NOT NULL,   -- ISO sensivity
+    exposure            REAL  NOT NULL,   -- exposure time in seconds       
+    -- Measurements
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]
     dark_roi            TEXT,             -- dark region of interest: [x1:x2,y1:y2]
-    scale               REAL,             -- image scale in arcsec/pixel
-    tstamp              TEXT,             -- ISO 8601 timestamp
-    iso                 TEXT,             -- ISO sensivity
-    exposure            REAL,             -- exposure time in seconds       
-    -- Measurements
     mean_signal_R1      REAL,
     stdev_signal_R1,    REAL,
     mean_signal_G2      REAL,

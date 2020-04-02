@@ -30,6 +30,7 @@ import datetime
 # local imports
 # -------------
 
+from . import DEF_DBASE
 
 # ----------------
 # Module constants
@@ -54,9 +55,10 @@ def dbase_clear(connection, options):
     cursor = connection.cursor()
     cursor.execute("DELETE FROM image_t")
     connection.commit()
-
+    logging.info("Cleared data from database {0}".format(DEF_DBASE))
 
 def dbase_purge(connection, options):
     cursor = connection.cursor()
     cursor.execute("DROP TABLE image_t")
     connection.commit()
+    logging.info("Erased schema in database {0}".format(DEF_DBASE))
