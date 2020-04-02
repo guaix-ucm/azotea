@@ -23,11 +23,11 @@ import traceback
 # other imports
 # -------------
 
-from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV
+from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config   import load_config_file, merge_options 
 from .metadata import metadata_display
 from .stats    import stats_compute
-from .utils    import chop, Point, ROI
+from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera 
 
 #
@@ -149,6 +149,11 @@ def loadConfig(filepath):
             self.metadata = exifread.process_file(f)
         self.model = str(self.metadata.get('Image Model'))
         return self.metadata
+# --------
+# Database
+# --------
+
+
 
 # ================ #
 # MAIN ENTRY POINT #
@@ -161,6 +166,8 @@ def main():
     try:
         options = createParser().parse_args(sys.argv[1:])
         configureLogging(options)
+        connection = open_database(DEF_DBASE)
+        create_database(connection, SQL_DATAMODEL, "SELECT COUNT(*) FROM image_t")
         command      = options.command
         subcommand   = options.subcommand
         if not command in ["config"]: 
@@ -168,7 +175,7 @@ def main():
             options      = merge_options(options, file_options)
         # Call the function dynamically
         func = command + '_' + subcommand
-        globals()[func](options)
+        globals()[func](connection, options)
     except KeyboardInterrupt as e:
         logging.error("[{0}] Interrupted by user ".format(__name__))
     except Exception as e:

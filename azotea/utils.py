@@ -92,6 +92,28 @@ class ROI:
 # Module global functions
 # -----------------------
 
+
+def open_database(dbase_path):
+    if not os.path.exists(dbase_path):
+        with open(dbase_path, 'w') as f:
+            pass
+        logging.info("Created database file {0}".format(dbase_path))
+    return sqlite3.connect(dbase_path)
+
+def create_database(connection, datamodel_path, query):
+    created = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query)
+    except Exception:
+        created = False
+    if not created:
+        with open(datamodel_path) as f: 
+            lines = f.readlines() 
+        script = ''.join(lines)
+        connection.executescript(script)
+        logging.info("Created data model from {0}".format(datamodel_path))
+
 def merge_two_dicts(d1, d2):
     '''Valid for Python 2 & Python 3'''
     merged = d1.copy()   # start with d1 keys and values

@@ -90,7 +90,7 @@ def metadata_multiple(directory, options):
 # Command esntry points
 # =====================
 
-def metadata_display(options):
+def metadata_display(connection, options):
     if options.input_file is not None:
         metadata_single(options.input_file, options)
     else:

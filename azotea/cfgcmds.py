@@ -66,13 +66,13 @@ def config_create(filename):
 # =====================
 
 
-def config_global(options):
+def config_global(connection, options):
     if options.list:
         config_list(DEF_CONFIG_TPL)
     elif options.create:
         config_create(DEF_CONFIG_TPL)
 
-def config_camera(options):
+def config_camera(connection, options):
     if options.list:
         config_list(DEF_CONFIG_TPL)
     elif options.create:

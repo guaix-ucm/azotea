@@ -128,7 +128,7 @@ def stats_move(file_list, options):
 # =====================
 
 
-def stats_compute(options):
+def stats_compute(connection, options):
     rows, file_list = stats_analyze(options.work_dir, options)
     stats_write(rows, options)
     stats_move(file_list, options)
