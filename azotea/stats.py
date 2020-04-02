@@ -65,7 +65,7 @@ def stats_analyze(directory, options):
     directory = directory[:-1] if os.path.basename(directory) == '' else directory  
     metadata = {'session': tstamp, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
     rows = []
-    file_list = glob.glob(directory + '/' + options.filter)
+    file_list = glob.iglob(directory + '/' + options.filter)
     logging.info("Analyzing {0} files".format(len(file_list)))
     for filename in file_list:
         image = CameraImage(filename, options)
