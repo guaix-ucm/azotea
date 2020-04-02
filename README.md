@@ -5,6 +5,26 @@ Pipeline Python de reducción de datos para [AZOTEA](https://guaix.ucm.es/AZOTEA
 Esta es una herramienta de línea de comandos.
 
 
+# Instalación y actualización
+
+Instalar primero ***Python 3*** y su herramienta `pip`. Esta suele venir incluida en Linux y MacOS pero no así en Windows. Una vez que tenemos esto, se instala AZOTEA como sigue:
+
+```bash
+pip install --user azotea
+```
+
+Para actualizar a la última versión de AZOTEA, teclear:
+
+```bash
+pip install --user -U azotea
+```
+## Compatibilidad con Python 2
+
+Aunque el programa en sí, puede jecutarse en Python 2, algunas librerías empleadas en AZOTEA ya no funcionan en Python 2, por lo que se recomienda usar Python 3.
+
+Los siguientes comandos no funcionan en Python 2:
+
+* `azotea metadata`
 
 # Configuracion
 
