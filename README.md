@@ -91,19 +91,22 @@ Este último comando mostrará algo sumilar a esto:
 +----------------------------+---------------------+------------------------+---------------------+----------------+
 ```
 
-A continuación, calcularemos la estadistica de cada imagen. Podemos hacer una ejecución "en seco" (*dry run*) que no va actualizar ningín fichero CSV de resultados:
+A continuación, calcularemos la estadistica de cada imagen. Podemos hacer una ejecución "en seco" (*dry run*) que no va actualizar ningín fichero CSV de resultados. Tambien podemos tener un preview de las medidas (*extended*):
 
 ```bash
-python -m azotea stats compute  --work-dir demo/test --dry-run
+python -m azotea stats compute  --work-dir demo/test --dry-run --extended
 ```
 
 ```
-22020-04-02 12:16:53,561 [INFO] Opening configuration file /home/rafa/azotea.ini
-2020-04-02 12:16:53,561 [INFO] Analyzing 3 files
-2020-04-02 12:16:53,960 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:16:54,356 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:16:54,701 [INFO] 2020_03_2605_30_079999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:16:54,701 [INFO] Dry run, do not generate/update CSV files
+2020-04-02 13:41:08,004 [INFO] Opening configuration file /home/rafa/azotea.ini
+2020-04-02 13:41:08,004 [INFO] Analyzing 3 files
+2020-04-02 13:41:08,400 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
+2020-04-02 13:41:08,400 [INFO] 2020_03_2600_17_409999.CR2: μ = [1083.1, 1107.6, 1106.9, 1067.6], σ = [40.2, 53.5, 57.9, 25.1] 
+2020-04-02 13:41:08,793 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
+2020-04-02 13:41:08,793 [INFO] 2020_03_2600_18_459999.CR2: μ = [1083.9, 1108.8, 1107.8, 1068.2], σ = [40.4, 53.6, 57.7, 25.2] 
+2020-04-02 13:41:09,135 [INFO] 2020_03_2605_30_079999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
+2020-04-02 13:41:09,135 [INFO] 2020_03_2605_30_079999.CR2: μ = [13878.6, 15849.0, 15845.0, 15847.0], σ = [1656.4, 0.0, 0.0, 0.0] 
+2020-04-02 13:41:09,135 [INFO] Dry run, do not generate/update CSV files
 ```
 
 Si no queremos calcular la estadistica de todas las imagenes del directorio de trabajo, se puede especificar un filtro:

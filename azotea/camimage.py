@@ -175,7 +175,7 @@ class CameraImage(object):
             self._add_dark_stats(result)
         logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
         if self.extended:
-            logging.info("{0}: \u03BC = {1}, \u03C3 ={2} ".format(
+            logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(
                 self._name, [r1_mean, g2_mean, g3_mean, b4_mean],[r1_std, g2_std, g3_std, b4_std]))
         return result
     
