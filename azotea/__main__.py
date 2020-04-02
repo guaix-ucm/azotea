@@ -124,9 +124,12 @@ def createParser():
 
     sdy = subparser.add_parser('compute',  help='compute image statistics')
     sdy.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
-    sdy.add_argument('--csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file where all sessions are accumulated')
-    sdy.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')
-    sdy.add_argument('-f' ,'--filter', type=str, default='*.*', help='Optional input glob-style filter')
+    sdy.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file where all sessions are accumulated')
+    sdy.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    sdy.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
+    sdyex = sdy.add_mutually_exclusive_group()
+    sdy.add_argument('-m' ,'--do-not-move',  action="store_true", help="Do not move files after processing")
+    sdy.add_argument('-d' ,'--dry-run',  action="store_true", help="Do not generate/update CSV files")
 
     return parser
 

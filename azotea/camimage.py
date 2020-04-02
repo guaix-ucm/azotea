@@ -38,6 +38,7 @@ import numpy as np
 # local imports
 # -------------
 
+from .      import DEF_CAMERA
 from .utils import chop, Point, ROI
 
 # ----------------
@@ -185,7 +186,8 @@ class CameraImage(object):
         Load camera configuration from configuration file
         '''
         if not (os.path.exists(self.camerapath)):
-            raise IOError(errno.ENOENT,"No such file or directory", path)
+            logging.warning("No camera config file found at {0}, using default file".format(self.camerapath))
+            self.camerapath = DEF_CAMERA
 
         parser  =  ConfigParser.RawConfigParser()
         # str is for case sensitive options
