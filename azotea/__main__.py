@@ -127,6 +127,7 @@ def createParser():
     sdy.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file where all sessions are accumulated')
     sdy.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
     sdy.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
+    sdy.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
     sdyex = sdy.add_mutually_exclusive_group()
     sdyex.add_argument('-m' ,'--do-not-move',  action="store_true", help="Do not move files after processing")
     sdyex.add_argument('-d' ,'--dry-run',  action="store_true", help="Do not generate/update CSV files")

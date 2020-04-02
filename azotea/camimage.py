@@ -107,6 +107,7 @@ class CameraImage(object):
     def __init__(self, filepath, options):
         self.filepath   = filepath
         self.camerapath = options.camera
+        self.extended   = options.extended
         self.roi        = options.roi  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
         self.metadata   = None
@@ -148,10 +149,10 @@ class CameraImage(object):
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
         self._center_roi()
-        r1_mean_center, r1_std_center = self._region_stats(self.signal[R1], self.roi)
-        g2_mean_center, g2_std_center = self._region_stats(self.signal[G2], self.roi)
-        g3_mean_center, g3_std_center = self._region_stats(self.signal[G3], self.roi)
-        b4_mean_center, b4_std_center = self._region_stats(self.signal[B4], self.roi)
+        r1_mean, r1_std = self._region_stats(self.signal[R1], self.roi)
+        g2_mean, g2_std = self._region_stats(self.signal[G2], self.roi)
+        g3_mean, g3_std = self._region_stats(self.signal[G3], self.roi)
+        b4_mean, b4_std = self._region_stats(self.signal[B4], self.roi)
         result = {
             'name'            : self._name,
             'date'            : self.metadata.get('Image DateTime'),
@@ -160,20 +161,22 @@ class CameraImage(object):
             'exposure'        : self.metadata.get('EXIF ExposureTime'),
             'roi'             : str(self.roi),
             'dark_roi'        : str(self.dkroi),
-            'mean_signal_R1'  : r1_mean_center,
-            'stdev_signal_R1' : r1_std_center,
-            'mean_signal_G2'  : g2_mean_center,
-            'stdev_signal_G2' : g2_std_center,
-            'mean_signal_G3'  : g3_mean_center,
-            'stdev_signal_G3' : g3_std_center,
-            'mean_signal_B4'  : b4_mean_center,
-            'stdev_signal_B4' : b4_std_center,
+            'mean_signal_R1'  : r1_mean,
+            'stdev_signal_R1' : r1_std,
+            'mean_signal_G2'  : g2_mean,
+            'stdev_signal_G2' : g2_std,
+            'mean_signal_G3'  : g3_mean,
+            'stdev_signal_G3' : g3_std,
+            'mean_signal_B4'  : b4_mean,
+            'stdev_signal_B4' : b4_std,
         }
         if self.dkroi:
             self._extract_dark()
             self._add_dark_stats(result)
-
-        logging.info("{0}: {3}, ROI = {1}, Dark ROI = {2}".format(self._name, self.roi, self.dkroi, self.model))
+        logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
+        if self.extended:
+            logging.info("{0}: \u03BC = {1}, \u03C3 ={2} ".format(
+                self._name, [r1_mean, g2_mean, g3_mean, b4_mean],[r1_std, g2_std, g3_std, b4_std]))
         return result
     
 

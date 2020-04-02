@@ -20,13 +20,15 @@ pip install --user -U azotea
 ```
 ## Compatibilidad con Python 2
 
-Aunque el programa en sí, puede jecutarse en Python 2, algunas librerías empleadas en AZOTEA ya no funcionan en Python 2, por lo que se recomienda usar Python 3.
+Aunque el programa en sí, puede ejecutarse en Python 2, algunas librerías empleadas en AZOTEA ya no funcionan en Python 2, por lo que se recomienda usar Python 3.
 
 Los siguientes comandos no funcionan en Python 2:
 
 * `azotea metadata`
 
 # Configuracion
+
+## Configuración global
 
 Antes de poder operar con AZOTEA hay que crear un fichero de configuración para el observador.
 Lo mejor es crearlo a partir de la plantlla interna asi:
@@ -43,15 +45,17 @@ Esto creará un fichero `azotea.ini` en el directorio raiz (`$HOME`) de cada usu
 Editar el fichero con un block de notas o similar. Los campos son descriptivos y no debería haber ningin problema al rellenarlos.
 
 
-Los modelos de camara soportados se pueden ver listando el fichero de configuracion interno
+## Camaras soportadas
+
+AZOTEA se irá actualizando a medida que soporte más cámaras.
+
+Los modelos de camara soportados hasta el momento se pueden ver listando el fichero de configuracion interno
 
 ```bash
 python -m azotea config camera --list
 ```
 
-Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él y luego editarlo
-de manera análoga a la configuración global. Este fichero no es para todo el mundo, sólo los que entienden
-cómo funciona el software deben hacerlo.
+***Uso Avanzado, no recomendadp***: Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él y luego editarlo de manera análoga a la configuración global. Este fichero no es para todo el mundo, sólo los que entienden cómo funciona el software deben hacerlo.
 
 
 ```bash
@@ -65,13 +69,14 @@ python -m azotea config camera --create
 
 # Operativa
 
-Si nos interesa antes, se pueden mostrar los metadatos de una sola imagen o un directorio de trabajo.
-Por ejemplo:
+Antes de efectuar las reducciones de datos puede ser interesante echar un vistazo a algunos metadatos de las imágenes. Se pueden mostrar los metadatos de una sola imagen o un directorio de trabajo. Por ejemplo:
 
 ```bash
 python -m azotea metadata display --input-file demo/test/2020_03_2600_17_409999.CR2
 python -m azotea metadata display --work-dir demo/test
 ```
+
+Este último comando mostrará algo sumilar a esto:
 
 ```
 2020-03-31 23:20:43,272 [INFO] azotea.metadata: Scanning a list of 3 entries using filter *.CR2
@@ -86,7 +91,7 @@ python -m azotea metadata display --work-dir demo/test
 +----------------------------+---------------------+------------------------+---------------------+----------------+
 ```
 
-A contnuación, calcularemos la estadistica de cada imagen. Podemos hacer una ejecución "en seco" (*dry run*) que no va actualizar ningín fichero CSV de resultados:
+A continuación, calcularemos la estadistica de cada imagen. Podemos hacer una ejecución "en seco" (*dry run*) que no va actualizar ningín fichero CSV de resultados:
 
 ```bash
 python -m azotea stats compute  --work-dir demo/test --dry-run
