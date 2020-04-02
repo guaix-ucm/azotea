@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS image_t
 (
 	-- Image metadata
     name                TEXT  NOT NULL,   -- Image name without the path
+    hash                BLOB  UNIQUE,     -- Image hash
     observer            TEXT  NOT NULL,   -- Observer name
     organization        TEXT,             -- Observer organization
     location            TEXT  NOT NULL,   -- location name

@@ -18,6 +18,7 @@ import logging
 import errno
 import datetime
 import traceback
+import hashlib
 
 try:
     # Python 2
@@ -60,6 +61,8 @@ BG_X1 = 400
 BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
+
+
 
 # ----------
 # Exceptions
@@ -135,6 +138,17 @@ class CameraImage(object):
 
     def name(self):
         return self._name
+
+
+    def hash(self):
+        BLOCK_SIZE = 65536*65536 # The size of each read from the file
+        file_hash = hashlib.sha256()
+        with open(self.filepath, 'rb') as f:
+            block = f.read(BLOCK_SIZE) 
+            while len(block) > 0:
+                file_hash.update(block)
+                block = f.read(BLOCK_SIZE)
+        return file_hash.digest()
 
 
     def loadEXIF(self):

@@ -71,6 +71,7 @@ def insert_new_images(connection, rows):
         '''
         INSERT INTO image_t (
             name, 
+            hash,
             file_path, 
             session, 
             observer, 
@@ -82,6 +83,7 @@ def insert_new_images(connection, rows):
             exposure
         ) VALUES (
             :name, 
+            :hash,
             :file_path, 
             :session, 
             :observer, 
@@ -113,8 +115,9 @@ def stats_scan(connection, directory, session, options):
     metadata = {'session': session, 'observer': options.observer, 'organization': options.organization, 'location': options.location}
     rows = []
     for file_path in file_list:
-        metadata['file_path'] = file_path
         image = CameraImage(file_path, options)
+        metadata['file_path'] = file_path
+        metadata['hash']      = image.hash()
         row   = merge_two_dicts(metadata, image.loadEXIF())
         rows.append(row)
     insert_new_images(connection, rows)
@@ -175,3 +178,4 @@ def stats_write(rows, options):
 def stats_compute(connection, options):
     session = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
     stats_scan(connection, options.work_dir, session, options)
+
