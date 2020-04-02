@@ -106,6 +106,17 @@ def session_processed(connection, session):
         ''',row)
     return cursor.fetchone()[0]
 
+
+def find_by_hash(connection, hash):
+    row = {'hash': hash}
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT name, file_path
+        FROM image_t 
+        WHERE hash = :hash
+        ''',row)
+    return cursor.fetchone()
+
 # ------------------
 # Database iterables
 # ------------------
@@ -196,38 +207,38 @@ def export_global_iterable(connection):
 # Database inserters
 # ------------------
 
-def insert_new_images(connection, rows):
+def insert_new_image(connection, row):
     cursor = connection.cursor()
-    cursor.executemany(
-        '''
-        INSERT INTO image_t (
-            name, 
-            hash,
-            file_path, 
-            session, 
-            observer, 
-            organization, 
-            location, 
-            roi,
-            tstamp, 
-            model, 
-            iso, 
-            exposure
-        ) VALUES (
-            :name, 
-            :hash,
-            :file_path, 
-            :session, 
-            :observer, 
-            :organization, 
-            :location,
-            :roi,
-            :tstamp, 
-            :model, 
-            :iso, 
-            :exposure
-        )
-        ''', rows)
+    cursor.execute(
+            '''
+            INSERT INTO image_t (
+                name, 
+                hash,
+                file_path, 
+                session, 
+                observer, 
+                organization, 
+                location, 
+                roi,
+                tstamp, 
+                model, 
+                iso, 
+                exposure
+            ) VALUES (
+                :name, 
+                :hash,
+                :file_path, 
+                :session, 
+                :observer, 
+                :organization, 
+                :location,
+                :roi,
+                :tstamp, 
+                :model, 
+                :iso, 
+                :exposure
+            )
+            ''', row)
     connection.commit()
 
 
@@ -274,7 +285,6 @@ def stats_scan(connection, directory, session, options):
         'organization': options.organization, 
         'location'    : options.location,
     }
-    rows = []
     for file_path in file_list:
         image = CameraImage(file_path, options)
         exif_metadata = image.loadEXIF()
@@ -283,10 +293,14 @@ def stats_scan(connection, directory, session, options):
         metadata['hash']      = image.hash()
         metadata['roi']       = str(image.center_roi())
         row   = merge_two_dicts(metadata, exif_metadata)
-        rows.append(row)
-        logging.info("{0} registered in database".format(image.name()))
-    insert_new_images(connection, rows)
-
+        try:
+            insert_new_image(connection, row)
+        except sqlite3.IntegrityError as e:
+            connection.rollback()
+            name2, file_path2 = find_by_hash(connection, metadata['hash'])
+            logging.warn("{0} is duplicate of {1}".format(row['file_path'], file_path2))
+        else:
+            logging.info("{0} registered in database".format(row['name']))
 
 
 def stats_classify(connection, options):
