@@ -6,9 +6,22 @@ Esta es una herramienta de línea de comandos.
 
 # Modelos de cámara
 
-De momento solo se soportan los siguientes modelos sin especificar un fichero de configuración externo:
+Los modelos de camara soportados se pueden ver listando el fichero de configuracion interno
 
-* Canon EOS 450D
+```bash
+python -m azotea config camera --list
+```
+
+Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él
+
+
+```bash
+python -m azotea config camera --list
+```
+
+```
+2020-04-01 19:25:12,998 [INFO] Created /home/rafa/camera.ini file
+```
 
 # Comandos
 
@@ -53,6 +66,15 @@ Cada comando y subcomando dentro del comando tiene su propia ayuda:
 ```bash
 python -m azotea <comando> --help
 python -m azotea <comando> <subcomando> --help
+```
+
+# Operativa
+
+Antes de poder operar con AZOTEA hay que crear un fichero de configuración para el observador.
+Lo mejor es crearlo a partir de la plantlla interna asi:
+
+```bash
+python -m azotea config global --create
 ```
 
 # Ejemplos

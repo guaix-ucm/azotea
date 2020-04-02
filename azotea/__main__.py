@@ -23,11 +23,12 @@ import traceback
 # other imports
 # -------------
 
-from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CONFIG, DEF_CSV
+from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV
+from .config   import load_config_file, merge_options 
 from .metadata import metadata_display
 from .stats    import stats_compute
 from .utils    import chop, Point, ROI
-
+from .cfgcmds  import config_global, config_camera 
 
 #
 # -----------------------
@@ -74,14 +75,33 @@ def createParser():
     group1 = parser.add_mutually_exclusive_group()
     group1.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     group1.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
+    parser.add_argument('--camera', type=str, default=DEF_CAMERA, help='Optional alternate camera configuration file')
+    parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate global configuration file')
 
     # --------------------------
     # Create first level parsers
     # --------------------------
 
     subparser = parser.add_subparsers(dest='command')
-    parser_meta  = subparser.add_parser('metadata', help='metadata commands')
-    parser_stats = subparser.add_parser('stats', help='stats commands')
+    parser_meta   = subparser.add_parser('metadata', help='metadata commands')
+    parser_stats  = subparser.add_parser('stats', help='stats commands')
+    parser_config = subparser.add_parser('config', help='config commands')
+
+    # -----------------------------------------
+    # Create second level parsers for 'config'
+    # -----------------------------------------
+
+    subparser = parser_config.add_subparsers(dest='subcommand')
+
+    cgl = subparser.add_parser('global',  help="Global configuration file actions")
+    cglex = cgl.add_mutually_exclusive_group(required=True)
+    cglex.add_argument('-c' ,'--create', action="store_true", help="Create global configuration file in user's HOME directory")
+    cglex.add_argument('-l' ,'--list',   action="store_true", help="List current global configuration file template")
+
+    cca = subparser.add_parser('camera',  help="Create camera configuration file in user's HOME directory")
+    ccaex = cca.add_mutually_exclusive_group(required=True)
+    ccaex.add_argument('-c' ,'--create', action="store_true", help="Create camera configuration file in user's HOME directory")
+    ccaex.add_argument('-l' ,'--list',   action="store_true", help="List current camera configuration file template")
 
 
     # -----------------------------------------
@@ -89,35 +109,42 @@ def createParser():
     # -----------------------------------------
   
     subparser = parser_meta.add_subparsers(dest='subcommand')
+
     mdi = subparser.add_parser('display',  help='display image metadata')
-    mdi.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
-    mdi.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=ROI(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
-    mdi.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=ROI( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
     mdiex = mdi.add_mutually_exclusive_group(required=True)
     mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
-    mdiex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    mdi.add_argument('--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
+    mdiex.add_argument('-w','--work-dir',  type=str, help='Input working directory')
+    mdi.add_argument('-f', '--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
 
     # ---------------------------------------
     # Create second level parsers for 'stats'
     # ---------------------------------------
   
     subparser = parser_stats.add_subparsers(dest='subcommand')
+
     sdy = subparser.add_parser('compute',  help='compute image statistics')
-    sdy.add_argument('--width',  type=int, default=DEF_WIDTH,  help='Optional image center width')
-    sdy.add_argument('--height', type=int, default=DEF_HEIGHT, help='Optional image center height')
-    sdy.add_argument('--fg-region', type=mkrect1, metavar="<width,height>", default=ROI(0,DEF_WIDTH,0,DEF_HEIGHT), help='Optional foreground region')
-    sdy.add_argument('--bg-region', type=mkrect2, metavar="<x1,x2,y1,y2>", default=ROI( x1=400, y1=200, x2=550, y2=350), help='Optional background region')
-    sdy.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional Camera configuration file')
-    sdy.add_argument('--csv-file', type=str, default=DEF_CSV, help='Optional output CSV file')
-    sdyex = sdy.add_mutually_exclusive_group(required=True)
-    sdyex.add_argument('-i' ,'--input-file', type=str, help='Input file')
-    sdyex.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')
-    sdy.add_argument('--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
+    sdy.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
+    sdy.add_argument('--csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file where all sessions are accumulated')
+    sdy.add_argument('-w' ,'--work-dir',   type=str, help='Input working directory')
+    sdy.add_argument('-f' ,'--filter', type=str, default='*.*', help='Optional input glob-style filter')
 
     return parser
 
 
+# --------------------------
+# Configuration file loading
+# --------------------------
+
+from argparse import Namespace
+
+def loadConfig(filepath):
+    
+        '''Load EXIF metadata'''   
+        logging.debug("{0}: Loading EXIF metadata".format(self._name))
+        with open(self.filepath, "rb") as f:
+            self.metadata = exifread.process_file(f)
+        self.model = str(self.metadata.get('Image Model'))
+        return self.metadata
 
 # ================ #
 # MAIN ENTRY POINT #
@@ -130,8 +157,11 @@ def main():
     try:
         options = createParser().parse_args(sys.argv[1:])
         configureLogging(options)
-        command    = options.command
-        subcommand = options.subcommand
+        command      = options.command
+        subcommand   = options.subcommand
+        if not command in ["config"]: 
+            file_options = load_config_file(DEF_CONFIG)
+            options      = merge_options(options, file_options)
         # Call the function dynamically
         func = command + '_' + subcommand
         globals()[func](options)

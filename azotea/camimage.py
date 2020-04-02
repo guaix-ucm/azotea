@@ -68,6 +68,16 @@ class ConfigError(ValueError):
         s = '{0}.'.format(s)
         return s
 
+class MetadataError(ValueError):
+    '''TError reading metadata for image'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0}: '{1}'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+
 
 class CameraImage(object):
 
@@ -81,20 +91,12 @@ class CameraImage(object):
             'exposure'       ,
             'mean_signal_R1' ,
             'stdev_signal_R1',
-            'mean_dark_R1'   ,
-            'stdev_dark_R1'  ,
             'mean_signal_G2' ,
             'stdev_signal_G2',
-            'mean_dark_G2'   ,
-            'stdev_dark_G2'  ,
             'mean_signal_G3' ,
             'stdev_signal_G3',
-            'mean_dark_G3'   ,
-            'stdev_dark_G3'  ,
             'mean_signal_B4' ,
             'stdev_signal_B4',
-            'mean_dark_B4'   ,
-            'stdev_dark_B4'  ,
         ]
 
     # ========== #
@@ -103,9 +105,9 @@ class CameraImage(object):
 
     def __init__(self, filepath, options):
         self.filepath   = filepath
-        self.configpath = options.config
-        self.roi        = options.fg_region  # foreground rectangular region where signal is estimated
-        self.dkroi      = options.bg_region  # dark rectangular region where bias is estimated
+        self.camerapath = options.camera
+        self.roi        = options.roi  # foreground rectangular region where signal is estimated
+        self.dkroi      = None  # dark rectangular region where bias is estimated
         self.metadata   = None
         self.image      = None
         self.model      = None
@@ -126,6 +128,8 @@ class CameraImage(object):
         logging.debug("{0}: Loading EXIF metadata".format(self._name))
         with open(self.filepath, "rb") as f:
             self.metadata = exifread.process_file(f)
+        if not self.metadata:
+            raise MetadataError(self.filepath)
         self.model = str(self.metadata.get('Image Model'))
         return self.metadata
 
@@ -142,18 +146,12 @@ class CameraImage(object):
         
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
-        self._extract_dark()
         self._center_roi()
-        logging.info("{0}: {3}, ROI = {1}, Dk. ROI = {2}".format(self._name, self.roi, self.dkroi, self.model))
         r1_mean_center, r1_std_center = self._region_stats(self.signal[R1], self.roi)
-        r1_mean_dark,   r1_std_dark   = self._region_stats(self.dark[R1], self.dkroi)
         g2_mean_center, g2_std_center = self._region_stats(self.signal[G2], self.roi)
-        g2_mean_dark,   g2_std_dark   = self._region_stats(self.dark[G2], self.dkroi)
         g3_mean_center, g3_std_center = self._region_stats(self.signal[G3], self.roi)
-        g3_mean_dark,   g3_std_dark   = self._region_stats(self.dark[G3], self.dkroi)
         b4_mean_center, b4_std_center = self._region_stats(self.signal[B4], self.roi)
-        b4_mean_dark,   b4_std_dark   = self._region_stats(self.dark[B4], self.dkroi)
-        return {
+        result = {
             'name'            : self._name,
             'date'            : self.metadata.get('Image DateTime'),
             'model'           : self.model,
@@ -169,15 +167,13 @@ class CameraImage(object):
             'stdev_signal_G3' : g3_std_center,
             'mean_signal_B4'  : b4_mean_center,
             'stdev_signal_B4' : b4_std_center,
-            'mean_dark_R1'    : r1_mean_dark,
-            'stdev_dark_R1'   : r1_std_dark,
-            'mean_dark_G2'    : g2_mean_dark,
-            'stdev_dark_G2'   : g2_std_dark,
-            'mean_dark_G3'    : g3_mean_dark,
-            'stdev_dark_G3'   : g3_std_dark,
-            'mean_dark_B4'    : b4_mean_dark,
-            'stdev_dark_B4'   : b4_std_dark,
         }
+        if self.dkroi:
+            self._extract_dark()
+            self._add_dark_stats(result)
+
+        logging.info("{0}: {3}, ROI = {1}, Dark ROI = {2}".format(self._name, self.roi, self.dkroi, self.model))
+        return result
     
 
     # ============== #
@@ -188,13 +184,13 @@ class CameraImage(object):
         '''
         Load camera configuration from configuration file
         '''
-        if not (os.path.exists(self.configpath)):
+        if not (os.path.exists(self.camerapath)):
             raise IOError(errno.ENOENT,"No such file or directory", path)
 
         parser  =  ConfigParser.RawConfigParser()
         # str is for case sensitive options
         parser.optionxform = str
-        parser.read(self.configpath)
+        parser.read(self.camerapath)
         if not parser.has_section(self.model):
             raise ConfigError(self.model)
 
@@ -225,6 +221,22 @@ class CameraImage(object):
         self.dark.append(self.signal[G2][-410: , -610:])
         self.dark.append(self.signal[G3][-410: , -610:])
         self.dark.append(self.signal[B4][-410: , -610:])
+
+    def _add_dark_stats(self, mydict):
+        r1_mean_dark,   r1_std_dark   = self._region_stats(self.dark[R1], self.dkroi)
+        g2_mean_dark,   g2_std_dark   = self._region_stats(self.dark[G2], self.dkroi)
+        g3_mean_dark,   g3_std_dark   = self._region_stats(self.dark[G3], self.dkroi)
+        b4_mean_dark,   b4_std_dark   = self._region_stats(self.dark[B4], self.dkroi)
+        self.HEADERS.extend(['mean_dark_R1', 'stdev_dark_R1', 'mean_dark_G2', 'stdev_dark_G2',
+                'mean_dark_G3', 'stdev_dark_G3', 'mean_dark_B4', 'stdev_dark_B4'])
+        mydict['mean_dark_R1']  = r1_mean_dark
+        mydict['stdev_dark_R1'] = r1_std_dark
+        mydict['mean_dark_G2']  = g2_mean_dark
+        mydict['stdev_dark_G2'] = g2_std_dark
+        mydict['mean_dark_G3']  = g3_mean_dark
+        mydict['stdev_dark_G3'] = g3_std_dark
+        mydict['mean_dark_B4']  = b4_mean_dark
+        mydict['stdev_dark_B4'] = b4_std_dark
 
 
     def _read(self):

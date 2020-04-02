@@ -33,8 +33,14 @@ from ._version import get_versions
 DEF_WIDTH  = 500
 DEF_HEIGHT = 400
 
-DEF_CONFIG = resource_filename(__name__, 'data/camera.ini')
-DEF_CSV    = os.path.join(os.getcwd(), "azotea.csv")
+# Configuration file templates are built-in the package
+DEF_CAMERA_TPL = resource_filename(__name__, os.path.join('data', 'camera.ini'))
+DEF_CONFIG_TPL = resource_filename(__name__, os.path.join('data', 'azotea.ini'))
+
+# These are in the user's file system
+DEF_CAMERA     = os.path.join(os.path.expanduser("~"), os.path.basename(DEF_CAMERA_TPL))
+DEF_CONFIG     = os.path.join(os.path.expanduser("~"), os.path.basename(DEF_CONFIG_TPL))
+DEF_GLOBAL_CSV = os.path.join(os.path.expanduser("~"), "azotea.csv")
 
 # -----------------------
 # Module global variables
