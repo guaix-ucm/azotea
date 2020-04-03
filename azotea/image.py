@@ -32,7 +32,7 @@ import datetime
 
 from .         import AZOTEA_DIR
 from .camimage import  CameraImage
-from .utils    import merge_two_dicts
+from .utils    import merge_two_dicts, paging
 
 
 # ----------------
@@ -313,23 +313,112 @@ def do_image_register(connection, directory, batch, options):
 # Image metadata
 # --------------
 
-def metadata_multiple(directory, options):
-    headers = ["File Name"]
-    headers.extend(sorted(EXIF_HEADERS))
-    data = []
-    file_list = glob.glob(directory + '/' + options.filter)
-    maxsize = len(file_list)
-    logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, options.filter))
-    for filename in file_list:
-        image = CameraImage(filename, options)
-        dict_exif = image.loadEXIF()
-        row = [image.name()]   
-        if sys.version_info[0] < 3:
-            row.extend([ value for key, value in sorted(dict_exif.iteritems()) if key in EXIF_HEADERS])
-        else:
-            row.extend([ value for key, value in sorted(dict_exif.items()) if key in EXIF_HEADERS])
-        data.append(row)
-    paging(data, headers, maxsize=maxsize)
+def metadata_exif_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		''')
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT name, batch, tstamp, model, exposure, iso
+		FROM image_t
+		ORDER BY batch DESC
+		''')
+	return cursor, count
+
+
+def metadata_exif_batch_iterable(connection, batch):
+	'''batch may be None for NULL'''
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		WHERE batch = :batch
+		''', row)
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT name, batch, tstamp, model, exposure, iso
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY batch DESC
+		''', row)
+	return cursor, count
+
+
+def metadata_global_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		''')
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT name, type, batch, observer, organization, location, roi
+		FROM image_t
+		ORDER BY batch DESC
+		''')
+	return cursor, count
+
+
+def metadata_global_batch_iterable(connection, batch):
+	'''batch may be None for NULL'''
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		WHERE batch = :batch
+		''', row)
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT name, type, batch, observer, organization, location, roi
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY batch DESC
+		''', row)
+	return cursor, count
+
+EXIF_HEADERS = [
+	'Name',
+	'Batch',
+    'Timestamp',
+    'Model',
+    'Exposure',
+    'ISO',
+]
+
+GLOBAL_HEADERS = [
+	'Name',
+	'Type',
+	'Batch',
+    'Observer',
+    'Organiztaion',
+    'Location',
+    'ROI',
+]
+
+def do_image_metadata(connection, batch, options):
+
+    if options.exif:
+    	headers = EXIF_HEADERS
+    	iterable = metadata_exif_all_iterable if options.all else metadata_exif_batch_iterable
+    elif options.general:
+    	headers = GLOBAL_HEADERS
+    	iterable = metadata_global_all_iterable if options.all else metadata_global_batch_iterable
+    else:
+    	return
+    cursor, count = iterable(connection, batch)
+    paging(cursor, headers, maxsize=count, page_size=options.page_size)
 
 
 # --------------
@@ -533,13 +622,14 @@ def image_register(connection, options):
 	
 
 def image_metadata(connection, options):
-	pass
+	batch = last_batch(connection)
+	do_image_metadata(connection, batch, options)
 
 
 def image_classify(connection, options):
 	batch = last_batch(connection)
 	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_image_classify(connection, batch, iterable, options)
+	do_image_classify(connection, batch, classify_batch_iterable, options)
 
 
 def image_stats(connection, options):

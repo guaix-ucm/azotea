@@ -26,7 +26,6 @@ import traceback
 from . import __version__
 from . import  AZOTEA_DIR, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config   import load_config_file, merge_options 
-from .metadata import metadata_display
 from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
@@ -188,6 +187,10 @@ def createParser():
     
     ime = subparser.add_parser('metadata', help='display image metadata')
     ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
+    imeex = ime.add_mutually_exclusive_group(required=True)
+    imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
+    imeex.add_argument('--general', action="store_true", help="display general metadata")
   
     ist = subparser.add_parser('stats',   help='display image metadata')
     ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
