@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS image_t
     stdev_signal_B4     REAL,
     -- Processing state columns
     file_path           TEXT  NOT NULL,    -- original absolute file path
-    session             TEXT  NOT NULL,    -- Session id
+    batch               TEXT  NOT NULL,    -- batch id
     type                TEXT,              -- LIGHT or DARK
     state               TEXT,              -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
     PRIMARY KEY(name)

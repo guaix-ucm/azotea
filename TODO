@@ -1,0 +1,12 @@
+session -> batch
+AZOTEA_DIR
+dbase backup
+backup list
+backup delete
+patch list
+patch apply
+image register --work-dir
+image classify --work-dir
+image stats    --work-dir
+image reduce   --sork-dir
+image metadata --work-dir

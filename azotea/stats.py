@@ -96,14 +96,14 @@ def classification_algorithm1(name, file_path, options):
         result = {'name': name, 'type': "LIGHT"}
     return result
 
-def session_processed(connection, session):
-    row = {'session': session}
+def batch_processed(connection, batch):
+    row = {'batch': batch}
     cursor = connection.cursor()
     cursor.execute('''
         SELECT COUNT(*) 
         FROM image_t 
         WHERE state IS NOT NULL
-        AND session = :session
+        AND batch = :batch
         ''',row)
     return cursor.fetchone()[0]
 
@@ -119,11 +119,11 @@ def find_by_hash(connection, hash):
     return cursor.fetchone()
 
 
-def last_session(connection):
-    '''Get Last recorded session'''
+def last_batch(connection):
+    '''Get Last recorded batch'''
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT MAX(session)
+        SELECT MAX(batch)
         FROM image_t 
         ''')
     return cursor.fetchone()[0]
@@ -154,12 +154,12 @@ def unprocessed_iterable(connection):
     return cursor
 
 
-def export_session_iterable(connection, session):
-    row = {'session': session}
+def export_batch_iterable(connection, batch):
+    row = {'batch': batch}
     cursor = connection.cursor()
     cursor.execute(
         '''
-        SELECT  session,
+        SELECT  batch,
                 observer,
                 organization,
                 location,
@@ -181,7 +181,7 @@ def export_session_iterable(connection, session):
                 stdev_signal_B4
         FROM image_t
         WHERE state IS NOT NULL
-        AND   session = :session
+        AND   batch = :batch
         ''', row)
     return cursor
 
@@ -189,7 +189,7 @@ def export_global_iterable(connection):
     cursor = connection.cursor()
     cursor.execute(
         '''
-       SELECT   session,
+       SELECT   batch,
                 observer,
                 organization,
                 location,
@@ -227,7 +227,7 @@ def insert_new_image(connection, row):
                 name, 
                 hash,
                 file_path, 
-                session, 
+                batch, 
                 observer, 
                 organization, 
                 location, 
@@ -240,7 +240,7 @@ def insert_new_image(connection, row):
                 :name, 
                 :hash,
                 :file_path, 
-                :session, 
+                :batch, 
                 :observer, 
                 :organization, 
                 :location,
@@ -262,7 +262,7 @@ def insert_new_images(connection, rows):
                 name, 
                 hash,
                 file_path, 
-                session, 
+                batch, 
                 observer, 
                 organization, 
                 location, 
@@ -275,7 +275,7 @@ def insert_new_images(connection, rows):
                 :name, 
                 :hash,
                 :file_path, 
-                :session, 
+                :batch, 
                 :observer, 
                 :organization, 
                 :location,
@@ -324,11 +324,11 @@ def update_stats(connection, rows):
 # Processing steps
 # ----------------
 
-def stats_scan_preamble(connection, directory, session, options):
+def stats_scan_preamble(connection, directory, batch, options):
     file_list = insert_list(connection, directory, options)
     logging.info("Registering {0} new images".format(len(file_list)))
     metadata = {
-        'session'     : session, 
+        'batch'     : batch, 
         'observer'    : options.observer, 
         'organization': options.organization, 
         'location'    : options.location,
@@ -377,8 +377,8 @@ def stats_scan_fast(connection, file_list, metadata, options):
     else:
         logging.info("{0} images registered in database".format(len(rows)))
         
-def stats_scan(connection, directory, session, options):
-    file_list, metadata = stats_scan_preamble(connection, directory, session, options)
+def stats_scan(connection, directory, batch, options):
+    file_list, metadata = stats_scan_preamble(connection, directory, batch, options)
     if options.slow:
         stats_scan_slow(connection, file_list, metadata, options)
     else:
@@ -413,16 +413,16 @@ def stats_stats(connection, options):
         logging.info("No image statistics to be computed")
 
 
-def do_export_csv(connection, session, options):
-    fieldnames = ["session","observer","organization","location", "type"]
+def do_export_csv(connection, batch, options):
+    fieldnames = ["batch","observer","organization","location", "type"]
     fieldnames.extend(CameraImage.HEADERS)
-    # Write a session CSV file
-    session_csv_file = os.path.join(os.path.expanduser("~"), session + '.csv')
-    with myopen(session_csv_file, 'w') as csvfile:
+    # Write a batch CSV file
+    batch_csv_file = os.path.join(os.path.expanduser("~"), batch + '.csv')
+    with myopen(batch_csv_file, 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=';')
         writer.writerow(fieldnames)
-        writer.writerows(export_session_iterable(connection, session))
-    logging.info("Saved data to session CSV file {0}".format(session_csv_file))
+        writer.writerows(export_batch_iterable(connection, batch))
+    logging.info("Saved data to batch CSV file {0}".format(batch_csv_file))
     # Update the global CSV file
     writeheader = not os.path.exists(options.global_csv_file)
     with myopen(options.global_csv_file, 'w') as csvfile:
@@ -432,12 +432,12 @@ def do_export_csv(connection, session, options):
     logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
 
 
-def stats_export(connection, session, options):
-    if session_processed(connection, session):
-        do_export_csv(connection, session, options)
+def stats_export(connection, batch, options):
+    if batch_processed(connection, batch):
+        do_export_csv(connection, batch, options)
     elif options.force_csv:
-        session = last_session(connection)
-        do_export_csv(connection, session, options)
+        batch = last_batch(connection)
+        do_export_csv(connection, batch, options)
     else:
         logging.info("No CSV file generation takes place")
 
@@ -448,11 +448,11 @@ def stats_export(connection, session, options):
 
 
 def stats_compute(connection, options):
-    session = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    stats_scan(connection, options.work_dir, session, options)
+    batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    stats_scan(connection, options.work_dir, batch, options)
     stats_classify(connection, options)
     stats_stats(connection, options)
-    stats_export(connection, session, options)
+    stats_export(connection, batch, options)
     if duplicated_file_paths:
         logging.warning("Images duplcated: {0}".format(duplicated_file_paths))
 
