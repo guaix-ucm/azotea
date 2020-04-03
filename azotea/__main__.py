@@ -30,7 +30,8 @@ from .metadata import metadata_display
 from .stats    import stats_compute
 from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
-from .dbase    import dbase_clear, dbase_purge
+from .dbase    import dbase_clear, dbase_purge, dbase_backup
+from .backup   import backup_list, backup_delete, backup_restore
 
 #
 # -----------------------
@@ -88,7 +89,8 @@ def createParser():
     parser_meta   = subparser.add_parser('metadata', help='metadata commands')
     parser_stats  = subparser.add_parser('stats', help='stats commands')
     parser_config = subparser.add_parser('config', help='config commands')
-    parser_dbase  = subparser.add_parser('dbase', help='database commands (MAINTENANCE ONLY!)')
+    parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
+    parser_back   = subparser.add_parser('backup', help='database backup management')
 
 
     # -----------------------------------------
@@ -100,6 +102,25 @@ def createParser():
     dbc = subparser.add_parser('clear',  help="Clears the database (MAINTENANCE ONLY!)")
     
     dbp = subparser.add_parser('purge',  help="Purge the database  (MAINTENANCE ONLY!)")
+
+    dbp = subparser.add_parser('backup',  help="Database backup")
+    dbp.add_argument('--comment', type=str,  help='Optional comment')
+
+    # ----------------------------------------
+    # Create second level parsers for 'backup'
+    # ----------------------------------------
+
+    subparser = parser_back.add_subparsers(dest='subcommand')
+
+    bkl = subparser.add_parser('list',  help="List database backups")
+    
+    bkd = subparser.add_parser('delete',  help="Delete a given backup")
+    bkd.add_argument('--bak-file', type=str, required=True , help='Backup file to deleta')
+
+    bkr = subparser.add_parser('restore',  help="Restore database from backup")
+    bkr.add_argument('--bak-file', type=str, required=True , help='Backup file from where to restore')
+    bkr.add_argument('-n', '--non-interactive', action='store_true', help='Do not request confirmation')
+
 
     # -----------------------------------------
     # Create second level parsers for 'config'

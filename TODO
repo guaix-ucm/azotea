@@ -1,7 +1,7 @@
-AZOTEA_DIR
-dbase backup
 backup list
 backup delete
+backup restore
+patch_t table with file, version, creation_date
 patch list
 patch apply
 image register --work-dir
@@ -9,3 +9,6 @@ image classify --work-dir
 image stats    --work-dir
 image reduce   --sork-dir
 image metadata --work-dir
+master dark
+ - master_dark_t
+ - substractong
