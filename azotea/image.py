@@ -21,6 +21,7 @@ import csv
 import traceback
 import shutil
 import datetime
+import math
 
 # ---------------------
 # Third party libraries
@@ -111,6 +112,8 @@ def batch_processed(connection, batch):
 		AND batch = :batch
 		''',row)
 	return cursor.fetchone()[0]
+
+
 
 
 def find_by_hash(connection, hash):
@@ -253,7 +256,7 @@ def db_update_stats(connection, rows):
 # Image Register
 # --------------
 
-         
+		 
 def image_register_preamble(connection, directory, batch, options):
 	file_list = insert_list(connection, directory, options)
 	logging.info("Registering {0} new images".format(len(file_list)))
@@ -315,246 +318,16 @@ def do_image_register(connection, directory, batch, options):
 	else:
 		image_register_fast(connection, file_list, metadata, options)
 
-# --------------
-# Image metadata
-# --------------
-
-def metadata_exif_all_iterable(connection, batch):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		''')
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, batch, tstamp, model, exposure, iso
-		FROM image_t
-		ORDER BY batch DESC
-		''')
-	return cursor, count
-
-
-def metadata_exif_batch_iterable(connection, batch):
-	'''batch may be None for NULL'''
-	row = {'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		WHERE batch = :batch
-		''', row)
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, batch, tstamp, model, exposure, iso
-		FROM image_t
-		WHERE batch = :batch
-		ORDER BY batch DESC
-		''', row)
-	return cursor, count
-
-
-def metadata_global_all_iterable(connection, batch):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		''')
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, type, batch, observer, organization, location, roi
-		FROM image_t
-		ORDER BY batch DESC
-		''')
-	return cursor, count
-
-
-def metadata_global_batch_iterable(connection, batch):
-	'''batch may be None for NULL'''
-	row = {'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		WHERE batch = :batch
-		''', row)
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, type, batch, observer, organization, location, roi
-		FROM image_t
-		WHERE batch = :batch
-		ORDER BY batch DESC
-		''', row)
-	return cursor, count
-
-EXIF_HEADERS = [
-	'Name',
-	'Batch',
-    'Timestamp',
-    'Model',
-    'Exposure',
-    'ISO',
-]
-
-GLOBAL_HEADERS = [
-	'Name',
-	'Type',
-	'Batch',
-    'Observer',
-    'Organiztaion',
-    'Location',
-    'ROI',
-]
-
-def do_image_metadata(connection, batch, options):
-
-    if options.exif:
-    	headers = EXIF_HEADERS
-    	iterable = metadata_exif_all_iterable if options.all else metadata_exif_batch_iterable
-    elif options.general:
-    	headers = GLOBAL_HEADERS
-    	iterable = metadata_global_all_iterable if options.all else metadata_global_batch_iterable
-    else:
-    	return
-    cursor, count = iterable(connection, batch)
-    paging(cursor, headers, maxsize=count, page_size=options.page_size)
 
 
 
 # --------------
 # Image Dark
 # --------------
-	              
-def dark_all_iterable(connection, batch):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM master_dark_t
-		ORDER BY batch DESC
-		''')
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT 
-			batch,              
-		    mean_R1,             
-		    vari_R1,             
-		    mean_G2,            
-		    vari_G2,         
-		    mean_G3,          
-		    vari_G3,             
-		    mean_B4,            
-		    vari_B4,             
-		    roi,                
-		    N
-		FROM master_dark_t
-		ORDER BY batch DESC
-		''')
-	return cursor, count
-
-def dark_batch_iterable(connection, batch):
-	cursor = connection.cursor()
-	row = {'batch': batch}
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM master_dark_t
-		WHERE batch = :batch
-		''', row)
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT 
-			batch,              
-		    mean_R1,             
-		    vari_R1,             
-		    mean_G2,            
-		    vari_G2,         
-		    mean_G3,          
-		    vari_G3,             
-		    mean_B4,            
-		    vari_B4,             
-		    roi,                
-		    N     
-		FROM master_dark_t
-		WHERE batch = :batch
-		''', row)
-	return cursor, count
-
-HEADERS_MASTER_DARK = [
-	"Batch", 
-	"\u03BC R1", "\u03C3^2 R1", 
-	"\u03BC G2", "\u03C3^2 G2", 
-	"\u03BC G3", "\u03C3^2 G3",
-	"\u03BC B4", "\u03C3^2 B4",
-	"ROI",
-	"# Darks",
-]
 
 
-def do_image_dark(connection, batch,  iterable, options):
-	cursor, count = iterable(connection, batch)
-	paging(cursor, HEADERS_MASTER_DARK, maxsize=count, page_size=options.page_size)
-
-# -----------
-# Image State
-# -----------
-
-HEADERS_STATE = [
-	"Name",
-	"Batch",
-	"Type", 
-	"State",
-]
 
 
-def image_state_batch_iterable(connection, batch):
-	row = {'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		WHERE batch = :batch
-		''', row)
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, batch, type, state
-		FROM image_t
-		WHERE batch = :batch
-		ORDER BY batch DESC, name ASC
-		''', row)
-	return cursor, count
-
-def image_state_all_iterable(connection, batch):
-	cursor = connection.cursor()
-	row = {'batch': batch}
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		''', row)
-	count = cursor.fetchone()[0]
-	cursor.execute(
-		'''
-		SELECT name, batch, type, state
-		FROM image_t
-		ORDER BY batch DESC, name ASC
-		''', row)
-	return cursor, count
-
-def do_image_state(connection, batch,  iterable, options):
-	cursor, count = iterable(connection, batch)
-	paging(cursor, HEADERS_STATE, maxsize=count, page_size=options.page_size)
 
 # --------------
 # Image Classify
@@ -762,18 +535,18 @@ def db_update_dark_columns(connection, batch):
 	connection.commit()
 
 
-def master_dark_all_iterable(connection):
+def master_dark_all_batches_iterable(connection):
 	cursor = connection.cursor()
 	cursor.execute("SELECT batch from master_dark_t")
 	return cursor;
 
 
-def do_image_apply(connection, batch, options):
+def do_image_apply_dark(connection, batch, options):
 	logging.info("Updating master darks for all batches")
 	db_update_all_master_dark(connection, batch)
 	if options.all:
 		logging.info("Appling dark substraction to all images")
-		for batch, in master_dark_all_iterable(connection):
+		for batch, in master_dark_all_batches_iterable(connection):
 			db_update_dark_columns(connection, batch)
 	else:
 		logging.info("Appling dark substraction to current batch")
@@ -785,22 +558,22 @@ def do_image_apply(connection, batch, options):
 
 
 VIEW_HEADERS = [
-            'tstamp'         ,
-            'name'           ,
-            'model'          ,
-            'iso'            ,
-            'roi'            ,
-            'dark_roi'       ,
-            'exposure'       ,
-            'mean_signal_R1' ,
-            'std_signal_R1'  ,
-            'mean_signal_G2' ,
-            'std_signal_G2'  ,
-            'mean_signal_G3' ,
-            'std_signal_G3'  ,
-            'mean_signal_B4' ,
-            'std_signal_B4'  ,
-        ]
+			'tstamp'         ,
+			'name'           ,
+			'model'          ,
+			'iso'            ,
+			'roi'            ,
+			'dark_roi'       ,
+			'exposure'       ,
+			'mean_signal_R1' ,
+			'std_signal_R1'  ,
+			'mean_signal_G2' ,
+			'std_signal_G2'  ,
+			'mean_signal_G3' ,
+			'std_signal_G3'  ,
+			'mean_signal_B4' ,
+			'std_signal_B4'  ,
+		]
 
 def export_batch_iterable(connection, batch):
 	row = {'batch': batch}
@@ -866,7 +639,7 @@ def export_all_iterable(connection, batch):
 def var2std(item):
 	'''From vraiance to StdDev in seevral columns'''
 	index, value = item
-	return sqrt(value) if index in [13, 15, 17, 19] else value
+	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
 
 
 def do_image_export(connection, batch, src_iterable, options):
@@ -878,7 +651,7 @@ def do_image_export(connection, batch, src_iterable, options):
 			writer.writerow(fieldnames)
 			for row in src_iterable(connection, batch):
 				row = map(var2std, enumerate(row))
-				writer.writerows(row)
+				writer.writerow(row)
 		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	elif batch_processed(connection, batch):
 		# Write a batch CSV file
@@ -888,13 +661,349 @@ def do_image_export(connection, batch, src_iterable, options):
 			writer.writerow(fieldnames)
 			for row in src_iterable(connection, batch):
 				row = map(var2std, enumerate(row))
-				writer.writerows(row)
+				writer.writerow(row)
 		logging.info("Saved data to batch  CSV file {0}".format(batch_csv_file))
 	else:
 		logging.info("No new CSV file generation")
 	
 	
 
+# ==================================
+# Image View sumcommands and options
+# ==================================
+
+
+EXIF_HEADERS = [
+	'Name',
+	'Batch',
+	'Timestamp',
+	'Model',
+	'Exposure',
+	'ISO',
+]
+
+GLOBAL_HEADERS = [
+	'Name',
+	'Type',
+	'Batch',
+	'Observer',
+	'Organiztaion',
+	'Location',
+	'ROI',
+]
+
+STATE_HEADERS = [
+	"Name",
+	"Batch",
+	"Type", 
+	"State",
+]
+
+DATA_HEADERS = [
+	"Name", "Batch",
+	"\u03BC R1", "\u03C3^2 R1", 
+	"\u03BC G2", "\u03C3^2 G2", 
+	"\u03BC G3", "\u03C3^2 G3",
+	"\u03BC B4", "\u03C3^2 B4",
+]
+
+RAW_DATA_HEADERS = [
+	"Name", "Batch" ,
+	"Raw \u03BC R1", "Raw \u03C3^2 R1", 
+	"Raw \u03BC G2", "Raw \u03C3^2 G2", 
+	"Raw \u03BC G3", "Raw \u03C3^2 G3",
+	"Raw \u03BC B4", "Raw \u03C3^2 B4",
+]
+
+DARK_DATA_HEADERS = [
+	"Name", "Batch" ,
+	"Raw \u03BC R1", "Raw \u03C3^2 R1", 
+	"Raw \u03BC G2", "Raw \u03C3^2 G2", 
+	"Raw \u03BC G3", "Raw \u03C3^2 G3",
+	"Raw \u03BC B4", "Raw \u03C3^2 B4",
+]
+
+def batch_count(cursor, batch):
+	row = {'batch': batch}
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		WHERE batch = :batch
+		''', row)
+	count = cursor.fetchone()[0]
+
+def all_count(cursor):
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		''')
+	count = cursor.fetchone()[0]
+
+# --------------
+# Image metadata
+# --------------
+
+def metadata_exif_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT name, batch, tstamp, model, exposure, iso
+		FROM image_t
+		ORDER BY batch DESC, name ASC
+		''')
+	return cursor, count
+
+
+def metadata_exif_batch_iterable(connection, batch):
+	'''batch may be None for NULL'''
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT name, batch, tstamp, model, exposure, iso
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY name DESC
+		''', row)
+	return cursor, count
+
+# ------------
+# Image General
+# -------------
+
+def metadata_global_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT name, type, batch, observer, organization, location, roi
+		FROM image_t
+		ORDER BY batch DESC
+		''')
+	return cursor, count
+
+
+def metadata_global_batch_iterable(connection, batch):
+	'''batch may be None for NULL'''
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT name, type, batch, observer, organization, location, roi
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY name ASC
+		''', row)
+	return cursor, count
+
+# -----------
+# Image State
+# -----------
+
+def image_state_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT name, batch, type, state
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+
+def image_state_all_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT name, batch, type, state
+		FROM image_t
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+# -----------
+# Image Data
+# -----------
+
+def image_data_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch, 
+			mean_signal_R1, vari_signal_R1,
+			mean_signal_G2, vari_signal_G2,
+			mean_signal_G3, vari_signal_G3,
+			mean_signal_B4, vari_signal_B4
+		FROM image_v
+		WHERE batch = :batch
+		ORDER BY name ASC
+		''', row)
+	return cursor, count
+
+
+def image_data_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch,
+			mean_signal_R1, vari_signal_R1,
+			mean_signal_G2, vari_signal_G2,
+			mean_signal_G3, vari_signal_G3,
+			mean_signal_B4, vari_signal_B4
+		FROM image_v
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+# -------------
+# Raw Image Data
+# --------------
+
+def image_raw_data_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch, 
+			mean_raw_signal_R1, vari_raw_signal_R1,
+			mean_raw_signal_G2, vari_raw_signal_G2,
+			mean_raw_signal_G3, vari_raw_signal_G3,
+			mean_raw_signal_B4, vari_raw_signal_B4
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY name ASC
+		''', row)
+	return cursor, count
+
+
+def image_raw_data_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch,
+			mean_raw_signal_R1, vari_raw_signal_R1,
+			mean_raw_signal_G2, vari_raw_signal_G2,
+			mean_raw_signal_G3, vari_raw_signal_G3,
+			mean_raw_signal_B4, vari_raw_signal_B4
+		FROM image_t
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+# --------------
+# Dark Image Data
+# ---------------
+
+def image_dark_data_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	count = batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch, 
+			mean_dark_R1, vari_dark_R1,
+			mean_dark_G2, vari_dark_G2,
+			mean_dark_G3, vari_dark_G3,
+			mean_dark_B4, vari_dark_B4
+		FROM image_t
+		WHERE batch = :batch
+		ORDER BY name ASC
+		''', row)
+	return cursor, count
+
+
+def image_dark_data_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	count = all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch, 
+			mean_dark_R1, vari_dark_R1,
+			mean_dark_G2, vari_dark_G2,
+			mean_dark_G3, vari_dark_G3,
+			mean_dark_B4, vari_dark_B4
+		FROM image_t
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+				  
+def naster_dark_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute("SELECT COUNT(*) FROM master_dark_t")
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT 
+			batch,              
+			mean_R1, vari_R1,             
+			mean_G2, vari_G2,         
+			mean_G3, vari_G3,             
+			mean_B4, vari_B4,             
+			roi, N
+		FROM master_dark_t
+		ORDER BY batch DESC
+		''')
+	return cursor, count
+
+def master_dark_batch_iterable(connection, batch):
+	cursor = connection.cursor()
+	row = {'batch': batch}
+	cursor.execute("SELECT COUNT(*) FROM master_dark_t WHERE batch = :batch", row)
+	count = cursor.fetchone()[0]
+	cursor.execute(
+		'''
+		SELECT 
+			batch,              
+			mean_R1, vari_R1,             
+			mean_G2, vari_G2,         
+			mean_G3, vari_G3,             
+			mean_B4, vari_B4,             
+			roi, N
+		FROM master_dark_t
+		WHERE batch = :batch
+		''', row)
+	return cursor, count
+
+MASTER_DARK_HEADERS = [
+	"Batch", 
+	"\u03BC R1", "\u03C3^2 R1", 
+	"\u03BC G2", "\u03C3^2 G2", 
+	"\u03BC G3", "\u03C3^2 G3",
+	"\u03BC B4", "\u03C3^2 B4",
+	"ROI",
+	"# Darks",
+]
+
+
+def do_image_dark(connection, batch,  iterable, options):
+	cursor, count = iterable(connection, batch)
+	paging(cursor, HEADERS_MASTER_DARK, maxsize=count, page_size=options.page_size)
+
+def do_image_view(connection, batch, iterable, headers, options):
+	cursor, count = iterable(connection, batch)
+	paging(cursor, headers, maxsize=count, page_size=options.page_size)
 
 # =====================
 # Command esntry points
@@ -902,21 +1011,35 @@ def do_image_export(connection, batch, src_iterable, options):
 
 # These display various data
 
-def image_metadata(connection, options):
+def image_view(connection, options):
 	batch = latest_batch(connection)
-	do_image_metadata(connection, batch, options)
+	if options.exif:
+		headers = EXIF_HEADERS
+		iterable = metadata_exif_all_iterable if options.all else metadata_exif_batch_iterable
+	elif options.general:
+		headers = GLOBAL_HEADERS
+		iterable = metadata_global_all_iterable if options.all else metadata_global_batch_iterable
+	elif options.state:
+		headers = STATE_HEADERS
+		iterable = image_state_all_iterable if options.all else image_state_batch_iterable
+	elif options.data:
+		headers = DATA_HEADERS
+		iterable = image_data_all_iterable if options.all else image_data_batch_iterable
+	elif options.raw_data:
+		headers = RAW_DATA_HEADERS
+		iterable = image_raw_data_all_iterable if options.all else image_raw_data_batch_iterable
+	elif options.dark:
+		headers = DARK_DATA_HEADERS
+		iterable = image_dark_data_all_iterable if options.all else image_dark_data_batch_iterable
+	elif options.master:
+		headers = MASTER_DARK_HEADERS
+		iterable = naster_dark_all_iterable if options.all else master_dark_batch_iterable
+	else:
+		return
+	do_image_view(connection, batch, iterable, headers, options)
 
-def image_dark(connection, options):
-	batch = latest_batch(connection)
-	iterable = dark_all_iterable if options.all else dark_batch_iterable
-	do_image_dark(connection, batch, iterable, options)
 
-def image_state(connection, options):
-	batch = latest_batch(connection)
-	iterable = image_state_all_iterable if options.all else image_state_batch_iterable
-	do_image_state(connection, batch, iterable, options)
-
-# Thsea are the pipelien stages in execution order
+# These are the pipelien stages in execution order
 
 def image_register(connection, options):
 	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
@@ -935,9 +1058,9 @@ def image_stats(connection, options):
 	do_image_stats(connection, batch, iterable, options)
 
 
-def image_apply(connection, options):
+def image_dark(connection, options):
 	batch = latest_batch(connection)
-	do_image_apply(connection, batch, options)
+	do_image_apply_dark(connection, batch, options)
 
 
 def image_export(connection, options):
@@ -960,7 +1083,7 @@ def image_reduce(connection, options):
 	iterable = stats_all_iterable if options.all else stats_batch_iterable
 	do_image_stats(connection, batch, iterable, options)
 	# Step 4
-	do_image_master_dark(connection, batch, options)
+	do_image_apply_dark(connection, batch, options)
 	# Step 5
 	iterable = export_all_iterable if options.all else export_batch_iterable
 	do_image_export(connection, batch, iterable, options)

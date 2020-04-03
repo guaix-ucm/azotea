@@ -30,8 +30,8 @@ from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
 from .backup   import backup_list, backup_delete, backup_restore
-from .image    import image_register, image_classify, image_apply, image_stats, image_export, image_reduce
-from .image    import image_dark, image_metadata, image_state
+from .image    import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
+from .image    import image_view
 #
 # -----------------------
 # Module global variables
@@ -177,20 +177,17 @@ def createParser():
     parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
     parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
 
-    ime = subparser.add_parser('metadata', help='display image metadata')
+    ime = subparser.add_parser('view',    help='display image data')
     ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
     ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
     imeex = ime.add_mutually_exclusive_group(required=True)
     imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
     imeex.add_argument('--general', action="store_true", help="display general metadata")
-
-    idk = subparser.add_parser('dark',   help='display image metadata')
-    idk.add_argument('-a' ,'--all',      action="store_true", help="apply to all darks in database")
-    idk.add_argument('--page-size',      type=int, default=10,  help="display page size")
-
-    ist = subparser.add_parser('state',   help='display image state')
-    ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-    ist.add_argument('--page-size',      type=int, default=10,  help="display page size")
+    imeex.add_argument('--state', action="store_true", help="display processing state")
+    imeex.add_argument('--data',  action="store_true", help="dark substracted signal averaged over roi")
+    imeex.add_argument('--raw-data',  action="store_true", help="raw signal averaged over roi")
+    imeex.add_argument('--dark',  action="store_true", help="dark signal averaged over dark row or master dark")
+    imeex.add_argument('--master',  action="store_true", help="display master dark data")
 
     ire = subparser.add_parser('register', help='register images in the database')
     ire.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
@@ -200,7 +197,7 @@ def createParser():
     icl = subparser.add_parser('classify', help='classify LIGHT/DARK images')
     icl.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
 
-    isb = subparser.add_parser('apply',    help='apply DARK images to LIGHT images')
+    isb = subparser.add_parser('dark',    help='apply master DARK to LIGHT images')
     isb.add_argument('-a' ,'--all',        action="store_true", help="apply to all images in database")
     
     ist = subparser.add_parser('stats',   help='compute image statistics')
