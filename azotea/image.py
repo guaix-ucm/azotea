@@ -731,7 +731,8 @@ def batch_count(cursor, batch):
 		FROM image_t
 		WHERE batch = :batch
 		''', row)
-	count = cursor.fetchone()[0]
+	return cursor.fetchone()[0]
+
 
 def all_count(cursor):
 	cursor.execute(
@@ -739,7 +740,7 @@ def all_count(cursor):
 		SELECT COUNT(*)
 		FROM image_t
 		''')
-	count = cursor.fetchone()[0]
+	return cursor.fetchone()[0]
 
 # --------------
 # Image metadata
