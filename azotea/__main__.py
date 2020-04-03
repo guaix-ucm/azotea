@@ -30,8 +30,8 @@ from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
 from .backup   import backup_list, backup_delete, backup_restore
-from .image    import image_register, image_metadata, image_classify, image_stats, image_export, image_reduce
-
+from .image    import image_register, image_classify, image_apply, image_stats, image_export, image_reduce
+from .image    import image_dark, image_metadata, image_state
 #
 # -----------------------
 # Module global variables
@@ -177,6 +177,21 @@ def createParser():
     parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
     parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
 
+    ime = subparser.add_parser('metadata', help='display image metadata')
+    ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
+    imeex = ime.add_mutually_exclusive_group(required=True)
+    imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
+    imeex.add_argument('--general', action="store_true", help="display general metadata")
+
+    idk = subparser.add_parser('dark',   help='display image metadata')
+    idk.add_argument('-a' ,'--all',      action="store_true", help="apply to all darks in database")
+    idk.add_argument('--page-size',      type=int, default=10,  help="display page size")
+
+    ist = subparser.add_parser('state',   help='display image state')
+    ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    ist.add_argument('--page-size',      type=int, default=10,  help="display page size")
+
     ire = subparser.add_parser('register', help='register images in the database')
     ire.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
     ire.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
@@ -184,16 +199,13 @@ def createParser():
 
     icl = subparser.add_parser('classify', help='classify LIGHT/DARK images')
     icl.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+
+    isb = subparser.add_parser('apply',    help='apply DARK images to LIGHT images')
+    isb.add_argument('-a' ,'--all',        action="store_true", help="apply to all images in database")
     
-    ime = subparser.add_parser('metadata', help='display image metadata')
-    ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-    ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
-    imeex = ime.add_mutually_exclusive_group(required=True)
-    imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
-    imeex.add_argument('--general', action="store_true", help="display general metadata")
-  
-    ist = subparser.add_parser('stats',   help='display image metadata')
+    ist = subparser.add_parser('stats',   help='compute image statistics')
     ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    ist.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
   
     iex = subparser.add_parser('export',  help='export to CSV')
     iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")

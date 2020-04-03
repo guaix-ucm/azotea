@@ -1,11 +1,6 @@
 ith file, version, creation_date
 patch list
 patch apply
-image register --work-dir
-image classify --work-dir
-image stats    --work-dir
-image reduce   --sork-dir
-image metadata --work-dir
 master dark
  - master_dark_t
  - substractong

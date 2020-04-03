@@ -65,13 +65,16 @@ def dbase_do_backup(ccomment):
 def dbase_clear(connection, options):
 	cursor = connection.cursor()
 	cursor.execute("DELETE FROM image_t")
+	cursor.execute("DELETE FROM master_dark_t")
 	connection.commit()
 	logging.info("Cleared data from database {0}".format(DEF_DBASE))
 
 
 def dbase_purge(connection, options):
 	cursor = connection.cursor()
-	cursor.execute("DROP TABLE image_t")
+	cursor.execute("DROP VIEW  IF EXISTS image_v")
+	cursor.execute("DROP TABLE IF EXISTS image_t")
+	cursor.execute("DROP TABLE IF EXISTS master_dark_t")
 	connection.commit()
 	logging.info("Erased schema in database {0}".format(DEF_DBASE))
 

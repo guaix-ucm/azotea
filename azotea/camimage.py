@@ -20,6 +20,8 @@ import datetime
 import traceback
 import hashlib
 
+from math import sqrt
+
 try:
     # Python 2
     import ConfigParser
@@ -105,14 +107,14 @@ class CameraImage(object):
             'roi'            ,
             'dark_roi'       ,
             'exposure'       ,
-            'mean_signal_R1' ,
-            'stdev_signal_R1',
-            'mean_signal_G2' ,
-            'stdev_signal_G2',
-            'mean_signal_G3' ,
-            'stdev_signal_G3',
-            'mean_signal_B4' ,
-            'stdev_signal_B4',
+            'mean_raw_signal_R1',
+            'vari_raw_signal_R1',
+            'mean_raw_signal_G2',
+            'vari_raw_signal_G2',
+            'mean_raw_signal_G3',
+            'vari_raw_signal_G3',
+            'mean_raw_signal_B4',
+            'vari_raw_signal_B4',
         ]
                 
                
@@ -192,29 +194,30 @@ class CameraImage(object):
         
     def stats(self):
         logging.debug("{0}: Computing stats".format(self._name))
-        r1_mean, r1_std = self._region_stats(self.signal[R1], self.roi)
-        g2_mean, g2_std = self._region_stats(self.signal[G2], self.roi)
-        g3_mean, g3_std = self._region_stats(self.signal[G3], self.roi)
-        b4_mean, b4_std = self._region_stats(self.signal[B4], self.roi)
+        r1_mean, r1_vari = self._region_stats(self.signal[R1], self.roi)
+        g2_mean, g2_vari = self._region_stats(self.signal[G2], self.roi)
+        g3_mean, g3_vari = self._region_stats(self.signal[G3], self.roi)
+        b4_mean, b4_vari = self._region_stats(self.signal[B4], self.roi)
         result = {
             'name'            : self._name,
             'roi'             : str(self.roi),
-            'mean_signal_R1'  : r1_mean,
-            'stdev_signal_R1' : r1_std,
-            'mean_signal_G2'  : g2_mean,
-            'stdev_signal_G2' : g2_std,
-            'mean_signal_G3'  : g3_mean,
-            'stdev_signal_G3' : g3_std,
-            'mean_signal_B4'  : b4_mean,
-            'stdev_signal_B4' : b4_std,
+            'mean_raw_signal_R1'  : r1_mean,
+            'vari_raw_signal_R1'  : r1_vari,
+            'mean_raw_signal_G2'  : g2_mean,
+            'vari_raw_signal_G2'  : g2_vari,
+            'mean_raw_signal_G3'  : g3_mean,
+            'vari_raw_signal_G3'  : g3_vari,
+            'mean_raw_signal_B4'  : b4_mean,
+            'vari_raw_signal_B4'  : b4_vari,
         }
         if self.dkroi:
             self._extract_dark()
             self._add_dark_stats(result)
         logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
         if self._extended:
-            logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(
-                self._name, [r1_mean, g2_mean, g3_mean, b4_mean],[r1_std, g2_std, g3_std, b4_std]))
+            mean  = [r1_mean, g2_mean, g3_mean, b4_mean]
+            stdev = [round(sqrt(r1_vari),1), round(sqrt(g2_vari),1), round(sqrt(g3_vari),1), round(sqrt(b4_vari),1)]
+            logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(self._name, mean, stdev))
         return result
 
     # ============== #
@@ -263,7 +266,7 @@ class CameraImage(object):
 
     def _region_stats(self, data, region):
         r = data[region.y1:region.y2, region.x1:region.x2]
-        return round(r.mean(),1), round(r.std(),1)
+        return round(r.mean(),1), round(r.var(),2)
 
 
     def _center_roi(self):
@@ -281,20 +284,20 @@ class CameraImage(object):
         self.dark.append(self.signal[B4][-410: , -610:])
 
     def _add_dark_stats(self, mydict):
-        r1_mean_dark,   r1_std_dark   = self._region_stats(self.dark[R1], self.dkroi)
-        g2_mean_dark,   g2_std_dark   = self._region_stats(self.dark[G2], self.dkroi)
-        g3_mean_dark,   g3_std_dark   = self._region_stats(self.dark[G3], self.dkroi)
-        b4_mean_dark,   b4_std_dark   = self._region_stats(self.dark[B4], self.dkroi)
-        self.HEADERS.extend(['mean_dark_R1', 'stdev_dark_R1', 'mean_dark_G2', 'stdev_dark_G2',
-                'mean_dark_G3', 'stdev_dark_G3', 'mean_dark_B4', 'stdev_dark_B4'])
-        mydict['mean_dark_R1']  = r1_mean_dark
-        mydict['stdev_dark_R1'] = r1_std_dark
-        mydict['mean_dark_G2']  = g2_mean_dark
-        mydict['stdev_dark_G2'] = g2_std_dark
-        mydict['mean_dark_G3']  = g3_mean_dark
-        mydict['stdev_dark_G3'] = g3_std_dark
-        mydict['mean_dark_B4']  = b4_mean_dark
-        mydict['stdev_dark_B4'] = b4_std_dark
+        r1_mean_dark,   r1_vari_dark   = self._region_stats(self.dark[R1], self.dkroi)
+        g2_mean_dark,   g2_vari_dark   = self._region_stats(self.dark[G2], self.dkroi)
+        g3_mean_dark,   g3_vari_dark   = self._region_stats(self.dark[G3], self.dkroi)
+        b4_mean_dark,   b4_vari_dark   = self._region_stats(self.dark[B4], self.dkroi)
+        self.HEADERS.extend(['mean_dark_R1', 'vari_dark_R1', 'mean_dark_G2', 'vari_dark_G2',
+                'mean_dark_G3', 'vari_dark_G3', 'mean_dark_B4', 'vari_dark_B4'])
+        mydict['mean_dark_R1'] = r1_mean_dark
+        mydict['vari_dark_R1'] = r1_vari_dark
+        mydict['mean_dark_G2'] = g2_mean_dark
+        mydict['vari_dark_G2'] = g2_vari_dark
+        mydict['mean_dark_G3'] = g3_mean_dark
+        mydict['vari_dark_G3'] = g3_vari_dark
+        mydict['mean_dark_B4'] = b4_mean_dark
+        mydict['vari_dark_B4'] = b4_vari_dark
 
 
     def _read(self):
