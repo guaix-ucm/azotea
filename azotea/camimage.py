@@ -241,7 +241,7 @@ class CameraImage(object):
         Load camera configuration from configuration file
         '''
         if not (os.path.exists(self.camerapath)):
-            logging.warning("No camera config file found at {0}, using default file".format(self.camerapath))
+            logging.debug("No camera config file found at {0}, using default file".format(self.camerapath))
             self.camerapath = DEF_CAMERA_TPL
 
         parser  =  ConfigParser.RawConfigParser()

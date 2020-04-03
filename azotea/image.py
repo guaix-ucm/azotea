@@ -378,7 +378,7 @@ def image_register_fast(connection, file_list, metadata, options):
 		logging.info("{0} images registered in database".format(len(rows)))
 
 
-def image_do_register(connection, directory, batch, options):
+def do_image_register(connection, directory, batch, options):
 	file_list, metadata = image_register_preamble(connection, directory, batch, options)
 	if options.slow:
 		image_register_slow(connection, file_list, metadata, options)
@@ -390,7 +390,7 @@ def image_do_register(connection, directory, batch, options):
 # --------------
 
 
-def image_do_classify(connection, options):
+def do_image_classify(connection, options):
 	rows = []
 	for name, file_path in classify_iterable(connection):
 		row = classification_algorithm1(name, file_path, options)
@@ -407,10 +407,11 @@ def image_do_classify(connection, options):
 # -----------
 
 
-def do_stats_stats(connection, options):
+def do_image_stats(connection, options):
 	rows = []
 	for name, file_path in unprocessed_iterable(connection):
 		image = CameraImage(file_path, options)
+		image.extended(options.extended)
 		image.loadEXIF()    # we need to find out the camera model before reading
 		image.read()
 		row = image.stats()
@@ -468,17 +469,17 @@ def stats_compute(connection, options):
 
 def image_register(connection, options):
 	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-	image_do_register(connection, options.work_dir, batch, options)
+	do_image_register(connection, options.work_dir, batch, options)
 	
 
 def image_metadata(connection, options):
 	pass
 
 def image_classify(connection, options):
-	image_do_classify(connection, options)
+	do_image_classify(connection, options)
 
 def image_stats(connection, options):
-	pass
+	do_image_stats(connection, options)
 
 def image_export(connection, options):
 	pass
