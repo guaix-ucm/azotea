@@ -118,6 +118,16 @@ def find_by_hash(connection, hash):
         ''',row)
     return cursor.fetchone()
 
+
+def last_session(connection):
+    '''Get Last recorded session'''
+    cursor = connection.cursor()
+    cursor.execute('''
+        SELECT MAX(session)
+        FROM image_t 
+        ''')
+    return cursor.fetchone()[0]
+
 # ------------------
 # Database iterables
 # ------------------
@@ -403,29 +413,33 @@ def stats_stats(connection, options):
         logging.info("No image statistics to be computed")
 
 
-def stats_export(connection, session, options):
-    if options.dry_run:
-        logging.info("Dry run, do not generate/update CSV files")
-        return
+def do_export_csv(connection, session, options):
     fieldnames = ["session","observer","organization","location", "type"]
     fieldnames.extend(CameraImage.HEADERS)
-    if session_processed(connection, session):
-        # Write a session CSV file
-        session_csv_file = os.path.join(os.path.expanduser("~"), session + '.csv')
-        with myopen(session_csv_file, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            #writer.writeheader()
-            writer.writerow(fieldnames)
-            writer.writerows(export_session_iterable(connection, session))
-        logging.info("Saved data to session CSV file {0}".format(session_csv_file))
-        # Update the global CSV file
-        writeheader = not os.path.exists(options.global_csv_file)
-        with myopen(options.global_csv_file, 'w') as csvfile:
-            writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(fieldnames)
-            writer.writerows(export_global_iterable(connection))
-        logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
+    # Write a session CSV file
+    session_csv_file = os.path.join(os.path.expanduser("~"), session + '.csv')
+    with myopen(session_csv_file, 'w') as csvfile:
+        writer = csv.writer(csvfile, delimiter=';')
+        writer.writerow(fieldnames)
+        writer.writerows(export_session_iterable(connection, session))
+    logging.info("Saved data to session CSV file {0}".format(session_csv_file))
+    # Update the global CSV file
+    writeheader = not os.path.exists(options.global_csv_file)
+    with myopen(options.global_csv_file, 'w') as csvfile:
+        writer = csv.writer(csvfile, delimiter=';')
+        writer.writerow(fieldnames)
+        writer.writerows(export_global_iterable(connection))
+    logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
 
+
+def stats_export(connection, session, options):
+    if session_processed(connection, session):
+        do_export_csv(connection, session, options)
+    elif options.force_csv:
+        session = last_session(connection)
+        do_export_csv(connection, session, options)
+    else:
+        logging.info("No CSV file generation takes place")
 
 
 # =====================
