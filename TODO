@@ -1,7 +1,4 @@
-backup list
-backup delete
-backup restore
-patch_t table with file, version, creation_date
+ith file, version, creation_date
 patch list
 patch apply
 image register --work-dir

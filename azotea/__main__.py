@@ -32,6 +32,7 @@ from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
 from .backup   import backup_list, backup_delete, backup_restore
+from .image    import image_register, image_metadata, image_classify, image_stats, image_export, image_reduce
 
 #
 # -----------------------
@@ -86,11 +87,14 @@ def createParser():
     # --------------------------
 
     subparser = parser.add_subparsers(dest='command')
+
     parser_meta   = subparser.add_parser('metadata', help='metadata commands')
     parser_stats  = subparser.add_parser('stats', help='stats commands')
+
     parser_config = subparser.add_parser('config', help='config commands')
     parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
-    parser_back   = subparser.add_parser('backup', help='database backup management')
+    parser_back   = subparser.add_parser('backup', help='backup management')
+    parser_image  = subparser.add_parser('image', help='image commands')
 
 
     # -----------------------------------------
@@ -165,6 +169,40 @@ def createParser():
     sdy.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
     sdy.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
     sdy.add_argument('-o' ,'--force-csv',  action="store_true", help="Force CSV file generation of last batch")
+
+
+    # ---------------------------------------
+    # Create second level parsers for 'image'
+    # ---------------------------------------
+  
+    subparser = parser_image.add_subparsers(dest='subcommand')
+    parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
+    parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
+
+    ire = subparser.add_parser('register',  help='register images in the database')
+    ire.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ire.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
+    ire.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
+
+    icl = subparser.add_parser('classify',  help='classify LIGHT/DARK images')
+    icl.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+
+    ime = subparser.add_parser('metadata',  help='display image metadata')
+    ime.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+
+    ist = subparser.add_parser('stats',  help='display image metadata')
+    ist.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ist.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
+
+    iex = subparser.add_parser('export',  help='export to CSV')
+    iex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    iex.add_argument('-o' ,'--force-csv',  action="store_true", help="Force CSV file generation of last batch")
+
+    ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
+    ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
+    ird.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
+    ird.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
 
     return parser
 

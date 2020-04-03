@@ -124,7 +124,7 @@ class CameraImage(object):
     def __init__(self, filepath, options):
         self.filepath   = filepath
         self.camerapath = options.camera
-        self.extended   = options.extended
+        self._extended   = False
         self.roi        = options.roi  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
         self.exif       = None
@@ -141,6 +141,9 @@ class CameraImage(object):
     def name(self):
         return self._name
 
+
+    def extended(self, flag):
+        self._extended = flag
 
 
     def hash(self):
@@ -163,7 +166,6 @@ class CameraImage(object):
             raise MetadataError(self.filepath)
         self.model = str(self.exif.get('Image Model'))
         self.metadata['name']      = self._name
-        self.metadata['file_path'] = self.filepath
         self.metadata['model']     = self.model
         self.metadata['tstamp']    = self._iso8601(str(self.exif.get('Image DateTime')))
         self.metadata['exposure']  = str(self.exif.get('EXIF ExposureTime'))
@@ -210,7 +212,7 @@ class CameraImage(object):
             self._extract_dark()
             self._add_dark_stats(result)
         logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
-        if self.extended:
+        if self._extended:
             logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(
                 self._name, [r1_mean, g2_mean, g3_mean, b4_mean],[r1_std, g2_std, g3_std, b4_std]))
         return result
