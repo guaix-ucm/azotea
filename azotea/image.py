@@ -132,7 +132,7 @@ def last_batch(connection):
 # Database iterables
 # ------------------
 
-def to_classify_iterable(connection):
+def classify_iterable(connection):
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -290,7 +290,7 @@ def insert_new_images(connection, rows):
 
 
 
-def update_type(connection, rows):
+def db_update_type(connection, rows):
 	cursor = connection.cursor()
 	cursor.executemany(
 		'''
@@ -390,20 +390,24 @@ def image_do_register(connection, directory, batch, options):
 # --------------
 
 
-def stats_classify(connection, options):
+def image_do_classify(connection, options):
 	rows = []
-	for name, file_path in to_classify_iterable(connection):
+	for name, file_path in classify_iterable(connection):
 		row = classification_algorithm1(name, file_path, options)
 		logging.info("{0} is type {1}".format(name,row['type']))
 		rows.append(row)
 	if rows:
-		update_type(connection, rows)
+		db_update_type(connection, rows)
 	else:
 		logging.info("No image type classification is needed")
 
 
+# -----------
+# Image Stats
+# -----------
 
-def stats_stats(connection, options):
+
+def do_stats_stats(connection, options):
 	rows = []
 	for name, file_path in unprocessed_iterable(connection):
 		image = CameraImage(file_path, options)
@@ -471,7 +475,7 @@ def image_metadata(connection, options):
 	pass
 
 def image_classify(connection, options):
-	pass
+	image_do_classify(connection, options)
 
 def image_stats(connection, options):
 	pass
