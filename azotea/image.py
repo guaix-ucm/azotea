@@ -235,8 +235,8 @@ def db_update_stats(connection, rows):
 	cursor.executemany(
 		'''
 		UPDATE image_t
-		SET state           = :state,
-			roi             = :roi, 
+		SET state               = :state,
+			roi                 = :roi, 
 			mean_raw_signal_R1  = :mean_raw_signal_R1, 
 			mean_raw_signal_G2  = :mean_raw_signal_G2, 
 			mean_raw_signal_G3  = :mean_raw_signal_G3,
@@ -531,6 +531,7 @@ def image_state_batch_iterable(connection, batch):
 		SELECT name, batch, type, state
 		FROM image_t
 		WHERE batch = :batch
+		ORDER BY batch DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -547,7 +548,7 @@ def image_state_all_iterable(connection, batch):
 		'''
 		SELECT name, batch, type, state
 		FROM image_t
-		ORDER BY batch DESC
+		ORDER BY batch DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -666,20 +667,22 @@ def db_update_all_master_dark(connection, batch):
 			batch, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(mean_dark_R1), 
-			AVG(mean_dark_G2), 
-			AVG(mean_dark_G3), 
-			AVG(mean_dark_B4),
-			SUM(vari_dark_R1)/COUNT(*),
-			SUM(vari_dark_G2)/COUNT(*),
-			SUM(vari_dark_G3)/COUNT(*),
-			SUM(vari_dark_B4)/COUNT(*)
+			AVG(mean_raw_signal_R1), 
+			AVG(mean_raw_signal_G2), 
+			AVG(mean_raw_signal_G3), 
+			AVG(mean_raw_signal_B4),
+			SUM(vari_raw_signal_R1)/COUNT(*),
+			SUM(vari_raw_signal_G2)/COUNT(*),
+			SUM(vari_raw_signal_G3)/COUNT(*),
+			SUM(vari_raw_signal_B4)/COUNT(*)
 		FROM image_t
 		WHERE type = :type
 		AND   state = :state
 		GROUP BY batch
 		''', row)
 	connection.commit()
+
+
 
 def db_update_dark_columns(connection, batch):
 	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
