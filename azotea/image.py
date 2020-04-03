@@ -503,7 +503,7 @@ def db_update_dark_columns(connection, batch):
 	cursor.execute(
 		'''
 		UPDATE image_t
-		SET vari_dark_G3 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch)
+		SET vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch)
 		WHERE batch = :batch
 		AND   state = :state
 		AND   type  = :type
