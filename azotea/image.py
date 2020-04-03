@@ -42,13 +42,14 @@ from .utils    import merge_two_dicts, paging
 
 # values for the 'state' column in table
 
-UNPROCESSED      = None
+REGISTERED       = "REGISTERED"
 CLASSIFIED       = "CLASSIFIED"
 RAW_STATS        = "RAW STATS"
 DARK_SUBSTRACTED = "DARK SUBSTRACTED"
 
 LIGHT_FRAME = "LIGHT"
 DARK_FRAME  = "DARK"
+UNKNOWN     = "UNKNOWN"
 
 # -----------------------
 # Module global variables
@@ -167,7 +168,9 @@ def insert_new_image(connection, row):
 				tstamp, 
 				model, 
 				iso, 
-				exposure
+				exposure,
+				type,
+				state
 			) VALUES (
 				:name, 
 				:hash,
@@ -180,7 +183,9 @@ def insert_new_image(connection, row):
 				:tstamp, 
 				:model, 
 				:iso, 
-				:exposure
+				:exposure,
+				:type,
+				:state
 			)
 			''', row)
 	connection.commit()
@@ -202,7 +207,9 @@ def insert_new_images(connection, rows):
 				tstamp, 
 				model, 
 				iso, 
-				exposure
+				exposure,
+				type,
+				state
 			) VALUES (
 				:name, 
 				:hash,
@@ -215,7 +222,9 @@ def insert_new_images(connection, rows):
 				:tstamp, 
 				:model, 
 				:iso, 
-				:exposure
+				:exposure,
+				:type,
+				:state
 			)
 			''', rows)
 	connection.commit()
@@ -261,10 +270,12 @@ def image_register_preamble(connection, directory, batch, options):
 	file_list = insert_list(connection, directory, options)
 	logging.info("Registering {0} new images".format(len(file_list)))
 	metadata = {
-		'batch'     : batch, 
+		'batch'       : batch, 
 		'observer'    : options.observer, 
 		'organization': options.organization, 
 		'location'    : options.location,
+		'state'       : REGISTERED,
+		'type'        : UNKNOWN,
 	}
 	return file_list, metadata
 
@@ -334,24 +345,25 @@ def do_image_register(connection, directory, batch, options):
 # --------------
 
 def classify_all_iterable(connection, batch):
+	row = {'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name, file_path
 		FROM image_t
-		WHERE type IS NULL
-		''')
+		WHERE type = :type
+		''',row)
 	return cursor
 
 
 def classify_batch_iterable(connection, batch):
-	row = {'batch': batch}
+	row = {'batch': batch, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name, file_path
 		FROM image_t
-		WHERE type IS NULL
+		WHERE type = :type
 		AND batch = :batch
 		''', row)
 	return cursor
