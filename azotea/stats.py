@@ -48,6 +48,7 @@ DARK_SUBSTRACTED = "DARK SUBSTRACTED"
 # Module global variables
 # -----------------------
 
+duplicated_file_paths = []
 
 if sys.version_info[0] == 2:
     import errno
@@ -208,6 +209,7 @@ def export_global_iterable(connection):
 # ------------------
 
 def insert_new_image(connection, row):
+    '''slow version to find out the exact duplicate'''
     cursor = connection.cursor()
     cursor.execute(
             '''
@@ -241,6 +243,41 @@ def insert_new_image(connection, row):
             ''', row)
     connection.commit()
 
+def insert_new_images(connection, rows):
+    '''fast version'''
+    cursor = connection.cursor()
+    cursor.executemany(
+            '''
+            INSERT INTO image_t (
+                name, 
+                hash,
+                file_path, 
+                session, 
+                observer, 
+                organization, 
+                location, 
+                roi,
+                tstamp, 
+                model, 
+                iso, 
+                exposure
+            ) VALUES (
+                :name, 
+                :hash,
+                :file_path, 
+                :session, 
+                :observer, 
+                :organization, 
+                :location,
+                :roi,
+                :tstamp, 
+                :model, 
+                :iso, 
+                :exposure
+            )
+            ''', rows)
+    connection.commit()
+
 
 
 def update_type(connection, rows):
@@ -259,7 +296,8 @@ def update_stats(connection, rows):
     cursor.executemany(
         '''
         UPDATE image_t
-        SET state           = :state, 
+        SET state           = :state,
+            roi             = :roi, 
             mean_signal_R1  = :mean_signal_R1, 
             mean_signal_G2  = :mean_signal_G2, 
             mean_signal_G3  = :mean_signal_G3,
@@ -276,7 +314,7 @@ def update_stats(connection, rows):
 # Processing steps
 # ----------------
 
-def stats_scan(connection, directory, session, options):
+def stats_scan_preamble(connection, directory, session, options):
     file_list = insert_list(connection, directory, options)
     logging.info("Registering {0} new images".format(len(file_list)))
     metadata = {
@@ -285,22 +323,56 @@ def stats_scan(connection, directory, session, options):
         'organization': options.organization, 
         'location'    : options.location,
     }
+    return file_list, metadata
+
+def stats_scan_slow(connection,  file_list, metadata, options):
+    
+    global duplicated_file_paths 
+
     for file_path in file_list:
         image = CameraImage(file_path, options)
         exif_metadata = image.loadEXIF()
-        image.read()
         metadata['file_path'] = file_path
         metadata['hash']      = image.hash()
-        metadata['roi']       = str(image.center_roi())
+        metadata['roi']       = str(options.roi)  # provisional
         row   = merge_two_dicts(metadata, exif_metadata)
         try:
             insert_new_image(connection, row)
         except sqlite3.IntegrityError as e:
             connection.rollback()
-            name2, file_path2 = find_by_hash(connection, metadata['hash'])
-            logging.warn("{0} is duplicate of {1}".format(row['file_path'], file_path2))
+            name2, path2 = find_by_hash(connection, metadata['hash'])
+            duplicated_file_paths.append({'original': path2, 'duplicated': metadata['file_path']})
+            logging.warn("{0} is duplicate of {1}".format(row['file_path'], path2))
         else:
             logging.info("{0} registered in database".format(row['name']))
+
+
+def stats_scan_fast(connection, file_list, metadata, options):
+    rows = []
+    for file_path in file_list:
+        image = CameraImage(file_path, options)
+        exif_metadata = image.loadEXIF()
+        metadata['file_path'] = file_path
+        metadata['hash']      = image.hash()
+        metadata['roi']       = str(options.roi)  # provisional
+        row   = merge_two_dicts(metadata, exif_metadata)
+        rows.append(row)
+        logging.info("{0} registering in database".format(row['name']))
+    try:
+        insert_new_images(connection, rows)
+    except sqlite3.IntegrityError as e:
+        connection.rollback()
+        logging.error("Detected duplicated images. Re-run with --slow option to find out which")
+        raise
+    else:
+        logging.info("{0} images registered in database".format(len(rows)))
+        
+def stats_scan(connection, directory, session, options):
+    file_list, metadata = stats_scan_preamble(connection, directory, session, options)
+    if options.slow:
+        stats_scan_slow(connection, file_list, metadata, options)
+    else:
+        stats_scan_fast(connection, file_list, metadata, options)
 
 
 def stats_classify(connection, options):
@@ -343,13 +415,14 @@ def stats_export(connection, session, options):
         with myopen(session_csv_file, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
             #writer.writeheader()
+            writer.writerow(fieldnames)
             writer.writerows(export_session_iterable(connection, session))
         logging.info("Saved data to session CSV file {0}".format(session_csv_file))
         # Update the global CSV file
         writeheader = not os.path.exists(options.global_csv_file)
         with myopen(options.global_csv_file, 'w') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
-            #writer.writeheader()
+            writer.writerow(fieldnames)
             writer.writerows(export_global_iterable(connection))
         logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
 
@@ -366,4 +439,6 @@ def stats_compute(connection, options):
     stats_classify(connection, options)
     stats_stats(connection, options)
     stats_export(connection, session, options)
+    if duplicated_file_paths:
+        logging.warning("Images duplcated: {0}".format(duplicated_file_paths))
 

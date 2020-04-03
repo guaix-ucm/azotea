@@ -1,5 +1,0 @@
-Implememtar ujna tabla de gestion con las columnas de CSV más:
-type - Tipo de imagen LIGHT o DARK
-state - Estado de procesamoineto: UNPROCESSED, "DARK SUBSTRACTED"
-path - ruta al fichecro original
-y más campos de los metadatos exif

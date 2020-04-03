@@ -101,7 +101,7 @@ class CameraImage(object):
             'tstamp'         ,
             'name'           ,
             'model'          ,
-            'ISO'            ,
+            'iso'            ,
             'roi'            ,
             'dark_roi'       ,
             'exposure'       ,
@@ -114,6 +114,8 @@ class CameraImage(object):
             'mean_signal_B4' ,
             'stdev_signal_B4',
         ]
+                
+               
 
     # ========== #
     # Public API #
@@ -194,6 +196,7 @@ class CameraImage(object):
         b4_mean, b4_std = self._region_stats(self.signal[B4], self.roi)
         result = {
             'name'            : self._name,
+            'roi'             : str(self.roi),
             'mean_signal_R1'  : r1_mean,
             'stdev_signal_R1' : r1_std,
             'mean_signal_G2'  : g2_mean,
