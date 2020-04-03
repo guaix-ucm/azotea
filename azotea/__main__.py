@@ -119,7 +119,7 @@ def createParser():
 
     bkr = subparser.add_parser('restore',  help="Restore database from backup")
     bkr.add_argument('--bak-file', type=str, required=True , help='Backup file from where to restore')
-    bkr.add_argument('-n', '--non-interactive', action='store_true', help='Do not request confirmation')
+    bkr.add_argument('--non-interactive', action='store_true', help='Do not request confirmation')
 
 
     # -----------------------------------------

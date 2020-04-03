@@ -68,12 +68,19 @@ def backup_list(connection, options):
 	headers = ["backup"]
 	paging(data, headers, maxsize=len(file_list))
 
+
 def backup_delete(connection, options):
 	connection.close()
 	file_path = os.path.join(BACKUP_DIR, options.bak_file)
 	os.remove(file_path)
+	logging.info("Done.")
 
 
 def backup_restore(connection, options):
 	connection.close()
+	backup_file = os.path.join(BACKUP_DIR, options.bak_file)
+	if not options.non_interactive:
+		raw_input("Are you sure ???? <Enter> to continue or [Ctrl-C] to abort")
+	shutil.copy2(backup_file, DEF_DBASE)
+	logging.info("Done.")
 	
