@@ -27,7 +27,6 @@ from . import __version__
 from . import  AZOTEA_DIR, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config   import load_config_file, merge_options 
 from .metadata import metadata_display
-from .stats    import stats_compute
 from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
@@ -185,25 +184,24 @@ def createParser():
     ire.add_argument('-s' ,'--slow',       action="store_true", help="Use slow registering mode to detect duplicates")
 
     icl = subparser.add_parser('classify', help='classify LIGHT/DARK images')
-    icl.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
-
+    icl.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    
     ime = subparser.add_parser('metadata', help='display image metadata')
-    ime.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
-
+    ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+  
     ist = subparser.add_parser('stats',   help='display image metadata')
-    ist.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
-    ist.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
-
+    ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+  
     iex = subparser.add_parser('export',  help='export to CSV')
-    iex.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
-    iex.add_argument('-o' ,'--force-csv', action="store_true", help="Force CSV file generation of last batch")
+    iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
 
     ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
-    ird.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
+    irdex = ird.add_mutually_exclusive_group(required=True)
+    irdex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    irdex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
     ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
     ird.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
     ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")
-    ird.add_argument('-o' ,'--force-csv', action="store_true", help="Force CSV file generation of last batch")
 
     return parser
 

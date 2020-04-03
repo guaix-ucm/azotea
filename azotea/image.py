@@ -133,87 +133,10 @@ def last_batch(connection):
 # Database iterables
 # ------------------
 
-def classify_iterable(connection):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT name, file_path
-		FROM image_t
-		WHERE type IS NULL
-		''')
-	return cursor
 
 
-def unprocessed_iterable(connection):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT name, file_path
-		FROM image_t
-		WHERE state IS NULL
-		''')
-	return cursor
 
 
-def export_batch_iterable(connection, batch):
-	row = {'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT  batch,
-				observer,
-				organization,
-				location,
-				type,
-				tstamp, 
-				name, 
-				model, 
-				iso, 
-				roi,
-				dark_roi,
-				exposure, 
-				mean_signal_R1, 
-				stdev_signal_R1, 
-				mean_signal_G2, 
-				stdev_signal_G2, 
-				mean_signal_G3, 
-				stdev_signal_G3, 
-				mean_signal_B4, 
-				stdev_signal_B4
-		FROM image_t
-		WHERE state IS NOT NULL
-		AND   batch = :batch
-		''', row)
-	return cursor
-
-def export_global_iterable(connection):
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-	   SELECT   batch,
-				observer,
-				organization,
-				location,
-				type,
-				tstamp, 
-				name, 
-				model, 
-				iso, 
-				roi,
-				dark_roi,
-				exposure, 
-				mean_signal_R1, 
-				stdev_signal_R1, 
-				mean_signal_G2, 
-				stdev_signal_G2, 
-				mean_signal_G3, 
-				stdev_signal_G3, 
-				mean_signal_B4, 
-				stdev_signal_B4
-		FROM image_t
-		WHERE state IS NOT NULL
-		''')
-	return cursor
 
 # ------------------
 # Database inserters
@@ -387,13 +310,59 @@ def do_image_register(connection, directory, batch, options):
 		image_register_fast(connection, file_list, metadata, options)
 
 # --------------
+# Image metadata
+# --------------
+
+def metadata_multiple(directory, options):
+    headers = ["File Name"]
+    headers.extend(sorted(EXIF_HEADERS))
+    data = []
+    file_list = glob.glob(directory + '/' + options.filter)
+    maxsize = len(file_list)
+    logging.info("{0}: Scanning a list of {1} entries using filter {2}".format(__name__, maxsize, options.filter))
+    for filename in file_list:
+        image = CameraImage(filename, options)
+        dict_exif = image.loadEXIF()
+        row = [image.name()]   
+        if sys.version_info[0] < 3:
+            row.extend([ value for key, value in sorted(dict_exif.iteritems()) if key in EXIF_HEADERS])
+        else:
+            row.extend([ value for key, value in sorted(dict_exif.items()) if key in EXIF_HEADERS])
+        data.append(row)
+    paging(data, headers, maxsize=maxsize)
+
+
+# --------------
 # Image Classify
 # --------------
 
+def classify_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT name, file_path
+		FROM image_t
+		WHERE type IS NULL
+		''')
+	return cursor
 
-def do_image_classify(connection, options):
+
+def classify_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT name, file_path
+		FROM image_t
+		WHERE type IS NULL
+		AND batch = :batch
+		''', row)
+	return cursor
+
+
+def do_image_classify(connection, batch, src_iterable, options):
 	rows = []
-	for name, file_path in classify_iterable(connection):
+	for name, file_path in src_iterable(connection, batch):
 		row = classification_algorithm1(name, file_path, options)
 		logging.info("{0} is type {1}".format(name,row['type']))
 		rows.append(row)
@@ -408,9 +377,32 @@ def do_image_classify(connection, options):
 # -----------
 
 
-def do_image_stats(connection, options):
+def stats_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT name, file_path
+		FROM image_t
+		WHERE state IS NULL
+		''')
+	return cursor
+
+def stats_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT name, file_path
+		FROM image_t
+		WHERE state IS NULL
+		AND batch = :batch
+		''', row)
+	return cursor
+
+
+def do_image_stats(connection, batch, src_iterable, options):
 	rows = []
-	for name, file_path in unprocessed_iterable(connection):
+	for name, file_path in src_iterable(connection, batch):
 		image = CameraImage(file_path, options)
 		image.extended(options.extended)
 		image.loadEXIF()    # we need to find out the camera model before reading
@@ -428,6 +420,66 @@ def do_image_stats(connection, options):
 # Image Export
 # -----------
 
+def export_batch_iterable(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT  batch,
+				observer,
+				organization,
+				location,
+				type,
+				tstamp, 
+				name, 
+				model, 
+				iso, 
+				roi,
+				dark_roi,
+				exposure, 
+				mean_signal_R1, 
+				stdev_signal_R1, 
+				mean_signal_G2, 
+				stdev_signal_G2, 
+				mean_signal_G3, 
+				stdev_signal_G3, 
+				mean_signal_B4, 
+				stdev_signal_B4
+		FROM image_t
+		WHERE state IS NOT NULL
+		AND   batch = :batch
+		''', row)
+	return cursor
+
+def export_all_iterable(connection, batch):
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+	   SELECT   batch,
+				observer,
+				organization,
+				location,
+				type,
+				tstamp, 
+				name, 
+				model, 
+				iso, 
+				roi,
+				dark_roi,
+				exposure, 
+				mean_signal_R1, 
+				stdev_signal_R1, 
+				mean_signal_G2, 
+				stdev_signal_G2, 
+				mean_signal_G3, 
+				stdev_signal_G3, 
+				mean_signal_B4, 
+				stdev_signal_B4
+		FROM image_t
+		WHERE state IS NOT NULL
+		''')
+	return cursor
+
 def image_export_csv(connection, batch, options):
 	fieldnames = ["batch","observer","organization","location", "type"]
 	fieldnames.extend(CameraImage.HEADERS)
@@ -443,33 +495,36 @@ def image_export_csv(connection, batch, options):
 	with myopen(options.global_csv_file, 'w') as csvfile:
 		writer = csv.writer(csvfile, delimiter=';')
 		writer.writerow(fieldnames)
-		writer.writerows(export_global_iterable(connection))
+		writer.writerows(export_all_iterable(connection))
 	logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 
-def do_image_export(connection, batch, options):
-	if batch_processed(connection, batch):
-		image_export_csv(connection, batch, options)
-	elif options.force_csv:
-		batch = last_batch(connection)
-		image_export_csv(connection, batch, options)
+def do_image_export(connection, batch, src_iterable, options):
+	fieldnames = ["batch","observer","organization","location", "type"]
+	fieldnames.extend(CameraImage.HEADERS)
+	if options.all:
+		with myopen(options.global_csv_file, 'w') as csvfile:
+			writer = csv.writer(csvfile, delimiter=';')
+			writer.writerow(fieldnames)
+			writer.writerows(src_iterable(connection, batch))
+		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+	elif batch_processed(connection, batch):
+		# Write a batch CSV file
+		batch_csv_file = os.path.join(AZOTEA_DIR, batch + '.csv')
+		with myopen(batch_csv_file, 'w') as csvfile:
+			writer = csv.writer(csvfile, delimiter=';')
+			writer.writerow(fieldnames)
+			writer.writerows(export_batch_iterable(connection, batch))
+		logging.info("Saved data to batch  CSV file {0}".format(batch_csv_file))
 	else:
-		logging.info("No CSV file generation takes place")
+		logging.info("No new CSV file generation")
+	
+	
 
 
 # =====================
 # Command esntry points
 # =====================
-
-
-def stats_compute(connection, options):
-	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-	stats_scan(connection, options.work_dir, batch, options)
-	stats_classify(connection, options)
-	stats_stats(connection, options)
-	stats_export(connection, batch, options)
-	if duplicated_file_paths:
-		logging.warning("Images duplcated: {0}".format(duplicated_file_paths))
 
 
 def image_register(connection, options):
@@ -482,22 +537,32 @@ def image_metadata(connection, options):
 
 
 def image_classify(connection, options):
-	do_image_classify(connection, options)
+	batch = last_batch(connection)
+	iterable = classify_all_iterable if options.all else classify_batch_iterable
+	do_image_classify(connection, batch, iterable, options)
 
 
 def image_stats(connection, options):
-	do_image_stats(connection, options)
+	batch = last_batch(connection)
+	iterable = stats_all_iterable if options.all else stats_batch_iterable
+	do_image_stats(connection, batch, iterable, options)
 
 
 def image_export(connection, options):
-	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-	do_image_export(connection, batch, options)
+	batch = last_batch(connection)
+	iterable = export_all_iterable if options.all else export_batch_iterable
+	do_image_export(connection, batch, iterable, options)
 
 
 def image_reduce(connection, options):
-	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-	do_image_register(connection, options.work_dir, batch, options)
-	do_image_classify(connection, options)
-	do_image_stats(connection, options)
-	do_image_export(connection, batch, options)
-
+	if not options.all:
+		batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+		do_image_register(connection, options.work_dir, batch, options)
+	else:
+		batch = last_batch(connection)
+	iterable = classify_all_iterable if options.all else classify_batch_iterable
+	do_image_classify(connection, batch, iterable, options)
+	iterable = stats_all_iterable if options.all else stats_batch_iterable
+	do_image_stats(connection, batch, iterable, options)
+	iterable = export_all_iterable if options.all else export_batch_iterable
+	do_image_export(connection, batch, iterable, options)
