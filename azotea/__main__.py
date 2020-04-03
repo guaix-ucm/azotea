@@ -23,7 +23,8 @@ import traceback
 # other imports
 # -------------
 
-from . import __version__, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
+from . import __version__
+from . import  AZOTEA_DIR, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config   import load_config_file, merge_options 
 from .metadata import metadata_display
 from .stats    import stats_compute
@@ -176,6 +177,9 @@ def main():
     Utility entry point
     '''
     try:
+        if not os.path.exists(AZOTEA_DIR):
+            logging.info("Creatind directory {0}".format(AZOTEA_DIR))
+            os.mkdir(AZOTEA_DIR)
         options = createParser().parse_args(sys.argv[1:])
         configureLogging(options)
         connection = open_database(DEF_DBASE)

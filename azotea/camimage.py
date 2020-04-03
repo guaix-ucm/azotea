@@ -40,7 +40,7 @@ import numpy as np
 # local imports
 # -------------
 
-from .      import DEF_CAMERA, DEF_TSTAMP
+from .      import DEF_CAMERA_TPL, DEF_TSTAMP
 from .utils import chop, Point, ROI
 
 # ----------------
@@ -240,7 +240,7 @@ class CameraImage(object):
         '''
         if not (os.path.exists(self.camerapath)):
             logging.warning("No camera config file found at {0}, using default file".format(self.camerapath))
-            self.camerapath = DEF_CAMERA
+            self.camerapath = DEF_CAMERA_TPL
 
         parser  =  ConfigParser.RawConfigParser()
         # str is for case sensitive options

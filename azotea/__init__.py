@@ -38,11 +38,14 @@ DEF_CAMERA_TPL = resource_filename(__name__, os.path.join('data', 'camera.ini'))
 DEF_CONFIG_TPL = resource_filename(__name__, os.path.join('data', 'azotea.ini'))
 SQL_DATAMODEL  = resource_filename(__name__, os.path.join('data', 'azotea.sql'))
 
+# Configuration file templates are built-in the package
+AZOTEA_DIR = os.path.join(os.path.expanduser("~"), "azotea")
+
 # These are in the user's file system
-DEF_CAMERA     = os.path.join(os.path.expanduser("~"), os.path.basename(DEF_CAMERA_TPL))
-DEF_CONFIG     = os.path.join(os.path.expanduser("~"), os.path.basename(DEF_CONFIG_TPL))
-DEF_GLOBAL_CSV = os.path.join(os.path.expanduser("~"), "azotea.csv")
-DEF_DBASE      = os.path.join(os.path.expanduser("~"), "azotea.db")
+DEF_CAMERA     = os.path.join(AZOTEA_DIR, os.path.basename(DEF_CAMERA_TPL))
+DEF_CONFIG     = os.path.join(AZOTEA_DIR, os.path.basename(DEF_CONFIG_TPL))
+DEF_GLOBAL_CSV = os.path.join(AZOTEA_DIR, "azotea.csv")
+DEF_DBASE      = os.path.join(AZOTEA_DIR, "azotea.db")
 
 DEF_TSTAMP = "%Y-%m-%dT%H:%M:%S"
 # -----------------------
