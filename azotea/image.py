@@ -30,6 +30,7 @@ import datetime
 # local imports
 # -------------
 
+from .         import AZOTEA_DIR
 from .camimage import  CameraImage
 from .utils    import merge_two_dicts
 
@@ -375,7 +376,7 @@ def image_register_fast(connection, file_list, metadata, options):
 		logging.error("Detected duplicated images. Re-run with --slow option to find out which")
 		raise
 	else:
-		logging.info("{0} images registered in database".format(len(rows)))
+		logging.info("{0} new images registered in database".format(len(rows)))
 
 
 def do_image_register(connection, directory, batch, options):
@@ -423,31 +424,35 @@ def do_image_stats(connection, options):
 		logging.info("No image statistics to be computed")
 
 
-def do_export_csv(connection, batch, options):
+# -----------
+# Image Export
+# -----------
+
+def image_export_csv(connection, batch, options):
 	fieldnames = ["batch","observer","organization","location", "type"]
 	fieldnames.extend(CameraImage.HEADERS)
 	# Write a batch CSV file
-	batch_csv_file = os.path.join(os.path.expanduser("~"), batch + '.csv')
+	batch_csv_file = os.path.join(AZOTEA_DIR, batch + '.csv')
 	with myopen(batch_csv_file, 'w') as csvfile:
 		writer = csv.writer(csvfile, delimiter=';')
 		writer.writerow(fieldnames)
 		writer.writerows(export_batch_iterable(connection, batch))
-	logging.info("Saved data to batch CSV file {0}".format(batch_csv_file))
+	logging.info("Saved data to batch  CSV file {0}".format(batch_csv_file))
 	# Update the global CSV file
 	writeheader = not os.path.exists(options.global_csv_file)
 	with myopen(options.global_csv_file, 'w') as csvfile:
 		writer = csv.writer(csvfile, delimiter=';')
 		writer.writerow(fieldnames)
 		writer.writerows(export_global_iterable(connection))
-	logging.info("Saved data to global  CSV file {0}".format(options.global_csv_file))
+	logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 
-def stats_export(connection, batch, options):
+def do_image_export(connection, batch, options):
 	if batch_processed(connection, batch):
-		do_export_csv(connection, batch, options)
+		image_export_csv(connection, batch, options)
 	elif options.force_csv:
 		batch = last_batch(connection)
-		do_export_csv(connection, batch, options)
+		image_export_csv(connection, batch, options)
 	else:
 		logging.info("No CSV file generation takes place")
 
@@ -475,14 +480,24 @@ def image_register(connection, options):
 def image_metadata(connection, options):
 	pass
 
+
 def image_classify(connection, options):
 	do_image_classify(connection, options)
+
 
 def image_stats(connection, options):
 	do_image_stats(connection, options)
 
+
 def image_export(connection, options):
-	pass
+	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+	do_image_export(connection, batch, options)
+
 
 def image_reduce(connection, options):
-	pass
+	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+	do_image_register(connection, options.work_dir, batch, options)
+	do_image_classify(connection, options)
+	do_image_stats(connection, options)
+	do_image_export(connection, batch, options)
+

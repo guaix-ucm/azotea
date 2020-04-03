@@ -179,30 +179,31 @@ def createParser():
     parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
     parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
 
-    ire = subparser.add_parser('register',  help='register images in the database')
-    ire.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    ire.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
-    ire.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
+    ire = subparser.add_parser('register', help='register images in the database')
+    ire.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
+    ire.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
+    ire.add_argument('-s' ,'--slow',       action="store_true", help="Use slow registering mode to detect duplicates")
 
-    icl = subparser.add_parser('classify',  help='classify LIGHT/DARK images')
-    icl.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    icl = subparser.add_parser('classify', help='classify LIGHT/DARK images')
+    icl.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
 
-    ime = subparser.add_parser('metadata',  help='display image metadata')
-    ime.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ime = subparser.add_parser('metadata', help='display image metadata')
+    ime.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
 
-    ist = subparser.add_parser('stats',  help='display image metadata')
-    ist.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ist = subparser.add_parser('stats',   help='display image metadata')
+    ist.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
     ist.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
 
     iex = subparser.add_parser('export',  help='export to CSV')
-    iex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    iex.add_argument('-o' ,'--force-csv',  action="store_true", help="Force CSV file generation of last batch")
+    iex.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
+    iex.add_argument('-o' ,'--force-csv', action="store_true", help="Force CSV file generation of last batch")
 
     ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
-    ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+    ird.add_argument('-w' ,'--work-dir',  required=True, type=str, help='Input working directory')
     ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
     ird.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
-    ird.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
+    ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")
+    ird.add_argument('-o' ,'--force-csv', action="store_true", help="Force CSV file generation of last batch")
 
     return parser
 
