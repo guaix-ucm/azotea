@@ -997,10 +997,6 @@ MASTER_DARK_HEADERS = [
 ]
 
 
-def do_image_dark(connection, batch,  iterable, options):
-	cursor, count = iterable(connection, batch)
-	paging(cursor, HEADERS_MASTER_DARK, maxsize=count, page_size=options.page_size)
-
 def do_image_view(connection, batch, iterable, headers, options):
 	cursor, count = iterable(connection, batch)
 	paging(cursor, headers, maxsize=count, page_size=options.page_size)
