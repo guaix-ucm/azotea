@@ -5,8 +5,6 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 TO DO
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - actualizar README, hay cosas obsoletas al final
-- sorted(glob.glob)
-- subdirectorios azotea/config y azotea/dbase
 - añadir email al config y al modelo de datos
 - añadir dark_roi al config
 - azotea config create --name <name> => crea nuevo fichero <name>.ini bajo azotea/config

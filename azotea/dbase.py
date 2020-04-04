@@ -30,7 +30,7 @@ import datetime
 # local imports
 # -------------
 
-from . import DEF_DBASE, AZOTEA_DIR
+from . import  AZOTEA_BAK_DIR, DEF_DBASE
 
 # ----------------
 # Module constants
@@ -48,12 +48,8 @@ from . import DEF_DBASE, AZOTEA_DIR
 
 def dbase_do_backup(ccomment):
 	tstamp = datetime.datetime.utcnow().strftime(".%Y%m%d%H%M%S")
-	backup_dir = os.path.join(AZOTEA_DIR, "backup")
 	filename = os.path.basename(DEF_DBASE) + tstamp
-	if not os.path.exists(backup_dir):
-		logging.info("Creating backup directory {0}".format(backup_dir))
-		os.mkdir(backup_dir)
-	dest_file = os.path.join(backup_dir, filename)
+	dest_file = os.path.join(AZOTEA_BAK_DIR, filename)
 	shutil.copy2(DEF_DBASE, dest_file)
 	logging.info("database backup to {0}".format(dest_file))
 

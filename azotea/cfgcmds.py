@@ -37,7 +37,7 @@ from shutil import copyfileobj as copy
 # local imports
 # -------------
 
-from . import DEF_CAMERA_TPL, DEF_CONFIG_TPL
+from . import DEF_CAMERA_TPL, DEF_CONFIG_TPL, AZOTEA_CFG_DIR
 
 # ----------------
 # Module constants
@@ -57,7 +57,7 @@ def config_list(filename):
         shutil.copyfileobj(f, sys.stdout)
 
 def config_create(filename):
-    dest = os.path.join(os.path.expanduser("~"), os.path.basename(filename))
+    dest = os.path.join(AZOTEA_CFG_DIR, os.path.basename(filename))
     shutil.copy2(filename, dest)
     logging.info("Created {0} file".format(dest))
 

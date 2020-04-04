@@ -24,7 +24,8 @@ import traceback
 # -------------
 
 from . import __version__
-from . import  AZOTEA_DIR, DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
+from . import  AZOTEA_BASE_DIR, AZOTEA_DB_DIR, AZOTEA_LOG_DIR, AZOTEA_CFG_DIR, AZOTEA_BAK_DIR
+from . import DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config   import load_config_file, merge_options 
 from .utils    import chop, Point, ROI, open_database, create_database
 from .cfgcmds  import config_global, config_camera
@@ -217,9 +218,13 @@ def main():
     Utility entry point
     '''
     try:
-        if not os.path.exists(AZOTEA_DIR):
-            logging.info("Creatind directory {0}".format(AZOTEA_DIR))
-            os.mkdir(AZOTEA_DIR)
+        if not os.path.exists(AZOTEA_BASE_DIR):
+            logging.info("Creating directories under {0}".format(AZOTEA_BASE_DIR))
+            os.mkdir(AZOTEA_BASE_DIR)
+            os.mkdir(AZOTEA_CFG_DIR)
+            os.mkdir(AZOTEA_DB_DIR)
+            os.mkdir(AZOTEA_BAK_DIR)
+            os.mkdir(AZOTEA_LOG_DIR)
         options = createParser().parse_args(sys.argv[1:])
         configureLogging(options)
         connection = open_database(DEF_DBASE)

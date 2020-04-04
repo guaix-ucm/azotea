@@ -31,7 +31,7 @@ import math
 # local imports
 # -------------
 
-from .         import AZOTEA_DIR
+from .         import AZOTEA_BASE_DIR
 from .camimage import  CameraImage
 from .utils    import merge_two_dicts, paging
 
@@ -109,7 +109,7 @@ def already_in_database(connection):
 
 def candidates(directory, options):
 	'''candidate list of images to be inserted in the database'''
-	file_list = glob.glob(directory + '/' + options.filter)
+	file_list = sorted(glob.glob(directory + '/' + options.filter))
 	logging.info("Found {0} candidate images".format(len(file_list)))
 	return file_list
 
@@ -633,7 +633,7 @@ def do_image_export(connection, batch, src_iterable, options):
 		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	elif batch_processed(connection, batch):
 		# Write a batch CSV file
-		batch_csv_file = os.path.join(AZOTEA_DIR, batch + '.csv')
+		batch_csv_file = os.path.join(AZOTEA_BASE_DIR, batch + '.csv')
 		with myopen(batch_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)

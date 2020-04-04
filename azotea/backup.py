@@ -37,14 +37,14 @@ except:
 # local imports
 # -------------
 
-from . import DEF_DBASE, AZOTEA_DIR
+from . import DEF_DBASE, AZOTEA_BASE_DIR
 from .utils import  paging
 
 # ----------------
 # Module constants
 # ----------------
 
-BACKUP_DIR = os.path.join(AZOTEA_DIR, "backup")
+BACKUP_DIR = os.path.join(AZOTEA_BASE_DIR, "backup")
 
 # -----------------------
 # Module global variables
