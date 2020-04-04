@@ -3,7 +3,7 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
-- compactar tanto UPDATE SET campo = (SELECT) por una sola sentencia
+- algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - actualizar README, hay cosas obsoletas al final
 - sorted(glob.glob)
 - subdirectorios azotea/config y azotea/dbase

@@ -57,22 +57,22 @@ UNKNOWN     = "UNKNOWN"
 # ----------
 
 class NoBatchError(ValueError):
-    '''No batch to operate upon.'''
-    def __str__(self):
-        s = self.__doc__
-        if self.args:
-            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
-        s = '{0}.'.format(s)
-        return s
+	'''No batch to operate upon.'''
+	def __str__(self):
+		s = self.__doc__
+		if self.args:
+			s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+		s = '{0}.'.format(s)
+		return s
 
 class NoWorkDirectoryError(ValueError):
-    '''No working directory specified.'''
-    def __str__(self):
-        s = self.__doc__
-        if self.args:
-            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
-        s = '{0}.'.format(s)
-        return s
+	'''No working directory specified.'''
+	def __str__(self):
+		s = self.__doc__
+		if self.args:
+			s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+		s = '{0}.'.format(s)
+		return s
 
 # -----------------------
 # Module global variables
@@ -251,7 +251,6 @@ def insert_new_images(connection, rows):
 			)
 			''', rows)
 	connection.commit()
-
 
 
 def db_update_type(connection, rows):
@@ -491,78 +490,22 @@ def db_update_all_master_dark(connection, batch):
 	connection.commit()
 
 
-
 def db_update_dark_columns(connection, batch):
 	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		UPDATE image_t
-		SET mean_dark_R1 = (SELECT mean_R1 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET mean_dark_G2 = (SELECT mean_G2 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET mean_dark_G3 = (SELECT mean_G3 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET mean_dark_B4 = (SELECT mean_B4 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET vari_dark_R1 = (SELECT vari_R1 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET vari_dark_B4 = (SELECT vari_B4 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
-		AND   state = :state
-		AND   type  = :type
-		''',row)
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET   state = :new_state
+		SET
+			state        = :new_state,
+			mean_dark_R1 = (SELECT mean_R1 FROM master_dark_t WHERE batch = :batch),
+			mean_dark_G2 = (SELECT mean_G2 FROM master_dark_t WHERE batch = :batch),
+			mean_dark_G3 = (SELECT mean_G3 FROM master_dark_t WHERE batch = :batch),
+			mean_dark_B4 = (SELECT mean_B4 FROM master_dark_t WHERE batch = :batch),
+			vari_dark_R1 = (SELECT vari_R1 FROM master_dark_t WHERE batch = :batch),
+			vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch),
+			vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE batch = :batch),
+			vari_dark_B4 = (SELECT vari_B4 FROM master_dark_t WHERE batch = :batch)
 		WHERE batch = :batch
 		AND   state = :state
 		AND   type  = :type
