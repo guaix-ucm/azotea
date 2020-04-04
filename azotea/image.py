@@ -494,7 +494,6 @@ def db_update_all_master_dark(connection, batch):
 
 def db_update_dark_columns(connection, batch):
 	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
-	print(row)
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -1081,9 +1080,8 @@ def image_register(connection, options):
 		batch = latest_batch(connection)
 		if batch is None:
 			raise NoBatchError("image regiter")
-			
 	do_image_register(connection, options.work_dir, batch, options)
-	
+
 
 def image_classify(connection, options):
 	batch = latest_batch(connection)
@@ -1109,8 +1107,10 @@ def image_export(connection, options):
 
 
 def image_reduce(connection, options):
-	# Step 1
+	# Step 1 is a bit tricky in the generic pipeline
 	if options.new and not options.work_dir:
+		raise NoWorkDirectoryError("image reduce")
+	if not options.all and not options.work_dir:
 		raise NoWorkDirectoryError("image reduce")
 
 	if options.new:
@@ -1119,8 +1119,10 @@ def image_reduce(connection, options):
 		batch = latest_batch(connection)
 		if batch is None:
 			raise NoBatchError("image reduce")
+
+	if not options.all:
+		do_image_register(connection, options.work_dir, batch, options)
 	
-	do_image_register(connection, options.work_dir, batch, options)
 	# Step 2
 	iterable = classify_all_iterable if options.all else classify_batch_iterable
 	do_image_classify(connection, batch, iterable, options)
