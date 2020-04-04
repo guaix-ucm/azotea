@@ -77,6 +77,8 @@ python -m azotea --camera mycamera.ini stats compute
 
 ## ***La version corta***
 
+Para observadores impacientes que quieren reducir la observación una noche en un directorio.
+
 1. Configurado el fichero `azotea.ini`, que debe residir en `$HOME/azotea/azotea.ini`
 
 2. Volcar *todas* las imagenes de la cámara de una misma noche a un directorio de trabajo (p.e. `/home/rafa/demo/test`)
@@ -86,7 +88,7 @@ python -m azotea --camera mycamera.ini stats compute
 4. ¡Por fin! ejecutar en una linea de comandos:
 
 ```bash
-python -m azotea image reduce --new --work-dir /home/rafa/demo/test
+python -m azotea image reduce --new --work-dir <directorio donde están las imágenes>
 python -m azotea image export --all
 ```
 

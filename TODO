@@ -1,6 +1,6 @@
 
 CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especifica --new. Todo lo demás
-se añade a la ultima sesion abierta
+se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
 - actualizar README, hay cosas obsoletas al final
@@ -13,8 +13,10 @@ TO DO
    - metodos setROY(roi_str) setDarkROI() a CameraImage
 - Leer el fichero config SOLO EN LOS CASOS en register --new y reduce --new
   esto oblifga a poner la ROI a cameraimage dinamicamente, no en el constructor
+  - master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
 - master dark por session y --all
 - ejecutar los caso de prueba listados
+- azotea reorgainze directorios por dia juliano --input-dir --output-dir
 - ejecucion silenciosa 
 - batch management
   - batch current [--extended] muestra los ficheros de la sesion últimna
@@ -31,7 +33,13 @@ CASOS DE PRUEBA:
 1) sesion de una sola imagen y comparar con las estadisticas de Jaime Zamorano
 2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
 3) Sesion inicial y añadir 2 DARK más. Se debería rehacer el master DARK y recalcular los LIGHT restantes
-4) Sesion de multireducción
+4) Sesion multireduccion
+  - unico observador
+  - con multiples directorios , un de ellos con register --new y los demas con register --work-dir
+4) Sesion de  multiobservador multireducción
+  - varios observadores
+  - varios directorios por observador
+
 
 
 CASO DE USO: MULTIREDUCCION
