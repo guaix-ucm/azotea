@@ -629,13 +629,13 @@ def export_batch_iterable(connection, batch):
 				dark_roi,
 				exposure, 
 				mean_signal_R1, 
-				vari_signal_R1, 
+				vari_signal_R1, -- Array index 13
 				mean_signal_G2, 
-				vari_signal_G2, 
+				vari_signal_G2, -- Array index 15
 				mean_signal_G3, 
-				vari_signal_G3, 
+				vari_signal_G3, -- Array index 17
 				mean_signal_B4, 
-				vari_signal_B4
+				vari_signal_B4  -- Array index 19
 		FROM image_v
 		WHERE state IS NOT NULL
 		AND   batch = :batch
@@ -659,13 +659,13 @@ def export_all_iterable(connection, batch):
 				dark_roi,
 				exposure, 
 				mean_signal_R1, 
-				vari_signal_R1, 
+				vari_signal_R1, -- Array index 13
 				mean_signal_G2, 
-				vari_signal_G2, 
+				vari_signal_G2, -- Array index 15
 				mean_signal_G3, 
-				vari_signal_G3, 
+				vari_signal_G3, -- Array index 17
 				mean_signal_B4, 
-				vari_signal_B4
+				vari_signal_B4  -- Array index 19
 		FROM image_v
 		WHERE state IS NOT NULL
 		''')
