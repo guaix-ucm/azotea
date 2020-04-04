@@ -190,6 +190,7 @@ def createParser():
     imeex.add_argument('--master',  action="store_true", help="display master dark data")
 
     ire = subparser.add_parser('register', help='register images in the database')
+    ire.add_argument('-n' ,'--new',        action="store_true", help="Generate a new batch of images")
     ire.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
     ire.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
     ire.add_argument('-s' ,'--slow',       action="store_true", help="Use slow registering mode to detect duplicates")
@@ -208,9 +209,10 @@ def createParser():
     iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
 
     ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
-    irdex = ird.add_mutually_exclusive_group(required=True)
-    irdex.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    irdex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+    irdex = ird.add_mutually_exclusive_group()
+    irdex.add_argument('-n' ,'--new',     action="store_true", help="Generate a new batch of images")
+    irdex.add_argument('-a' ,'--all',     action="store_true", help="apply to all existing batches")
+    ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
     ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
     ird.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
     ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")

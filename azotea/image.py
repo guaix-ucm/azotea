@@ -51,6 +51,29 @@ LIGHT_FRAME = "LIGHT"
 DARK_FRAME  = "DARK"
 UNKNOWN     = "UNKNOWN"
 
+
+# ----------
+# Exceptions
+# ----------
+
+class NoBatchError(ValueError):
+    '''No batch to operate upon.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class NoWorkDirectoryError(ValueError):
+    '''No working directory specified.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
 # -----------------------
 # Module global variables
 # -----------------------
@@ -471,6 +494,7 @@ def db_update_all_master_dark(connection, batch):
 
 def db_update_dark_columns(connection, batch):
 	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
+	print(row)
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -1051,7 +1075,13 @@ def image_view(connection, options):
 # These are the pipelien stages in execution order
 
 def image_register(connection, options):
-	batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+	if options.new:
+		batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+	else:
+		batch = latest_batch(connection)
+		if batch is None:
+			raise NoBatchError("image regiter")
+			
 	do_image_register(connection, options.work_dir, batch, options)
 	
 
@@ -1080,11 +1110,17 @@ def image_export(connection, options):
 
 def image_reduce(connection, options):
 	# Step 1
-	if not options.all:
+	if options.new and not options.work_dir:
+		raise NoWorkDirectoryError("image reduce")
+
+	if options.new:
 		batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-		do_image_register(connection, options.work_dir, batch, options)
 	else:
 		batch = latest_batch(connection)
+		if batch is None:
+			raise NoBatchError("image reduce")
+	
+	do_image_register(connection, options.work_dir, batch, options)
 	# Step 2
 	iterable = classify_all_iterable if options.all else classify_batch_iterable
 	do_image_classify(connection, batch, iterable, options)
