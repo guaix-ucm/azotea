@@ -1,15 +1,40 @@
-UPDATE README
 
-backup y restore
+CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especifica --new. Todo lo demás
+se añade a la ultima sesion abierta
 
-ith file, version, creation_date
+TO DO
+- actualizar README, hay cosas obsoletas al final
+- sorted(glob.glob)
+- subdirectorios azotea/config y azotea/dbase
+- añadir email al config y al modelo de datos
+- añadir dark_roi al config
+- azotea config create --name <name> => crea nuevo fichero <name>.ini bajo azotea/config
+- constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
+   - metodos setROY(roi_str) setDarkROI() a CameraImage
+- Leer el fichero config SOLO EN LOS CASOS en register --new y reduce --new
+  esto oblifga a poner la ROI a cameraimage dinamicamente, no en el constructor
+- master dark por session y --all
+- ejecutar los caso de prueba listados
+- ejecucion silenciosa 
+- batch management
+  - batch current [--extended] muestra los ficheros de la sesion últimna
+  - batch list [--exttended] muestra nnumero de imagenets de cada lote. Con --extended listado individual
+  - batch merge¿es neecsario? quizas no ...
+- backup restore
+- informes a lo IDA con plantilla JINJA
+- fichero de log?, recuperar BD a partir de log?
+- patch management (list, apply)
+- documento con uso avanzado ¿readthedocs o Google Docs?
 
-batch ids management (merge) ¿es necesario ahora, a lo mejro no ...)
 
-si se añaden más darks,¿hay que rehacer el master dark?. ¿Como actualizamos?
+CASOS DE PRUEBA:
+1) sesion de una sola imagen y comparar con las estadisticas de Jaime Zamorano
+2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
+3) Sesion inicial y añadir 2 DARK más. Se debería rehacer el master DARK y recalcular los LIGHT restantes
+4) Sesion de multireducción
 
-patch list
-patch apply
-informes a lo IDA con plantilla JINJA
 
-probar la ejecucion silenciosa
+CASO DE USO: MULTIREDUCCION
+- crear un fichero config por cda observador
+- hacer un register de cada directorio abriendo sesion nueva y especificando el config del observador
+- reducir por fases o global con --all en todos los casos
