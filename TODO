@@ -1,5 +1,15 @@
+UPDATE README
+
+backup y restore
+
 ith file, version, creation_date
+
+batch ids management (merge) ¿es necesario ahora, a lo mejro no ...)
+
+si se añaden más darks,¿hay que rehacer el master dark?. ¿Como actualizamos?
+
 patch list
 patch apply
 informes a lo IDA con plantilla JINJA
 
+probar la ejecucion silenciosa

@@ -75,87 +75,80 @@ python -m azotea --camera mycamera.ini stats compute
 
 # Operativa
 
-Antes de efectuar las reducciones de datos puede ser interesante echar un vistazo a algunos metadatos de las imágenes. Se pueden mostrar los metadatos de una sola imagen o un directorio de trabajo. Por ejemplo:
+## ***La version corta***
+
+1. Configurado el fichero `azotea.ini`, que debe residir en `$HOME/azotea/azotea.ini`
+
+2. Volcar *todas* las imagenes de la cámara de una misma noche a un directorio de trabajo (p.e. `/home/rafa/demo/test`)
+
+3. Si hay tomas *dark*, renombrar dichas tomas a `dark_<nombre original>`
+
+4. ¡Por fin! ejecutar en una linea de comandos:
 
 ```bash
-python -m azotea metadata display --input-file demo/test/2020_03_2600_17_409999.CR2
-python -m azotea metadata display --work-dir demo/test
+python -m azotea image reduce --new --work-dir /home/rafa/demo/test
+python -m azotea image export --all
 ```
 
-Este último comando mostrará algo sumilar a esto:
+## La version larga
 
-```
-2020-03-31 23:20:43,272 [INFO] azotea.metadata: Scanning a list of 3 entries using filter *.CR2
-+----------------------------+---------------------+------------------------+---------------------+----------------+
-| File Name                  | EXIF ExposureTime   | EXIF ISOSpeedRatings   | Image DateTime      | Image Model    |
-+============================+=====================+========================+=====================+================+
-| 2020_03_2600_17_409999.CR2 | 60                  | 800                    | 2020:03:26 00:17:40 | Canon EOS 450D |
-+----------------------------+---------------------+------------------------+---------------------+----------------+
-| 2020_03_2600_18_459999.CR2 | 60                  | 800                    | 2020:03:26 00:18:45 | Canon EOS 450D |
-+----------------------------+---------------------+------------------------+---------------------+----------------+
-| 2020_03_2605_30_079999.CR2 | 60                  | 800                    | 2020:03:26 05:30:07 | Canon EOS 450D |
-+----------------------------+---------------------+------------------------+---------------------+----------------+
-```
+### Pîpeline de reducción de datos
 
-A continuación, calcularemos la estadistica de cada imagen. Podemos hacer una ejecución "en seco" (*dry run*) que no va actualizar ningín fichero CSV de resultados. Tambien podemos tener un preview de las medidas (*extended*):
+AZOTEA es un programa complejo, con muchas opciones, que lleva una pequeña base de datos incorporada para recordar los valores medidos y el estado de procesamiento de las imagenes. El usuario nunca trata con la base de datos directamente sino que actua con comandos. Las imagenes nunca se modifican ni se cambian de lugar y tipicamente se genera un lote de procesado (*batch*) por cada directorio. Lo habitual sería un directorio por día lleno de imagenes.
+
+Los datos de interés se guardan en la base de datos y a partir de ellos se generan ficheros para publicar o compartir. 
+
+Si la base de datos se corrompe o se borra, para recuperar su contenido habría que correr el pipeline de reduccióm de imágenes con todos los directorios que se hayan generado, cosa no siempre posible. Por ello se incluyen comandos de backup de la base de datos.
+
+
+El pipeline de AZOTEA consta de los siguientes pasos en secuencia:
+
+1. Registro de las imágenes en la base de datos
 
 ```bash
-python -m azotea stats compute  --work-dir demo/test --dry-run --extended
+python -m azotea image register --help
 ```
 
-```
-2020-04-02 13:41:08,004 [INFO] Opening configuration file /home/rafa/azotea.ini
-2020-04-02 13:41:08,004 [INFO] Analyzing 3 files
-2020-04-02 13:41:08,400 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 13:41:08,400 [INFO] 2020_03_2600_17_409999.CR2: μ = [1083.1, 1107.6, 1106.9, 1067.6], σ = [40.2, 53.5, 57.9, 25.1] 
-2020-04-02 13:41:08,793 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 13:41:08,793 [INFO] 2020_03_2600_18_459999.CR2: μ = [1083.9, 1108.8, 1107.8, 1068.2], σ = [40.4, 53.6, 57.7, 25.2] 
-2020-04-02 13:41:09,135 [INFO] 2020_03_2605_30_079999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 13:41:09,135 [INFO] 2020_03_2605_30_079999.CR2: μ = [13878.6, 15849.0, 15845.0, 15847.0], σ = [1656.4, 0.0, 0.0, 0.0] 
-2020-04-02 13:41:09,135 [INFO] Dry run, do not generate/update CSV files
+2. Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
+
+```bash
+python -m azotea image classify --help
 ```
 
-Si no queremos calcular la estadistica de todas las imagenes del directorio de trabajo, se puede especificar un filtro:
+3. Calculo de estadístcas en la región de interés (ROI) (media y varianza)
 
 
 ```bash
-python -m azotea stats compute  --work-dir demo/test --filter *2600*.CR2 --dry-run
-```
-```
-2020-04-02 12:29:56,277 [INFO] Opening configuration file /home/rafa/azotea.ini
-2020-04-02 12:29:56,277 [INFO] Analyzing 2 files
-2020-04-02 12:29:56,693 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:29:57,104 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:29:57,105 [INFO] Dry run, do not generate/update CSV files
+python -m azotea image stats --help
 ```
 
-Finalmente si estamos listos para procesar el directorio de trabajo, tecleamos:
+4. Elaboración de un DARK maestro si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT
+
 
 ```bash
-python -m azotea stats compute  --work-dir demo/test
+python -m azotea image dark --help
 ```
 
-```
-2020-04-02 12:32:23,572 [INFO] Opening configuration file /home/rafa/azotea.ini
-2020-04-02 12:32:23,572 [INFO] Analyzing 3 files
-2020-04-02 12:32:23,990 [INFO] 2020_03_2600_17_409999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:32:24,402 [INFO] 2020_03_2600_18_459999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:32:24,763 [INFO] 2020_03_2605_30_079999.CR2: Canon EOS 450D, ROI = [828:1328,519:919], Dark ROI = None
-2020-04-02 12:32:24,763 [INFO] Saved data to session CSV file /home/rafa/20200402103223.csv
-2020-04-02 12:32:24,763 [INFO] Saved data to global CSV file /home/rafa/azotea.csv
-2020-04-02 12:32:24,763 [INFO] Moved 3 files to demo/test/processed
+5. Exportación de los resultados a un fichero. En la actualidad sólo se soporta un fichero CSV
+
+```bash
+python -m azotea image export --help
 ```
 
-Si vemos la salida del log vemos que todos los ficheros procesados se mueven a un subdirectorio `processed` del directorio de trabajo. Esto es así para no acumular con medidas repetidas el fichero global CSV de medidas, Si por alguna razon queremos repetir el procesado, tendremos que mover dichas imágenes a su antigua ubicación.
+Todos estos pasos se pùeden efectuar por separado o combinadamente con `azotea image reduce`
 
-Cada vez que se ejecua `python -m azotea stats compute` se genera un nuevo identificador de sesion. Este identificador sirve para relacionar todas las imagenes que se han procesado en el mismo lote.
+### Otros comandos
+
+AZOTEA tiene otros comandos para
+1. efectuar y listar backups de la base de datos
+2. recrear la base de datos desde cero.
 
 # Ficheros CSV de salida
 
-El comando `stats compute` genera dos ficheros CSV:
+El pipeline de reducción genera dos ficheros CSV:
 
-* Un fichero CSV con los resultados de la sesion `YYYYMMDDHHMMSS`.csv (Ejemplo: 20200402103223.csv)
-* Un fichero global CSV donde se van acumulando todos los datos de todas las sesiones `azotea.csv`
+* Un fichero CSV con los resultados de la reducción del último lote con la forma `YYYYMMDDHHMMSS`.csv (Ejemplo: 20200402103223.csv)
+* Un fichero global CSV donde se van acumulando todos los datos de todos los lotes procesados hasta el momento: `azotea.csv`
 
 Ambos ficheros se situan en la el directorio raiz (`$HOME`) de cada usuario.
 
@@ -164,17 +157,18 @@ El fichero CSV tiene una cabecera con los nombres de las columnas, a saber:
 
 |    Columna      |  Descripcion                                           |
 |:---------------:|:-------------------------------------------------------|
-| session         | Identificacion de la sesion de reducción de datos.     |
+| batch           | Identificacion del lote de reducción de datos.         |
 | observer        | Nombre del observador.                                 |
 | organization    | Organizacion a la que pertenece el observador.         |
 | location        | Localidad desde donde ha sido tomada la imagen.        |
+| type            | Tipo de imagen (LIGHT/DARK)                            |
+| tstamp          | Fecha y hora de la imagen, formato ISO 8601            |
 | name            | Nombre de la imagen (=nombre del fichero sin la ruta.) |
 | model           | Modelo de cámara.                                      |
 | ISO             | Sensibilidad ISO de la toma.                           |
-| tstamp          | Fecha y hora de la imagen, formato ISO 8601
-| exposure        | Tiempo de exposicion                                   |
 | roi             | Region de interés [x1:x2, y1:y2]                       |
 | dark_roi        | Region de interes para medida oscura [x1:x2, y1:y2]    |
+| exposure        | Tiempo de exposicion                                   |
 | mean_signal_R1  | Promedio de señal canal R.                             |
 | stdev_signal_R1 | Desviación tipica señal del canal R.                   |
 | mean_signal_G2  | Promedio de señal en un canal G.                       |

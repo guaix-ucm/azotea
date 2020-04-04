@@ -86,14 +86,11 @@ def createParser():
 
     subparser = parser.add_subparsers(dest='command')
 
-    parser_meta   = subparser.add_parser('metadata', help='metadata commands')
-    parser_stats  = subparser.add_parser('stats', help='stats commands')
-
     parser_config = subparser.add_parser('config', help='config commands')
+    parser_image  = subparser.add_parser('image', help='image commands')
     parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
     parser_back   = subparser.add_parser('backup', help='backup management')
-    parser_image  = subparser.add_parser('image', help='image commands')
-
+   
 
     # -----------------------------------------
     # Create second level parsers for 'dbase'
