@@ -91,7 +91,6 @@ def createParser():
     parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
     parser_back   = subparser.add_parser('backup', help='backup management')
    
-
     # -----------------------------------------
     # Create second level parsers for 'dbase'
     # -----------------------------------------
@@ -136,34 +135,6 @@ def createParser():
     ccaex = cca.add_mutually_exclusive_group(required=True)
     ccaex.add_argument('-c' ,'--create', action="store_true", help="Create camera configuration file in user's HOME directory")
     ccaex.add_argument('-l' ,'--list',   action="store_true", help="List current camera configuration file template")
-
-
-    # -----------------------------------------
-    # Create second level parsers for 'metadata'
-    # -----------------------------------------
-  
-    subparser = parser_meta.add_subparsers(dest='subcommand')
-
-    mdi = subparser.add_parser('display',  help='display image metadata')
-    mdiex = mdi.add_mutually_exclusive_group(required=True)
-    mdiex.add_argument('-i', '--input-file', type=str, help='Input file')
-    mdiex.add_argument('-w','--work-dir',  type=str, help='Input working directory')
-    mdi.add_argument('-f', '--filter', type=str, default='*.*', help='Optional input glob-style filter if input directory')
-
-    # ---------------------------------------
-    # Create second level parsers for 'stats'
-    # ---------------------------------------
-  
-    subparser = parser_stats.add_subparsers(dest='subcommand')
-
-    sdy = subparser.add_parser('compute',  help='compute image statistics')
-    sdy.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
-    sdy.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file where all batches are accumulated')
-    sdy.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
-    sdy.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
-    sdy.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
-    sdy.add_argument('-s' ,'--slow',  action="store_true", help="Use slow registering mode to detect duplicates")
-    sdy.add_argument('-o' ,'--force-csv',  action="store_true", help="Force CSV file generation of last batch")
 
 
     # ---------------------------------------
