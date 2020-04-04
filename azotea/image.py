@@ -185,7 +185,8 @@ def insert_new_image(connection, row):
 				file_path, 
 				batch, 
 				observer, 
-				organization, 
+				organization,
+				email, 
 				location, 
 				roi,
 				tstamp, 
@@ -201,6 +202,7 @@ def insert_new_image(connection, row):
 				:batch, 
 				:observer, 
 				:organization, 
+				:email,
 				:location,
 				:roi,
 				:tstamp, 
@@ -224,7 +226,8 @@ def insert_new_images(connection, rows):
 				file_path, 
 				batch, 
 				observer, 
-				organization, 
+				organization,
+				email, 
 				location, 
 				roi,
 				tstamp, 
@@ -239,7 +242,8 @@ def insert_new_images(connection, rows):
 				:file_path, 
 				:batch, 
 				:observer, 
-				:organization, 
+				:organization,
+				:email, 
 				:location,
 				:roi,
 				:tstamp, 
@@ -294,7 +298,8 @@ def image_register_preamble(connection, directory, batch, options):
 	metadata = {
 		'batch'       : batch, 
 		'observer'    : options.observer, 
-		'organization': options.organization, 
+		'organization': options.organization,
+		'email'       : options.email, 
 		'location'    : options.location,
 		'state'       : REGISTERED,
 		'type'        : UNKNOWN,
@@ -561,6 +566,7 @@ def export_batch_iterable(connection, batch):
 		SELECT  batch,
 				observer,
 				organization,
+				email,
 				location,
 				type,
 				tstamp, 
@@ -591,6 +597,7 @@ def export_all_iterable(connection, batch):
 	   SELECT   batch,
 				observer,
 				organization,
+				email,
 				location,
 				type,
 				tstamp, 
@@ -621,7 +628,7 @@ def var2std(item):
 
 
 def do_image_export(connection, batch, src_iterable, options):
-	fieldnames = ["batch","observer","organization","location", "type"]
+	fieldnames = ["batch","observer","organization", "email","location", "type"]
 	fieldnames.extend(VIEW_HEADERS)
 	if options.all:
 		with myopen(options.global_csv_file, 'w') as csvfile:
@@ -759,7 +766,7 @@ def metadata_global_all_iterable(connection, batch):
 	count = all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, type, batch, observer, organization, location, roi
+		SELECT name, type, batch, observer, organization, email, location, roi
 		FROM image_t
 		ORDER BY batch DESC
 		''')
@@ -773,7 +780,7 @@ def metadata_global_batch_iterable(connection, batch):
 	count = batch_count(cursor, batch)
 	cursor.execute(
 		'''
-		SELECT name, type, batch, observer, organization, location, roi
+		SELECT name, type, batch, observer, organization, email, location, roi
 		FROM image_t
 		WHERE batch = :batch
 		ORDER BY name ASC

@@ -4,12 +4,9 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 
 TO DO
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
-- actualizar README, hay cosas obsoletas al final
-- añadir email al config y al modelo de datos
-- añadir dark_roi al config
-- azotea config create --name <name> => crea nuevo fichero <name>.ini bajo azotea/config
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
    - metodos setROY(roi_str) setDarkROI() a CameraImage
+- CameraCache en el modulo camimage.
 - Leer el fichero config SOLO EN LOS CASOS en register --new y reduce --new
   esto oblifga a poner la ROI a cameraimage dinamicamente, no en el constructor
   - master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave

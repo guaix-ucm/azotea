@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS image_t
     hash                BLOB  UNIQUE,     -- Image hash
     observer            TEXT  NOT NULL,   -- Observer name
     organization        TEXT,             -- Observer organization
+    email               TEXT,             -- Observer email
     location            TEXT  NOT NULL,   -- location name
     scale               REAL,             -- image scale in arcsec/pixel
     model               TEXT  NOT NULL,   -- Camera Model
@@ -58,6 +59,7 @@ SELECT
     hash                ,                 -- Image hash
     observer            ,                 -- Observer name
     organization        ,                 -- Observer organization
+    email               ,                 -- Observer email
     location            ,                 -- location name
     scale               ,                 -- image scale in arcsec/pixel
     model               ,                 -- Camera Model

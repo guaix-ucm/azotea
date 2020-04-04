@@ -68,9 +68,15 @@ def load_config_file(filepath):
     options = {}
     options['observer']      = parser.get("observer","observer")
     options['organization']  = parser.get("observer","organization")
+    options['email']         = parser.get("observer","email")
     options['location']      = parser.get("location","location")
     options['roi']           = ROI(0, parser.getint("image","width"), 0, parser.getint("image","height"))
     options['scale']         = parser.getfloat("image","scale")
+    options['dark_roi']      = parser.get("image","dark_roi")
+
+    options['email']         = options['email'] if len(options['email']) else None
+    options['organization']  = options['organization'] if len(options['organization']) else None
+    options['dark_roi']      = options['dark_roi'] if len(options['dark_roi']) else None
 
     return options
 

@@ -20,11 +20,7 @@ pip install --user -U azotea
 ```
 ## Compatibilidad con Python 2
 
-Aunque el programa en sí, puede ejecutarse en Python 2, algunas librerías empleadas en AZOTEA ya no funcionan en Python 2, por lo que se recomienda usar Python 3.
-
-Los siguientes comandos no funcionan en Python 2:
-
-* `azotea metadata`
+AZOTEA No es compatible con Python 2
 
 # Configuracion
 
@@ -212,15 +208,16 @@ python -m azotea --help
 
 ```
 usage: azotea [-h] [--version] [-v | -q] [--camera CAMERA] [--config CONFIG]
-              {metadata,stats,config} ...
+              {config,image,dbase,backup} ...
 
 AZOTEA analysis tool
 
 positional arguments:
-  {metadata,stats,config}
-    metadata            metadata commands
-    stats               stats commands
+  {config,image,dbase,backup}
     config              config commands
+    image               image commands
+    dbase               database commands (mostly mainteinance)
+    backup              backup management
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -231,48 +228,31 @@ optional arguments:
   --config CONFIG       Optional alternate global configuration file
 ```
 
-Según se ver, los comandos disponibles son `metadata` `stats` y `config` y las opciones globales son
+Según se ver, los comandos disponibles son `config` `image` y `dbase` y 'backup' y las opciones globales son
 `--camera` y `--config`
 
-Para ver las opciones del comando `stats` se teclea
+Para ver las opciones del comando `image` se teclea
 
 ```bash
-python -m azotea stats --help
+python -m azotea image --help
 ```
-
-```
-usage: azotea stats [-h] {compute} ...
+usage: azotea image [-h] [--roi <width,height>]
+                    [--global-csv-file GLOBAL_CSV_FILE]
+                    {view,register,classify,dark,stats,export,reduce} ...
 
 positional arguments:
-  {compute}
-    compute   compute image statistics
-
-optional arguments:
-  -h, --help  show this help message and exit
-```
-
-Como se ve, el comando `stats` solo tiene el subcomando `compute`. Y para averiguar las opciones del subcomando `stats compute` se teclea:
-
-
-```bash
-python -m azotea stats compute --help
-```
-
-```
-usage: azotea stats compute [-h] [--roi <width,height>]
-                            [--global-csv-file GLOBAL_CSV_FILE] [-w WORK_DIR]
-                            [-f FILTER] [-m | -d]
+  {view,register,classify,dark,stats,export,reduce}
+    view                display image data
+    register            register images in the database
+    classify            classify LIGHT/DARK images
+    dark                apply master DARK to LIGHT images
+    stats               compute image statistics
+    export              export to CSV
+    reduce              run register/classify/stats</export pipeline
 
 optional arguments:
   -h, --help            show this help message and exit
   --roi <width,height>  Optional region of interest
   --global-csv-file GLOBAL_CSV_FILE
-                        Global output CSV file where all sessions are
-                        accumulated
-  -w WORK_DIR, --work-dir WORK_DIR
-                        Input working directory
-  -f FILTER, --filter FILTER
-                        Optional input glob-style filter
-  -m, --do-not-move     Do not move files after processing
-  -d, --dry-run         Do not generate/update CSV files
+                        Global output CSV file
 ```
