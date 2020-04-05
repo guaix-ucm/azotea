@@ -3,6 +3,7 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
+ - VER una cosa rara en el glob.glob de image
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
    - metodos setROY(roi_str) setDarkROI() a CameraImage
