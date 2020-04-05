@@ -4,6 +4,8 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 
 TO DO
  - VER una cosa rara en el glob.glob de image
+ - image view --count mostrar #imagens por lote, ORDER by batch DESC
+ - Estados como numeros y tabla auxiliar de decodes
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
    - metodos setROY(roi_str) setDarkROI() a CameraImage
