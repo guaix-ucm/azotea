@@ -33,6 +33,7 @@ from .dbase    import dbase_clear, dbase_purge, dbase_backup
 from .backup   import backup_list, backup_delete, backup_restore
 from .image    import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
 from .image    import image_view
+from .reorg    import reorganize_images
 #
 # -----------------------
 # Module global variables
@@ -91,6 +92,7 @@ def createParser():
     parser_image  = subparser.add_parser('image', help='image commands')
     parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
     parser_back   = subparser.add_parser('backup', help='backup management')
+    parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
    
     # -----------------------------------------
     # Create second level parsers for 'dbase'
@@ -119,6 +121,17 @@ def createParser():
     bkr = subparser.add_parser('restore',  help="Restore database from backup")
     bkr.add_argument('--bak-file', type=str, required=True , help='Backup file from where to restore')
     bkr.add_argument('--non-interactive', action='store_true', help='Do not request confirmation')
+
+
+    # ----------------------------------------
+    # Create second level parsers for 'reorganize'
+    # ----------------------------------------
+
+    subparser = parser_reorg.add_subparsers(dest='subcommand')
+
+    rgi = subparser.add_parser('images',  help="Reorganize images into observation nights")
+    rgi.add_argument('-i', '--input-dir',  type=str, required=True , help='Images input directory')
+    rgi.add_argument('-o','--output-dir', type=str, required=True , help='Images output base diretory')
 
 
     # -----------------------------------------

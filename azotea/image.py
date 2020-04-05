@@ -109,7 +109,7 @@ def already_in_database(connection):
 
 def candidates(directory, options):
 	'''candidate list of images to be inserted in the database'''
-	file_list = sorted(glob.glob(directory + '/' + options.filter))
+	file_list = sorted(os.path.join(glob.glob(directory, options.filter)))
 	logging.info("Found {0} candidate images".format(len(file_list)))
 	return file_list
 

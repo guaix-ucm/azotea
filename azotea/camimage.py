@@ -37,6 +37,7 @@ import exifread
 import rawpy
 import tabulate
 import numpy as np
+import jdcal
 
 #--------------
 # local imports
@@ -175,6 +176,10 @@ class CameraImage(object):
         return self.metadata
 
 
+    def getJulianDate(self):
+        return int(sum(jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)))
+
+
     def center_roi(self):
         '''image needs to be read'''
         if self.roi.x1 == 0 and self.roi.y1 == 0:
@@ -231,15 +236,15 @@ class CameraImage(object):
         date = None
         for fmt in ["%Y:%m:%d %H:%M:%S", "%Y:%m:%d %H:%M:%S"]:
             try:
-                date = datetime.datetime.strptime(tstamp, fmt)
+                self._date = datetime.datetime.strptime(tstamp, fmt)
             except ValueError:
                 continue
             else:
                 break
-        if not date:
+        if not self._date:
             raise TimestampError(tstamp)
         else:
-            return date.strftime(DEF_TSTAMP)
+            return self._date.strftime(DEF_TSTAMP)
 
     def _lookup(self):
         '''
