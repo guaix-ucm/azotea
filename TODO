@@ -12,7 +12,6 @@ TO DO
   - master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
 - master dark por session y --all
 - ejecutar los caso de prueba listados
-- azotea reorgainze directorios por dia juliano --input-dir --output-dir
 - ejecucion silenciosa 
 - batch management
   - batch current [--extended] muestra los ficheros de la sesion últimna
