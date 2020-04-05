@@ -71,6 +71,7 @@ def dbase_purge(connection, options):
 	cursor.execute("DROP VIEW  IF EXISTS image_v")
 	cursor.execute("DROP TABLE IF EXISTS image_t")
 	cursor.execute("DROP TABLE IF EXISTS master_dark_t")
+	cursor.execute("DROP TABLE IF EXISTS state_t")
 	connection.commit()
 	logging.info("Erased schema in database {0}".format(DEF_DBASE))
 

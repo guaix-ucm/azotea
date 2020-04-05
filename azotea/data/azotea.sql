@@ -43,9 +43,19 @@ CREATE TABLE IF NOT EXISTS image_t
     file_path           TEXT  NOT NULL,   -- original absolute file path
     batch               TEXT  NOT NULL,   -- batch identifier
     type                TEXT,             -- LIGHT or DARK
-    state               TEXT,             -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
+    state               INTEGER REFERENCES state_t(state),            
     PRIMARY KEY(name)
 );
+
+CREATE TABLE IF NOT EXISTS state_t (
+    state              INTEGER,
+    label              TEXT,
+    PRIMARY KEY(state)
+);
+
+INSERT OR IGNORE INTO state_t(state, label) VALUES ( 0, "REGISTERED");
+INSERT OR IGNORE INTO state_t(state, label) VALUES ( 1, "RAW STATS");
+INSERT OR IGNORE INTO state_t(state, label) VALUES ( 2, "DARK SUBSTRACTED");
 
 ------------------------------------------------------------------------------------------------
 -- This View exists to automatically substract the dark levels and calculate resulting variances

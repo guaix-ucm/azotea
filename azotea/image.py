@@ -42,10 +42,9 @@ from .utils    import merge_two_dicts, paging
 
 # values for the 'state' column in table
 
-REGISTERED       = "REGISTERED"
-CLASSIFIED       = "CLASSIFIED"
-RAW_STATS        = "RAW STATS"
-DARK_SUBSTRACTED = "DARK SUBSTRACTED"
+REGISTERED       = 0
+RAW_STATS        = 1
+DARK_SUBSTRACTED = 2
 
 LIGHT_FRAME = "LIGHT"
 DARK_FRAME  = "DARK"
@@ -109,7 +108,7 @@ def already_in_database(connection):
 
 def candidates(directory, options):
 	'''candidate list of images to be inserted in the database'''
-	file_list = sorted(os.path.join(glob.glob(directory, options.filter)))
+	file_list = sorted(glob.glob(os.path.join(directory, options.filter)))
 	logging.info("Found {0} candidate images".format(len(file_list)))
 	return file_list
 
@@ -262,7 +261,7 @@ def db_update_type(connection, rows):
 	cursor.executemany(
 		'''
 		UPDATE image_t
-		SET type = :type, state = :state
+		SET type  = :type
 		WHERE name = :name
 		''', rows)
 	connection.commit()
@@ -400,7 +399,6 @@ def do_image_classify(connection, batch, src_iterable, options):
 	rows = []
 	for name, file_path in src_iterable(connection, batch):
 		row = classification_algorithm1(name, file_path, options)
-		row['state'] = CLASSIFIED
 		logging.info("{0} is type {1}".format(name,row['type']))
 		rows.append(row)
 	if rows:
@@ -415,24 +413,24 @@ def do_image_classify(connection, batch, src_iterable, options):
 
 
 def stats_all_iterable(connection, batch):
-	row = {'state': CLASSIFIED}
+	row = {'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name, file_path
 		FROM image_t
-		WHERE state = :state
+		WHERE state < :state
 		''', row)
 	return cursor
 
 def stats_batch_iterable(connection, batch):
-	row = {'batch': batch, 'state': CLASSIFIED}
+	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name, file_path
 		FROM image_t
-		WHERE state = :state
+		WHERE state < :state
 		AND batch = :batch
 		''', row)
 	return cursor
@@ -489,7 +487,7 @@ def db_update_all_master_dark(connection, batch):
 			SUM(vari_raw_signal_B4)/COUNT(*)
 		FROM image_t
 		WHERE type = :type
-		AND   state = :state
+		AND   state >= :state
 		GROUP BY batch
 		''', row)
 	connection.commit()
@@ -512,7 +510,7 @@ def db_update_dark_columns(connection, batch):
 			vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE batch = :batch),
 			vari_dark_B4 = (SELECT vari_B4 FROM master_dark_t WHERE batch = :batch)
 		WHERE batch = :batch
-		AND   state = :state
+		AND   state BETWEEN :state AND :new_state
 		AND   type  = :type
 		''',row)
 	connection.commit()
@@ -559,7 +557,7 @@ VIEW_HEADERS = [
 		]
 
 def export_batch_iterable(connection, batch):
-	row = {'batch': batch}
+	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -591,6 +589,7 @@ def export_batch_iterable(connection, batch):
 	return cursor
 
 def export_all_iterable(connection, batch):
+	row = {'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -616,8 +615,8 @@ def export_all_iterable(connection, batch):
 				mean_signal_B4, 
 				vari_signal_B4  -- Array index 19
 		FROM image_v
-		WHERE state IS NOT NULL
-		''')
+		WHERE state >=:state
+		''', row)
 	return cursor
 
 
@@ -797,8 +796,9 @@ def image_state_batch_iterable(connection, batch):
 	count = batch_count(cursor, batch)
 	cursor.execute(
 		'''
-		SELECT name, batch, type, state
+		SELECT name, batch, type, s.label
 		FROM image_t
+		JOIN state_t AS s USING(state)
 		WHERE batch = :batch
 		ORDER BY batch DESC, name ASC
 		''', row)
@@ -811,8 +811,9 @@ def image_state_all_iterable(connection, batch):
 	count = all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, batch, type, state
+		SELECT name, batch, type, s.label
 		FROM image_t
+		JOIN state_t AS s USING(state)
 		ORDER BY batch DESC, name ASC
 		''', row)
 	return cursor, count
@@ -1074,11 +1075,13 @@ def image_reduce(connection, options):
 		do_image_register(connection, options.work_dir, batch, options)
 	
 	# Step 2
-	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_image_classify(connection, batch, iterable, options)
-	# Step 3
 	iterable = stats_all_iterable if options.all else stats_batch_iterable
 	do_image_stats(connection, batch, iterable, options)
+
+	# Step 3
+	iterable = classify_all_iterable if options.all else classify_batch_iterable
+	do_image_classify(connection, batch, iterable, options)
+
 	# Step 4
 	do_image_apply_dark(connection, batch, options)
 	# Step 5

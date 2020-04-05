@@ -22,7 +22,8 @@ DEPENDENCIES = [
                   'matplotlib',
                   'rawpy',
                   'exifread',
-                  'opencv-python'
+                  'opencv-python',
+                  'jdcal'
 ]
 
 CLASSIFIERS  = [
