@@ -6,6 +6,8 @@ TO DO
  
 - ejecutar los caso de prueba listados
 - parsear el Exif ExporureTime
+- ver comno recuperar la config optica del EXIF. 
+  En todo caso, añadir una seccion de configuracion optica en el fichero de config. Los datos EXIF si existen tuendran precedencia
 . Completar modelos de canaras
 - batch management
   - batch merge ¿es mecesario? quizas no ...
@@ -26,6 +28,8 @@ CASOS DE PRUEBA:
 4) Sesion de  multiobservador multireducción
   - varios observadores
   - varios directorios por observador
+ 3) caso de prueba, el programa no contempla la cámara
+ 
 
 
 
