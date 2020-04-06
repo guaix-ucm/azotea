@@ -6,10 +6,11 @@ TO DO
  
 - ejecutar los caso de prueba listados
 - parsear el Exif ExporureTime
+. Completar modelos de canaras
 - batch management
   - batch merge ¿es mecesario? quizas no ...
 - backup restore
-- informes a lo IDA con plantilla JINJA
+- modulo de reports: informes a lo IDA con plantilla JINJA
 - fichero de log?, recuperar BD a partir de log?
 - patch management (list, apply)
 - documento con uso avanzado ¿readthedocs o Google Docs?
