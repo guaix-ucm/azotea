@@ -11,16 +11,11 @@
 # -------------------
 
 import sys
-import argparse
-import sqlite3
 import os
 import os.path
 import glob
 import logging
-import csv
-import traceback
 import shutil
-import datetime
 import subprocess
 
 # ---------------------

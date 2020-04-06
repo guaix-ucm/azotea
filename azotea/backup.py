@@ -10,17 +10,10 @@
 # System wide imports
 # -------------------
 
-import sys
-import argparse
-import sqlite3
-import os
 import os.path
 import glob
 import logging
-import csv
-import traceback
 import shutil
-import datetime
 
 # Python3 catch
 try:
@@ -37,8 +30,8 @@ except:
 # local imports
 # -------------
 
-from . import DEF_DBASE, AZOTEA_BASE_DIR
-from .utils import  paging
+from .      import DEF_DBASE, AZOTEA_BASE_DIR
+from .utils import paging
 
 # ----------------
 # Module constants

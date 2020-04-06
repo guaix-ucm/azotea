@@ -27,30 +27,6 @@ from .exceptions import NoBatchError
 # Module constants
 # ----------------
 
-# values for the 'state' column in table
-
-REGISTERED       = 0
-RAW_STATS        = 1
-DARK_SUBSTRACTED = 2
-
-LIGHT_FRAME = "LIGHT"
-DARK_FRAME  = "DARK"
-UNKNOWN     = "UNKNOWN"
-
-
-# ----------
-# Exceptions
-# ----------
-
-class NoBatchError(ValueError):
-	'''No batch to operate upon.'''
-	def __str__(self):
-		s = self.__doc__
-		if self.args:
-			s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
-		s = '{0}.'.format(s)
-		return s
-
 
 # -----------------------
 # Module global variables
@@ -75,6 +51,7 @@ def lookup_batch(connection, batch):
 		''', row)
 	return cursor.fetchone()[0]
 
+
 def latest_batch(connection):
 	'''Get Last recorded batch'''
 	cursor = connection.cursor()
@@ -95,6 +72,7 @@ def batch_all_count(cursor):
 	result = [ x[0] for x in cursor.fetchall()]
 	return sum(result)
 
+
 def batch_batch_count(cursor, batch):
 	row = {'batch': batch}
 	cursor.execute(
@@ -106,8 +84,6 @@ def batch_batch_count(cursor, batch):
 		''',row)
 	result = [ x[0] for x in cursor.fetchall()]
 	return sum(result)
-
-
 
 
 # ------------------

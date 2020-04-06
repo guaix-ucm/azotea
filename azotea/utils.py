@@ -11,12 +11,16 @@
 # -------------------
 
 import sys
-import argparse
 import sqlite3
-import os
 import os.path
 import logging
 import re
+
+# Python3 catch
+try:
+    raw_input
+except:
+    raw_input = input 
 
 # ---------------------
 # Third party libraries
@@ -25,21 +29,11 @@ import re
 # Access  template withing the package
 from pkg_resources import resource_filename
 
-import exifread
 import tabulate
 
 #--------------
 # local imports
 # -------------
-
-from . import __version__
-
-
-# Python3 catch
-try:
-    raw_input
-except:
-    raw_input = input 
 
 
 # ----------------

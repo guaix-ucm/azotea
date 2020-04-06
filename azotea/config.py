@@ -8,14 +8,11 @@
 #--------------------
 # System wide imports
 # -------------------
-#from __future__ import division, absolute_import
 
-import sys
-import os
 import os.path
 import argparse
 import errno
-import copy
+
 
 import logging
 

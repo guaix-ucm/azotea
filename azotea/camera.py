@@ -10,17 +10,12 @@
 # System wide imports
 # -------------------
 
-import sys
-import argparse
 import os
 import os.path
 import logging
-import errno
 import datetime
-import traceback
 import hashlib
-
-from math import sqrt
+import math
 
 try:
     # Python 2
@@ -35,7 +30,6 @@ except:
 
 import exifread
 import rawpy
-import tabulate
 import numpy as np
 import jdcal
 
@@ -192,24 +186,6 @@ class CameraImage(object):
         self.step       = [2, 2, 2, 2]
     
 
-    def setROI(self, roi):
-        if type(roi) == str:
-            self.roi = ROI.strproi(roi_str)
-        elif type(roi) == ROI:
-            self.roi = roi
-
-
-    def hash(self):
-        BLOCK_SIZE = 65536*65536 # The size of each read from the file
-        file_hash = hashlib.sha256()
-        with open(self.filepath, 'rb') as f:
-            block = f.read(BLOCK_SIZE) 
-            while len(block) > 0:
-                file_hash.update(block)
-                block = f.read(BLOCK_SIZE)
-        return file_hash.digest()
-
-
     def loadEXIF(self):
         '''Load EXIF metadata'''   
         logging.debug("{0}: Loading EXIF metadata".format(self.name))
@@ -226,26 +202,56 @@ class CameraImage(object):
         return self.metadata
 
 
-    def getJulianDate(self):
-        return int(sum(jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)))
-
-
-    def center_roi(self):
-        '''image needs to be read'''
-        if self.roi.x1 == 0 and self.roi.y1 == 0:
-            self._center_roi()
-        return self.roi
-   
-
     def read(self):
-        '''Read RAW data''' 
+        '''Read RAW pixels''' 
         self._lookup()
         logging.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
         self.image = rawpy.imread(self.filepath)
         logging.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
-        self._read()
+        # R1 channel
+        self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
+        # G2 channel
+        self.signal.append(self.image.raw_image[self.k[G2].x::self.step[G2], self.k[G2].y::self.step[G2]])
+        # G3 channel
+        self.signal.append(self.image.raw_image[self.k[G3].x::self.step[G3], self.k[G3].y::self.step[G3]])
+         # B4 channel
+        self.signal.append(self.image.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
         self._center_roi()
-        
+
+
+    def center_roi(self):
+        '''image needs to be read beforehand'''
+        if self.roi.x1 == 0 and self.roi.y1 == 0:
+            self._center_roi()
+        return self.roi
+
+
+    def setROI(self, roi):
+        if type(roi) == str:
+            self.roi = ROI.strproi(roi_str)
+        elif type(roi) == ROI:
+            self.roi = roi
+
+
+    def hash(self):
+        '''Compute a hash from the image'''
+        BLOCK_SIZE = 65536*65536 # The size of each read from the file
+        file_hash = hashlib.sha256()
+        with open(self.filepath, 'rb') as f:
+            block = f.read(BLOCK_SIZE) 
+            while len(block) > 0:
+                file_hash.update(block)
+                block = f.read(BLOCK_SIZE)
+        return file_hash.digest()
+
+
+    def getJulianDate(self):
+        return int(sum(jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)))
+
+
+   
+   
+
         
     def stats(self):
         logging.debug("{0}: Computing stats".format(self.name))
@@ -270,7 +276,12 @@ class CameraImage(object):
             self._add_dark_stats(result)
         
         mean  = [r1_mean, g2_mean, g3_mean, b4_mean]
-        stdev = [round(sqrt(r1_vari),1), round(sqrt(g2_vari),1), round(sqrt(g3_vari),1), round(sqrt(b4_vari),1)]
+        stdev = [
+            round(math.sqrt(r1_vari),1), 
+            round(math.sqrt(g2_vari),1), 
+            round(math.sqrt(g3_vari),1), 
+            round(math.sqrt(b4_vari),1)
+        ]
         logging.info("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
         return result
 
@@ -300,26 +311,6 @@ class CameraImage(object):
 
         self.k, self.step = self.cache.lookup(self.model)
 
-        # if not (os.path.exists(self.camerapath)):
-        #     logging.debug("No camera config file found at {0}, using default file".format(self.camerapath))
-        #     self.camerapath = DEF_CAMERA_TPL
-
-        # parser  =  ConfigParser.RawConfigParser()
-        # # str is for case sensitive options
-        # parser.optionxform = str
-        # parser.read(self.camerapath)
-        # if not parser.has_section(self.metadata['model']):
-        #     raise ConfigError(self.model)
-
-        # r1 = chop(parser.get(self.model,"R1"),',')
-        # g2 = chop(parser.get(self.model,"G2"),',')
-        # g3 = chop(parser.get(self.model,"G3"),',')
-        # b4 = chop(parser.get(self.model,"B4"),',')
-        # self.k[R1].x, self.k[R1].y, self.step[R1] = int(r1[0]), int(r1[1]), int(r1[2])
-        # self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
-        # self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
-        # self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
-
 
     def _region_stats(self, data, region):
         r = data[region.y1:region.y2, region.x1:region.x2]
@@ -340,13 +331,16 @@ class CameraImage(object):
         self.dark.append(self.signal[G3][-410: , -610:])
         self.dark.append(self.signal[B4][-410: , -610:])
 
+
     def _add_dark_stats(self, mydict):
         r1_aver_dark,   r1_vari_dark   = self._region_stats(self.dark[R1], self.dkroi)
         g2_aver_dark,   g2_vari_dark   = self._region_stats(self.dark[G2], self.dkroi)
         g3_aver_dark,   g3_vari_dark   = self._region_stats(self.dark[G3], self.dkroi)
         b4_aver_dark,   b4_vari_dark   = self._region_stats(self.dark[B4], self.dkroi)
-        self.HEADERS.extend(['aver_dark_R1', 'vari_dark_R1', 'aver_dark_G2', 'vari_dark_G2',
-                'aver_dark_G3', 'vari_dark_G3', 'aver_dark_B4', 'vari_dark_B4'])
+        self.HEADERS.extend([
+                'aver_dark_R1', 'vari_dark_R1', 'aver_dark_G2', 'vari_dark_G2',
+                'aver_dark_G3', 'vari_dark_G3', 'aver_dark_B4', 'vari_dark_B4'
+                ])
         mydict['aver_dark_R1'] = r1_aver_dark
         mydict['vari_dark_R1'] = r1_vari_dark
         mydict['aver_dark_G2'] = g2_aver_dark
@@ -355,23 +349,3 @@ class CameraImage(object):
         mydict['vari_dark_G3'] = g3_vari_dark
         mydict['aver_dark_B4'] = b4_aver_dark
         mydict['vari_dark_B4'] = b4_vari_dark
-
-
-    def _read(self):
-        # R1 channel
-        self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
-        # G2 channel
-        self.signal.append(self.image.raw_image[self.k[G2].x::self.step[G2], self.k[G2].y::self.step[G2]])
-        # G3 channel
-        self.signal.append(self.image.raw_image[self.k[G3].x::self.step[G3], self.k[G3].y::self.step[G3]])
-         # B4 channel
-        self.signal.append(self.image.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
-       
-
-
-
-
-
-# -----------------------
-# Module global functions
-# -----------------------

@@ -18,25 +18,23 @@ import os.path
 import logging
 import traceback
 
-
 #--------------
-# other imports
+# local imports
 # -------------
 
-from . import __version__
-from . import  AZOTEA_BASE_DIR, AZOTEA_DB_DIR, AZOTEA_LOG_DIR, AZOTEA_CFG_DIR, AZOTEA_BAK_DIR
-from . import DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
-from .config   import load_config_file, merge_options 
-from .utils    import chop, Point, ROI, open_database, create_database
-from .cfgcmds  import config_global, config_camera
-from .dbase    import dbase_clear, dbase_purge, dbase_backup
-from .backup   import backup_list, backup_delete, backup_restore
-from .image    import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
-from .image    import image_list, NoWorkDirectoryError, NoBatchError
-from .reorg    import reorganize_images
-from .batch    import batch_current, batch_list
+from .        import __version__
+from .        import  AZOTEA_BASE_DIR, AZOTEA_DB_DIR, AZOTEA_LOG_DIR, AZOTEA_CFG_DIR, AZOTEA_BAK_DIR
+from .        import DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
+from .config  import load_config_file, merge_options 
+from .utils   import chop, Point, ROI, open_database, create_database
+from .cfgcmds import config_global, config_camera
+from .dbase   import dbase_clear, dbase_purge, dbase_backup
+from .backup  import backup_list, backup_delete, backup_restore
+from .image   import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
+from .image   import image_list, NoWorkDirectoryError, NoBatchError
+from .reorg   import reorganize_images
+from .batch   import batch_current, batch_list
 
-#
 # -----------------------
 # Module global variables
 # -----------------------
@@ -44,7 +42,6 @@ from .batch    import batch_current, batch_list
 # -----------------------
 # Module global functions
 # -----------------------
-
 
 def configureLogging(options):
 	if options.verbose:
@@ -60,11 +57,6 @@ def mkrect1(text):
 	'''Make a rectangle of width and height'''
 	l = chop(text,',')
 	return ROI( x1=0, x2=int(l[0]), y1=0, y2=int(l[1]))
-
-def mkrect2(text):
-	'''make rectangle with bounding corners'''
-	l = chop(text,',')
-	return ROI( x1=int(l[0]), y1=int(l[2]), x2=int(l[1]), y2=int(l[3]))
 
 
 # =================== #

@@ -11,15 +11,11 @@
 # -------------------
 
 import sys
-import argparse
 import sqlite3
-import os
 import os.path
 import glob
 import logging
 import csv
-import traceback
-import shutil
 import datetime
 import math
 
@@ -622,7 +618,7 @@ def export_all_iterable(connection, batch):
 
 
 def var2std(item):
-	'''From vraiance to StdDev in seevral columns'''
+	'''From Variance to StdDev in seevral columns'''
 	index, value = item
 	return round(math.sqrt(value),1) if index in [14, 16, 18, 20] else value
 

@@ -11,26 +11,13 @@
 # -------------------
 
 import sys
-import argparse
-import sqlite3
-import os
 import os.path
-import glob
 import logging
-import csv
-import traceback
 import shutil
 
 # ---------------------
 # Third party libraries
 # ---------------------
-
-# Access  template withing the package
-from pkg_resources import resource_filename
-
-
-import sys
-from shutil import copyfileobj as copy
 
 
 #--------------
@@ -74,6 +61,6 @@ def config_global(connection, options):
 
 def config_camera(connection, options):
     if options.list:
-        config_list(DEF_CONFIG_TPL)
+        config_list(DEF_CAMERA_TPL)
     elif options.create:
-        config_create(DEF_CONFIG_TPL)
+        config_create(DEF_CAMERA_TPL)
