@@ -713,10 +713,10 @@ RAW_DATA_HEADERS = [
 
 DARK_DATA_HEADERS = [
 	"Name", "Batch" ,
-	"Raw \u03BC R1", "Raw \u03C3^2 R1", 
-	"Raw \u03BC G2", "Raw \u03C3^2 G2", 
-	"Raw \u03BC G3", "Raw \u03C3^2 G3",
-	"Raw \u03BC B4", "Raw \u03C3^2 B4",
+	"Dark \u03BC R1", "Dark \u03C3^2 R1", 
+	"Dark \u03BC G2", "Dark \u03C3^2 G2", 
+	"Dark \u03BC G3", "Dark \u03C3^2 G3",
+	"Dark \u03BC B4", "Dark \u03C3^2 B4",
 ]
 
 def view_batch_count(cursor, batch):
@@ -874,7 +874,7 @@ def view_data_all_iterable(connection, batch):
 # --------------
 
 def view_raw_data_batch_iterable(connection, batch):
-	row = {'batch': batch}
+	row = {'batch': batch, 'light': LIGHT_FRAME, 'unknown': UNKNOWN}
 	cursor = connection.cursor()
 	count = view_batch_count(cursor, batch)
 	cursor.execute(
@@ -887,12 +887,14 @@ def view_raw_data_batch_iterable(connection, batch):
 			mean_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE batch = :batch
+		AND ((type = :light) OR (type = :unknown))
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
 
 
 def view_raw_data_all_iterable(connection, batch):
+	row = {'light': LIGHT_FRAME, 'unknown': UNKNOWN}
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
@@ -904,6 +906,8 @@ def view_raw_data_all_iterable(connection, batch):
 			mean_raw_signal_G3, vari_raw_signal_G3,
 			mean_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
+		WHERE type = :type
+		AND ((type = :light) OR (type = :unknown))
 		ORDER BY batch DESC, name ASC
 		''', row)
 	return cursor, count
@@ -931,7 +935,7 @@ def view_dark_data_batch_iterable(connection, batch):
 	return cursor, count
 
 
-def view_view_data_all_iterable(connection, batch):
+def view_dark_data_all_iterable(connection, batch):
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
@@ -947,7 +951,10 @@ def view_view_data_all_iterable(connection, batch):
 		''', row)
 	return cursor, count
 
-				  
+# ----------------
+# View Master Dark
+# -----------------
+
 def view_master_dark_all_iterable(connection, batch):
 	cursor = connection.cursor()
 	cursor.execute("SELECT COUNT(*) FROM master_dark_t")
@@ -994,6 +1001,49 @@ MASTER_DARK_HEADERS = [
 ]
 
 
+# ---------
+# View Dark
+# ----------
+
+def view_dark_batch_iterable(connection, batch):
+	row = {'batch': batch, 'type': DARK_FRAME}
+	cursor = connection.cursor()
+	count = view_batch_count(cursor, batch)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch, 
+			mean_raw_signal_R1, vari_raw_signal_R1,
+			mean_raw_signal_G2, vari_raw_signal_G2,
+			mean_raw_signal_G3, vari_raw_signal_G3,
+			mean_raw_signal_B4, vari_raw_signal_B4
+		FROM image_t
+		WHERE batch = :batch
+		AND type = :type
+		ORDER BY name ASC
+		''', row)
+	return cursor, count
+
+
+def view_dark_all_iterable(connection, batch):
+	row = {'batch': batch, 'type': DARK_FRAME}
+	cursor = connection.cursor()
+	count = view_all_count(cursor)
+	cursor.execute(
+		'''
+		SELECT 
+			name, batch,
+			mean_raw_signal_R1, vari_raw_signal_R1,
+			mean_raw_signal_G2, vari_raw_signal_G2,
+			mean_raw_signal_G3, vari_raw_signal_G3,
+			mean_raw_signal_B4, vari_raw_signal_B4
+		FROM image_t
+		WHERE type = :type
+		ORDER BY batch DESC, name ASC
+		''', row)
+	return cursor, count
+
+
 def do_image_view(connection, batch, iterable, headers, options):
 	cursor, count = iterable(connection, batch)
 	paging(cursor, headers, maxsize=count, page_size=options.page_size)
@@ -1009,7 +1059,7 @@ def image_list(connection, options):
 	if options.exif:
 		headers = EXIF_HEADERS
 		iterable = view_meta_exif_all_iterable if options.all else view_meta_exif_batch_iterable
-	elif options.general:
+	elif options.generic:
 		headers = GLOBAL_HEADERS
 		iterable = view_meta_global_all_iterable if options.all else view_meta_global_batch_iterable
 	elif options.state:
@@ -1021,9 +1071,12 @@ def image_list(connection, options):
 	elif options.raw_data:
 		headers = RAW_DATA_HEADERS
 		iterable = view_raw_data_all_iterable if options.all else view_raw_data_batch_iterable
-	elif options.dark:
+	elif options.dark_data:
 		headers = DARK_DATA_HEADERS
-		iterable = view_view_data_all_iterable if options.all else view_dark_data_batch_iterable
+		iterable = view_dark_data_all_iterable if options.all else view_dark_data_batch_iterable
+	elif options.dark:
+		headers = RAW_DATA_HEADERS
+		iterable = view_dark_all_iterable if options.all else view_dark_batch_iterable
 	elif options.master:
 		headers = MASTER_DARK_HEADERS
 		iterable = view_master_dark_all_iterable if options.all else view_master_dark_batch_iterable
