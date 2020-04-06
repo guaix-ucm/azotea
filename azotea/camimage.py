@@ -159,7 +159,7 @@ class CameraImage(object):
             'iso'            ,
             'roi'            ,
             'dark_roi'       ,
-            'exposure'       ,
+            'exptime'        ,
             'aver_raw_signal_R1',
             'vari_raw_signal_R1',
             'aver_raw_signal_G2',
@@ -221,7 +221,7 @@ class CameraImage(object):
         self.metadata['name']      = self.name
         self.metadata['model']     = self.model
         self.metadata['tstamp']    = self._iso8601(str(self.exif.get('Image DateTime')))
-        self.metadata['exposure']  = str(self.exif.get('EXIF ExposureTime'))
+        self.metadata['exptime']   = str(self.exif.get('EXIF ExposureTime'))
         self.metadata['iso']       = str(self.exif.get('EXIF ISOSpeedRatings'))
         return self.metadata
 

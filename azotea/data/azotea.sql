@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS image_t
     model               TEXT  NOT NULL,   -- Camera Model
     tstamp              TEXT  NOT NULL,   -- ISO 8601 timestamp
     iso                 TEXT  NOT NULL,   -- ISO sensivity
-    exposure            REAL  NOT NULL,   -- exposure time in seconds       
+    exptime             REAL  NOT NULL,   -- exposure time in seconds       
     -- Measurements
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]
     dark_roi            TEXT,             -- dark region of interest: [x1:x2,y1:y2], NULL if not used
@@ -75,7 +75,7 @@ SELECT
     model               ,                 -- Camera Model
     tstamp              ,                 -- ISO 8601 timestamp
     iso                 ,                 -- ISO sensivity
-    exposure            ,                 -- exposure time in seconds       
+    exptime             ,                 -- exposure time in seconds       
     -- Measurements
     roi                 ,                 -- region of interest: [x1:x2,y1:y2]
     dark_roi            ,                 -- dark region of interest: [x1:x2,y1:y2], NULL if not used
@@ -119,6 +119,8 @@ CREATE TABLE IF NOT EXISTS master_dark_t
     vari_G3             REAL    NOT NULL,    -- Green 2 dark variance
     aver_B4             REAL    NOT NULL,    -- Blue mean dark level in Blue
     vari_B4             REAL    NOT NULL,    -- Blue dark variance
+    min_exptime         REAL    NOT NULL,    -- Minimun batch exposure time
+    max_exptime         REAL    NOT NULL,    -- Maximun batch exposure time
     roi                 TEXT    NOT NULL,    -- region of interest: [x1:x2,y1:y2]
     N                   INTEGER NOT NULL,    -- number of darks used to average
     PRIMARY KEY(batch)

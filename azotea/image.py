@@ -208,7 +208,7 @@ def register_insert_image(connection, row):
 				tstamp, 
 				model, 
 				iso, 
-				exposure,
+				exptime,
 				type,
 				state
 			) VALUES (
@@ -224,7 +224,7 @@ def register_insert_image(connection, row):
 				:tstamp, 
 				:model, 
 				:iso, 
-				:exposure,
+				:exptime,
 				:type,
 				:state
 			)
@@ -250,7 +250,7 @@ def register_insert_images(connection, rows):
 				tstamp, 
 				model, 
 				iso, 
-				exposure,
+				exptime,
 				type,
 				state
 			) VALUES (
@@ -266,7 +266,7 @@ def register_insert_images(connection, rows):
 				:tstamp, 
 				:model, 
 				:iso, 
-				:exposure,
+				:exptime,
 				:type,
 				:state
 			)
@@ -485,7 +485,9 @@ def master_dark_db_update_all(connection, batch):
 			vari_R1, 
 			vari_G2, 
 			vari_G3, 
-			vari_B4
+			vari_B4,
+			min_exptime,
+			max_exptime
 		)
 		SELECT 
 			batch, 
@@ -498,7 +500,9 @@ def master_dark_db_update_all(connection, batch):
 			SUM(vari_raw_signal_R1)/COUNT(*),
 			SUM(vari_raw_signal_G2)/COUNT(*),
 			SUM(vari_raw_signal_G3)/COUNT(*),
-			SUM(vari_raw_signal_B4)/COUNT(*)
+			SUM(vari_raw_signal_B4)/COUNT(*),
+			MIN(exptime),
+			MAX(exptime)
 		FROM image_t
 		WHERE type = :type
 		AND   state >= :state
@@ -559,7 +563,7 @@ VIEW_HEADERS = [
 			'iso'            ,
 			'roi'            ,
 			'dark_roi'       ,
-			'exposure'       ,
+			'exptime'       ,
 			'aver_signal_R1' ,
 			'std_signal_R1'  ,
 			'aver_signal_G2' ,
@@ -587,7 +591,7 @@ def export_batch_iterable(connection, batch):
 				iso, 
 				roi,
 				dark_roi,
-				exposure, 
+				exptime, 
 				aver_signal_R1, 
 				vari_signal_R1, -- Array index 14
 				aver_signal_G2, 
@@ -620,7 +624,7 @@ def export_all_iterable(connection, batch):
 				iso, 
 				roi,
 				dark_roi,
-				exposure, 
+				exptime, 
 				aver_signal_R1, 
 				vari_signal_R1, -- Array index 14
 				aver_signal_G2, 
@@ -754,7 +758,7 @@ def view_meta_exif_all_iterable(connection, batch):
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, batch, tstamp, model, exposure, iso
+		SELECT name, batch, tstamp, model, exptime, iso
 		FROM image_t
 		ORDER BY batch DESC, name ASC
 		''')
@@ -768,7 +772,7 @@ def view_meta_exif_batch_iterable(connection, batch):
 	count = view_batch_count(cursor, batch)
 	cursor.execute(
 		'''
-		SELECT name, batch, tstamp, model, exposure, iso
+		SELECT name, batch, tstamp, model, exptime, iso
 		FROM image_t
 		WHERE batch = :batch
 		ORDER BY name DESC
@@ -987,7 +991,8 @@ def view_master_dark_batch_iterable(connection, batch):
 	cursor.execute(
 		'''
 		SELECT 
-			batch, N, roi             
+			batch, N, roi,           
+			(min_exptime == max_exptime) as good_flag,
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
@@ -1001,6 +1006,7 @@ MASTER_DARK_HEADERS = [
 	"Batch", 
 	"# Darks",
 	"ROI",
+	"Good?",
 	"\u03BC R1", "\u03C3^2 R1", 
 	"\u03BC G2", "\u03C3^2 G2", 
 	"\u03BC G3", "\u03C3^2 G3",
