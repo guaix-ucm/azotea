@@ -98,6 +98,58 @@ class TimestampError(ValueError):
         s = '{0}.'.format(s)
         return s
 
+
+# =======
+# CLASSES
+# =======
+
+class CameraCache(object):
+
+    def __init__(self, camerapath):
+        self._points_cache = {}
+        self._steps_cache = {}
+        self._camerapath = camerapath
+
+    def lookup(self, model):
+        '''
+        Load camera configuration from configuration file
+        '''
+        if model in self._points_cache.keys():
+            return self._points_cache[model], self._steps_cache[model]
+
+        if not (os.path.exists(self._camerapath)):
+            logging.debug("No camera config file found at {0}, using default file".format(self._camerapath))
+            self._camerapath = DEF_CAMERA_TPL
+
+        parser  =  ConfigParser.RawConfigParser()
+        # str is for case sensitive options
+        parser.optionxform = str
+        parser.read(self._camerapath)
+        if not parser.has_section(model):
+            raise ConfigError(model)
+
+        r1 = chop(parser.get(model,"R1"),',')
+        g2 = chop(parser.get(model,"G2"),',')
+        g3 = chop(parser.get(model,"G3"),',')
+        b4 = chop(parser.get(model,"B4"),',')
+
+        points = [ 
+            Point(x=int(r1[0]), y=int(r1[1])),
+            Point(x=int(g2[0]), y=int(g2[1])),
+            Point(x=int(g3[0]), y=int(g3[1])),
+            Point(x=int(b4[0]), y=int(b4[1])),
+        ]
+        steps = [ int(r1[2]), int(g2[2]),  int(g3[2]), int(b4[2])]
+
+        self._points_cache[model] = points
+        self._steps_cache[model] = steps
+        return points, steps
+
+
+        
+
+
+
 class CameraImage(object):
 
     HEADERS = [
@@ -124,9 +176,9 @@ class CameraImage(object):
     # Public API #
     # ========== #
 
-    def __init__(self, filepath, options):
+    def __init__(self, filepath, cache):
         self.filepath   = filepath
-        self.camerapath = options.camera
+        self.cache      = cache # Camera reading parameters cache
         self.roi        = None  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
         self.exif       = None
@@ -245,25 +297,28 @@ class CameraImage(object):
         '''
         Load camera configuration from configuration file
         '''
-        if not (os.path.exists(self.camerapath)):
-            logging.debug("No camera config file found at {0}, using default file".format(self.camerapath))
-            self.camerapath = DEF_CAMERA_TPL
 
-        parser  =  ConfigParser.RawConfigParser()
-        # str is for case sensitive options
-        parser.optionxform = str
-        parser.read(self.camerapath)
-        if not parser.has_section(self.metadata['model']):
-            raise ConfigError(self.model)
+        self.k, self.step = self.cache.lookup(self.model)
 
-        r1 = chop(parser.get(self.model,"R1"),',')
-        g2 = chop(parser.get(self.model,"G2"),',')
-        g3 = chop(parser.get(self.model,"G3"),',')
-        b4 = chop(parser.get(self.model,"B4"),',')
-        self.k[R1].x, self.k[R1].y, self.step[R1] = int(r1[0]), int(r1[1]), int(r1[2])
-        self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
-        self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
-        self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
+        # if not (os.path.exists(self.camerapath)):
+        #     logging.debug("No camera config file found at {0}, using default file".format(self.camerapath))
+        #     self.camerapath = DEF_CAMERA_TPL
+
+        # parser  =  ConfigParser.RawConfigParser()
+        # # str is for case sensitive options
+        # parser.optionxform = str
+        # parser.read(self.camerapath)
+        # if not parser.has_section(self.metadata['model']):
+        #     raise ConfigError(self.model)
+
+        # r1 = chop(parser.get(self.model,"R1"),',')
+        # g2 = chop(parser.get(self.model,"G2"),',')
+        # g3 = chop(parser.get(self.model,"G3"),',')
+        # b4 = chop(parser.get(self.model,"B4"),',')
+        # self.k[R1].x, self.k[R1].y, self.step[R1] = int(r1[0]), int(r1[1]), int(r1[2])
+        # self.k[G2].x, self.k[G2].y, self.step[G2] = int(g2[0]), int(g2[1]), int(g2[2])
+        # self.k[G3].x, self.k[G3].y, self.step[G3] = int(g3[0]), int(g3[1]), int(g3[2])
+        # self.k[B4].x, self.k[B4].y, self.step[B4] = int(b4[0]), int(b4[1]), int(b4[2])
 
 
     def _region_stats(self, data, region):

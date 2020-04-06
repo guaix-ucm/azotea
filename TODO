@@ -3,13 +3,8 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
-  
-
-- constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
-   - metodos setROY(roi_str) setDarkROI() a CameraImage
-- CameraCache en el modulo camimage.
-  esto oblifga a poner la ROI a cameraimage dinamicamente, no en el constructor
-  - master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
+   
+- master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
 - ejecutar los caso de prueba listados
 - batch management
   - batch merge ¿es mecesario? quizas no ...

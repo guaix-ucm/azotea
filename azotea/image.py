@@ -32,7 +32,7 @@ import math
 # -------------
 
 from .         import AZOTEA_BASE_DIR
-from .camimage import  CameraImage
+from .camimage import  CameraImage, CameraCache
 from .utils    import merge_two_dicts, paging
 
 
@@ -290,10 +290,11 @@ def register_preamble(connection, directory, batch, options):
 
 def register_slow(connection,  file_list, metadata, options):
 	
-	global duplicated_file_paths 
+	global duplicated_file_paths
+	camera_cache = CameraCache(options.camera) 
 
 	for file_path in file_list:
-		image = CameraImage(file_path, options)
+		image = CameraImage(file_path, camera_cache)
 		exif_metadata = image.loadEXIF()
 		metadata['file_path'] = file_path
 		metadata['hash']      = image.hash()
@@ -312,8 +313,9 @@ def register_slow(connection,  file_list, metadata, options):
 
 def register_fast(connection, file_list, metadata, options):
 	rows = []
+	camera_cache = CameraCache(options.camera) 
 	for file_path in file_list:
-		image = CameraImage(file_path, options)
+		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		exif_metadata = image.loadEXIF()
 		metadata['file_path'] = file_path
@@ -448,9 +450,10 @@ def stats_batch_iterable(connection, batch):
 
 
 def do_stats(connection, batch, src_iterable, options):
+	camera_cache = CameraCache(options.camera)
 	rows = []
 	for name, file_path in src_iterable(connection, batch):
-		image = CameraImage(file_path, options)
+		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		image.loadEXIF()    # we need to find out the camera model before reading
 		image.read()
