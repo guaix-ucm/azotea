@@ -314,6 +314,7 @@ def register_fast(connection, file_list, metadata, options):
 	rows = []
 	for file_path in file_list:
 		image = CameraImage(file_path, options)
+		image.setROI(options.roi)
 		exif_metadata = image.loadEXIF()
 		metadata['file_path'] = file_path
 		metadata['hash']      = image.hash()
@@ -450,7 +451,7 @@ def do_stats(connection, batch, src_iterable, options):
 	rows = []
 	for name, file_path in src_iterable(connection, batch):
 		image = CameraImage(file_path, options)
-		image.extended(options.extended)
+		image.setROI(options.roi)
 		image.loadEXIF()    # we need to find out the camera model before reading
 		image.read()
 		row = image.stats()

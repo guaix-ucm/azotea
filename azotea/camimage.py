@@ -127,13 +127,12 @@ class CameraImage(object):
     def __init__(self, filepath, options):
         self.filepath   = filepath
         self.camerapath = options.camera
-        self._extended   = False
-        self.roi        = options.roi  # foreground rectangular region where signal is estimated
+        self.roi        = None  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
         self.exif       = None
         self.image      = None
         self.metadata   = {}  # Subset of EXIF metadata we are interested in
-        self._name      = os.path.basename(self.filepath)
+        self.name       = os.path.basename(self.filepath)
         self.signal     = []    # Bayer array for signal ROI
         self.dark       = []    # Bayer array for dark ROI
         self.path       = filepath  
@@ -141,12 +140,11 @@ class CameraImage(object):
         self.step       = [2, 2, 2, 2]
     
 
-    def name(self):
-        return self._name
-
-
-    def extended(self, flag):
-        self._extended = flag
+    def setROI(self, roi):
+        if type(roi) == str:
+            self.roi = ROI.strproi(roi_str)
+        elif type(roi) == ROI:
+            self.roi = roi
 
 
     def hash(self):
@@ -162,13 +160,13 @@ class CameraImage(object):
 
     def loadEXIF(self):
         '''Load EXIF metadata'''   
-        logging.debug("{0}: Loading EXIF metadata".format(self._name))
+        logging.debug("{0}: Loading EXIF metadata".format(self.name))
         with open(self.filepath, "rb") as f:
             self.exif = exifread.process_file(f)
         if not self.exif:
             raise MetadataError(self.filepath)
         self.model = str(self.exif.get('Image Model'))
-        self.metadata['name']      = self._name
+        self.metadata['name']      = self.name
         self.metadata['model']     = self.model
         self.metadata['tstamp']    = self._iso8601(str(self.exif.get('Image DateTime')))
         self.metadata['exposure']  = str(self.exif.get('EXIF ExposureTime'))
@@ -190,21 +188,21 @@ class CameraImage(object):
     def read(self):
         '''Read RAW data''' 
         self._lookup()
-        logging.debug("{0}: Loading RAW data from {1}".format(self._name, self.model))
+        logging.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
         self.image = rawpy.imread(self.filepath)
-        logging.debug("{0}: Color description is {1}".format(self._name, self.image.color_desc))
+        logging.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
         self._read()
         self._center_roi()
         
         
     def stats(self):
-        logging.debug("{0}: Computing stats".format(self._name))
+        logging.debug("{0}: Computing stats".format(self.name))
         r1_mean, r1_vari = self._region_stats(self.signal[R1], self.roi)
         g2_mean, g2_vari = self._region_stats(self.signal[G2], self.roi)
         g3_mean, g3_vari = self._region_stats(self.signal[G3], self.roi)
         b4_mean, b4_vari = self._region_stats(self.signal[B4], self.roi)
         result = {
-            'name'            : self._name,
+            'name'            : self.name,
             'roi'             : str(self.roi),
             'mean_raw_signal_R1'  : r1_mean,
             'vari_raw_signal_R1'  : r1_vari,
@@ -221,11 +219,7 @@ class CameraImage(object):
         
         mean  = [r1_mean, g2_mean, g3_mean, b4_mean]
         stdev = [round(sqrt(r1_vari),1), round(sqrt(g2_vari),1), round(sqrt(g3_vari),1), round(sqrt(b4_vari),1)]
-        logging.info("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self._name, self.roi, mean, stdev))
-        if self._extended:
-            logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
-            #vari =  [r1_vari, g2_vari, g3_vari, b4_vari]
-            #logging.info("{0}: \u03BC = {1}, \u03C3^2 = {2} ".format(self._name, mean, vari))
+        logging.info("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
         return result
 
     # ============== #

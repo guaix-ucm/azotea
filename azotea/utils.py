@@ -16,7 +16,7 @@ import sqlite3
 import os
 import os.path
 import logging
-import traceback
+import re
 
 # ---------------------
 # Third party libraries
@@ -54,7 +54,7 @@ except:
 # Module utility classes
 # ----------------------
 
-class Point:
+class Point(object):
     """ Point class represents and manipulates x,y coords. """
     def __init__(self, x=0, y=0):
         """ Create a new point at the origin """
@@ -67,8 +67,26 @@ class Point:
     def __repr__(self):
         return "({0},{1})".format(self.x, self.y)
 
-class ROI:
+
+class ROI(object):
     """ Region of interest  """
+
+    PATTERN = r'\[(\d+):(\d+),(\d+):(\d+)\]'
+
+    @classmethod
+    def strproi(cls, roi_str):
+        pattern = re.compile(ROI.PATTERN)
+        matchobj = pattern.search(roi_str)
+        if matchobj:
+            x1 = int(matchobj.group(1))
+            x2 = int(matchobj.group(2))
+            y1 = int(matchobj.group(3))
+            y2 = int(matchobj.group(4))
+            return cls(x1,x2,y1,y2)
+        else:
+            return None
+
+
     def __init__(self, x1 ,x2, y1, y2):
         self.x1 = min(x1,x2)
         self.y1 = min(y1,y2)

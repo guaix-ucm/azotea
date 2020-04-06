@@ -208,8 +208,7 @@ def createParser():
 	
 	ist = subparser.add_parser('stats',   help='compute image statistics')
 	ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-	ist.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
-  
+	
 	iex = subparser.add_parser('export',  help='export to CSV')
 	iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
 
@@ -219,7 +218,6 @@ def createParser():
 	irdex.add_argument('-a' ,'--all',     action="store_true", help="apply to all existing batches")
 	ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
 	ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
-	ird.add_argument('-x' ,'--extended',  action="store_true", help="Show extended info (mean, stdev) per channel")
 	ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")
 
 	return parser
