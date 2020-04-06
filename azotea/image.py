@@ -137,7 +137,15 @@ def batch_processed(connection, batch):
 		''',row)
 	return cursor.fetchone()[0]
 
-
+def master_dark_for(connection, batch):
+	row = {'batch': batch}
+	cursor = connection.cursor()
+	cursor.execute('''
+		SELECT COUNT(*) 
+		FROM master_dark_t
+		WHERE batch = :batch
+		''',row)
+	return cursor.fetchone()[0]
 
 
 def find_by_hash(connection, hash):
@@ -524,15 +532,15 @@ def master_dark_all_batches_iterable(connection):
 
 
 def do_image_apply_dark(connection, batch, options):
-	logging.info("Updating master darks for all batches")
 	db_update_all_master_dark(connection, batch)
 	if options.all:
-		logging.info("Appling dark substraction to all images")
+		logging.info("Applying dark substraction to all images")
 		for batch, in master_dark_all_batches_iterable(connection):
 			db_update_dark_columns(connection, batch)
 	else:
-		logging.info("Appling dark substraction to current batch")
-		db_update_dark_columns(connection, batch)
+		if master_dark_for(connection, batch):
+			logging.info("Applying dark substraction to current batch")
+			db_update_dark_columns(connection, batch)
 
 # -----------
 # Image Export
@@ -656,7 +664,7 @@ def do_image_export(connection, batch, src_iterable, options):
 	
 
 # ==================================
-# Image View sumcommands and options
+# Image List subcommands and options
 # ==================================
 
 
@@ -997,7 +1005,7 @@ def do_image_view(connection, batch, iterable, headers, options):
 
 # These display various data
 
-def image_view(connection, options):
+def image_list(connection, options):
 	batch = latest_batch(connection)
 	if options.exif:
 		headers = EXIF_HEADERS

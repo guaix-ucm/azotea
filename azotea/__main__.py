@@ -32,7 +32,7 @@ from .cfgcmds  import config_global, config_camera
 from .dbase    import dbase_clear, dbase_purge, dbase_backup
 from .backup   import backup_list, backup_delete, backup_restore
 from .image    import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
-from .image    import image_view
+from .image    import image_list
 from .reorg    import reorganize_images
 from .batch    import batch_current, batch_list
 
@@ -181,7 +181,7 @@ def createParser():
     parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
     parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
 
-    ime = subparser.add_parser('view',    help='display image data')
+    ime = subparser.add_parser('list',    help='display image data')
     ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
     imeex = ime.add_mutually_exclusive_group(required=True)
     imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
