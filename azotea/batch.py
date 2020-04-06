@@ -20,7 +20,8 @@ import logging
 # local imports
 # -------------
 
-from .utils    import paging
+from .utils      import paging
+from .exceptions import NoBatchError
 
 # ----------------
 # Module constants

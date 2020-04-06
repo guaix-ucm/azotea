@@ -31,9 +31,10 @@ import math
 # local imports
 # -------------
 
-from .         import AZOTEA_BASE_DIR
-from .camera   import CameraImage, CameraCache
-from .utils    import merge_two_dicts, paging
+from .           import AZOTEA_BASE_DIR
+from .camera     import CameraImage, CameraCache
+from .utils      import merge_two_dicts, paging
+from .exceptions import NoBatchError, NoWorkDirectoryError
 
 
 # ----------------
@@ -51,27 +52,7 @@ DARK_FRAME  = "DARK"
 UNKNOWN     = "UNKNOWN"
 
 
-# ----------
-# Exceptions
-# ----------
 
-class NoBatchError(ValueError):
-	'''No batch to operate upon.'''
-	def __str__(self):
-		s = self.__doc__
-		if self.args:
-			s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
-		s = '{0}.'.format(s)
-		return s
-
-class NoWorkDirectoryError(ValueError):
-	'''No working directory specified.'''
-	def __str__(self):
-		s = self.__doc__
-		if self.args:
-			s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
-		s = '{0}.'.format(s)
-		return s
 
 # -----------------------
 # Module global variables
