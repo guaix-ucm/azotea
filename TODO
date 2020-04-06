@@ -3,9 +3,9 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
-   
-- master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
+ 
 - ejecutar los caso de prueba listados
+- parsear el Exif ExporureTime
 - batch management
   - batch merge ¿es mecesario? quizas no ...
 - backup restore
@@ -13,7 +13,7 @@ TO DO
 - fichero de log?, recuperar BD a partir de log?
 - patch management (list, apply)
 - documento con uso avanzado ¿readthedocs o Google Docs?
-- algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
+- algo con los strings de 8-bit en python 2 porbablemente los exif metadata
 
 
 CASOS DE PRUEBA:
