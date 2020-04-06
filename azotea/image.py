@@ -584,13 +584,13 @@ def export_batch_iterable(connection, batch):
 				dark_roi,
 				exposure, 
 				mean_signal_R1, 
-				vari_signal_R1, -- Array index 13
+				vari_signal_R1, -- Array index 14
 				mean_signal_G2, 
-				vari_signal_G2, -- Array index 15
+				vari_signal_G2, -- Array index 16
 				mean_signal_G3, 
-				vari_signal_G3, -- Array index 17
+				vari_signal_G3, -- Array index 18
 				mean_signal_B4, 
-				vari_signal_B4  -- Array index 19
+				vari_signal_B4  -- Array index 20
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
@@ -617,13 +617,13 @@ def export_all_iterable(connection, batch):
 				dark_roi,
 				exposure, 
 				mean_signal_R1, 
-				vari_signal_R1, -- Array index 13
+				vari_signal_R1, -- Array index 14
 				mean_signal_G2, 
-				vari_signal_G2, -- Array index 15
+				vari_signal_G2, -- Array index 16
 				mean_signal_G3, 
-				vari_signal_G3, -- Array index 17
+				vari_signal_G3, -- Array index 18
 				mean_signal_B4, 
-				vari_signal_B4  -- Array index 19
+				vari_signal_B4  -- Array index 20
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
@@ -634,7 +634,7 @@ def export_all_iterable(connection, batch):
 def var2std(item):
 	'''From vraiance to StdDev in seevral columns'''
 	index, value = item
-	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
+	return round(math.sqrt(value),1) if index in [14, 16, 18, 20] else value
 
 
 def do_image_export(connection, batch, src_iterable, options):
