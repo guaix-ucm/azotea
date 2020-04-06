@@ -32,7 +32,7 @@ import math
 # -------------
 
 from .         import AZOTEA_BASE_DIR
-from .camimage import  CameraImage, CameraCache
+from .camera   import CameraImage, CameraCache
 from .utils    import merge_two_dicts, paging
 
 

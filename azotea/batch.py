@@ -10,18 +10,7 @@
 # System wide imports
 # -------------------
 
-import sys
-import argparse
-import sqlite3
-import os
-import os.path
-import glob
 import logging
-import csv
-import traceback
-import shutil
-import datetime
-import math
 
 # ---------------------
 # Third party libraries
@@ -31,10 +20,7 @@ import math
 # local imports
 # -------------
 
-from .         import AZOTEA_BASE_DIR
-from .camimage import  CameraImage
-from .utils    import merge_two_dicts, paging
-
+from .utils    import paging
 
 # ----------------
 # Module constants

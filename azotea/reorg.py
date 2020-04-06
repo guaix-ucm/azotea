@@ -31,7 +31,7 @@ import subprocess
 # local imports
 # -------------
 
-from .camimage import  CameraImage
+from .camera import  CameraImage
 
 # ----------------
 # Module constants
