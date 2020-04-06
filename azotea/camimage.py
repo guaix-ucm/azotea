@@ -218,11 +218,12 @@ class CameraImage(object):
         if self.dkroi:
             self._extract_dark()
             self._add_dark_stats(result)
-        logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
+        
+        mean  = [r1_mean, g2_mean, g3_mean, b4_mean]
+        stdev = [round(sqrt(r1_vari),1), round(sqrt(g2_vari),1), round(sqrt(g3_vari),1), round(sqrt(b4_vari),1)]
+        logging.info("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self._name, self.roi, mean, stdev))
         if self._extended:
-            mean  = [r1_mean, g2_mean, g3_mean, b4_mean]
-            stdev = [round(sqrt(r1_vari),1), round(sqrt(g2_vari),1), round(sqrt(g3_vari),1), round(sqrt(b4_vari),1)]
-            logging.info("{0}: \u03BC = {1}, \u03C3 = {2} ".format(self._name, mean, stdev))
+            logging.info("{0}: {2}, ROI = {1}, Dark ROI = {3}".format(self._name, self.roi, self.model, self.dkroi))
             #vari =  [r1_vari, g2_vari, g3_vari, b4_vari]
             #logging.info("{0}: \u03BC = {1}, \u03C3^2 = {2} ".format(self._name, mean, vari))
         return result
