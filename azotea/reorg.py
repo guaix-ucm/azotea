@@ -21,6 +21,7 @@ import csv
 import traceback
 import shutil
 import datetime
+import subprocess
 
 # ---------------------
 # Third party libraries
@@ -90,7 +91,7 @@ def copy_files(image_list):
 	count = 0
 	for item in image_list:
 		if sys.platform == 'win32':
-			os.system('xcopy "{0}" "{1}"'.format(source, target))
+			subprocess.call("xcopy",item[0], item[1])
 		else:
 			shutil.copy2(item[0], item[1])
 		count += 1
