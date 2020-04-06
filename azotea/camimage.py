@@ -160,13 +160,13 @@ class CameraImage(object):
             'roi'            ,
             'dark_roi'       ,
             'exposure'       ,
-            'mean_raw_signal_R1',
+            'aver_raw_signal_R1',
             'vari_raw_signal_R1',
-            'mean_raw_signal_G2',
+            'aver_raw_signal_G2',
             'vari_raw_signal_G2',
-            'mean_raw_signal_G3',
+            'aver_raw_signal_G3',
             'vari_raw_signal_G3',
-            'mean_raw_signal_B4',
+            'aver_raw_signal_B4',
             'vari_raw_signal_B4',
         ]
                 
@@ -256,13 +256,13 @@ class CameraImage(object):
         result = {
             'name'            : self.name,
             'roi'             : str(self.roi),
-            'mean_raw_signal_R1'  : r1_mean,
+            'aver_raw_signal_R1'  : r1_mean,
             'vari_raw_signal_R1'  : r1_vari,
-            'mean_raw_signal_G2'  : g2_mean,
+            'aver_raw_signal_G2'  : g2_mean,
             'vari_raw_signal_G2'  : g2_vari,
-            'mean_raw_signal_G3'  : g3_mean,
+            'aver_raw_signal_G3'  : g3_mean,
             'vari_raw_signal_G3'  : g3_vari,
-            'mean_raw_signal_B4'  : b4_mean,
+            'aver_raw_signal_B4'  : b4_mean,
             'vari_raw_signal_B4'  : b4_vari,
         }
         if self.dkroi:
@@ -341,19 +341,19 @@ class CameraImage(object):
         self.dark.append(self.signal[B4][-410: , -610:])
 
     def _add_dark_stats(self, mydict):
-        r1_mean_dark,   r1_vari_dark   = self._region_stats(self.dark[R1], self.dkroi)
-        g2_mean_dark,   g2_vari_dark   = self._region_stats(self.dark[G2], self.dkroi)
-        g3_mean_dark,   g3_vari_dark   = self._region_stats(self.dark[G3], self.dkroi)
-        b4_mean_dark,   b4_vari_dark   = self._region_stats(self.dark[B4], self.dkroi)
-        self.HEADERS.extend(['mean_dark_R1', 'vari_dark_R1', 'mean_dark_G2', 'vari_dark_G2',
-                'mean_dark_G3', 'vari_dark_G3', 'mean_dark_B4', 'vari_dark_B4'])
-        mydict['mean_dark_R1'] = r1_mean_dark
+        r1_aver_dark,   r1_vari_dark   = self._region_stats(self.dark[R1], self.dkroi)
+        g2_aver_dark,   g2_vari_dark   = self._region_stats(self.dark[G2], self.dkroi)
+        g3_aver_dark,   g3_vari_dark   = self._region_stats(self.dark[G3], self.dkroi)
+        b4_aver_dark,   b4_vari_dark   = self._region_stats(self.dark[B4], self.dkroi)
+        self.HEADERS.extend(['aver_dark_R1', 'vari_dark_R1', 'aver_dark_G2', 'vari_dark_G2',
+                'aver_dark_G3', 'vari_dark_G3', 'aver_dark_B4', 'vari_dark_B4'])
+        mydict['aver_dark_R1'] = r1_aver_dark
         mydict['vari_dark_R1'] = r1_vari_dark
-        mydict['mean_dark_G2'] = g2_mean_dark
+        mydict['aver_dark_G2'] = g2_aver_dark
         mydict['vari_dark_G2'] = g2_vari_dark
-        mydict['mean_dark_G3'] = g3_mean_dark
+        mydict['aver_dark_G3'] = g3_aver_dark
         mydict['vari_dark_G3'] = g3_vari_dark
-        mydict['mean_dark_B4'] = b4_mean_dark
+        mydict['aver_dark_B4'] = b4_aver_dark
         mydict['vari_dark_B4'] = b4_vari_dark
 
 

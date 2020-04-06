@@ -413,10 +413,10 @@ def stats_update_db(connection, rows):
 		UPDATE image_t
 		SET state               = :state,
 			roi                 = :roi, 
-			mean_raw_signal_R1  = :mean_raw_signal_R1, 
-			mean_raw_signal_G2  = :mean_raw_signal_G2, 
-			mean_raw_signal_G3  = :mean_raw_signal_G3,
-			mean_raw_signal_B4  = :mean_raw_signal_B4,
+			aver_raw_signal_R1  = :aver_raw_signal_R1, 
+			aver_raw_signal_G2  = :aver_raw_signal_G2, 
+			aver_raw_signal_G3  = :aver_raw_signal_G3,
+			aver_raw_signal_B4  = :aver_raw_signal_B4,
 			vari_raw_signal_R1  = :vari_raw_signal_R1,
 			vari_raw_signal_G2  = :vari_raw_signal_G2,
 			vari_raw_signal_G3  = :vari_raw_signal_G3,
@@ -478,10 +478,10 @@ def master_dark_db_update_all(connection, batch):
 			batch, 
 			roi, 
 			N, 
-			mean_R1, 
-			mean_G2, 
-			mean_G3, 
-			mean_B4,
+			aver_R1, 
+			aver_G2, 
+			aver_G3, 
+			aver_B4,
 			vari_R1, 
 			vari_G2, 
 			vari_G3, 
@@ -491,10 +491,10 @@ def master_dark_db_update_all(connection, batch):
 			batch, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(mean_raw_signal_R1), 
-			AVG(mean_raw_signal_G2), 
-			AVG(mean_raw_signal_G3), 
-			AVG(mean_raw_signal_B4),
+			AVG(aver_raw_signal_R1), 
+			AVG(aver_raw_signal_G2), 
+			AVG(aver_raw_signal_G3), 
+			AVG(aver_raw_signal_B4),
 			SUM(vari_raw_signal_R1)/COUNT(*),
 			SUM(vari_raw_signal_G2)/COUNT(*),
 			SUM(vari_raw_signal_G3)/COUNT(*),
@@ -521,10 +521,10 @@ def dark_update_columns(connection, batch):
 		UPDATE image_t
 		SET
 			state        = :new_state,
-			mean_dark_R1 = (SELECT mean_R1 FROM master_dark_t WHERE batch = :batch),
-			mean_dark_G2 = (SELECT mean_G2 FROM master_dark_t WHERE batch = :batch),
-			mean_dark_G3 = (SELECT mean_G3 FROM master_dark_t WHERE batch = :batch),
-			mean_dark_B4 = (SELECT mean_B4 FROM master_dark_t WHERE batch = :batch),
+			aver_dark_R1 = (SELECT aver_R1 FROM master_dark_t WHERE batch = :batch),
+			aver_dark_G2 = (SELECT aver_G2 FROM master_dark_t WHERE batch = :batch),
+			aver_dark_G3 = (SELECT aver_G3 FROM master_dark_t WHERE batch = :batch),
+			aver_dark_B4 = (SELECT aver_B4 FROM master_dark_t WHERE batch = :batch),
 			vari_dark_R1 = (SELECT vari_R1 FROM master_dark_t WHERE batch = :batch),
 			vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch),
 			vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE batch = :batch),
@@ -560,13 +560,13 @@ VIEW_HEADERS = [
 			'roi'            ,
 			'dark_roi'       ,
 			'exposure'       ,
-			'mean_signal_R1' ,
+			'aver_signal_R1' ,
 			'std_signal_R1'  ,
-			'mean_signal_G2' ,
+			'aver_signal_G2' ,
 			'std_signal_G2'  ,
-			'mean_signal_G3' ,
+			'aver_signal_G3' ,
 			'std_signal_G3'  ,
-			'mean_signal_B4' ,
+			'aver_signal_B4' ,
 			'std_signal_B4'  ,
 		]
 
@@ -588,13 +588,13 @@ def export_batch_iterable(connection, batch):
 				roi,
 				dark_roi,
 				exposure, 
-				mean_signal_R1, 
+				aver_signal_R1, 
 				vari_signal_R1, -- Array index 14
-				mean_signal_G2, 
+				aver_signal_G2, 
 				vari_signal_G2, -- Array index 16
-				mean_signal_G3, 
+				aver_signal_G3, 
 				vari_signal_G3, -- Array index 18
-				mean_signal_B4, 
+				aver_signal_B4, 
 				vari_signal_B4  -- Array index 20
 		FROM image_v
 		WHERE state >= :state
@@ -621,13 +621,13 @@ def export_all_iterable(connection, batch):
 				roi,
 				dark_roi,
 				exposure, 
-				mean_signal_R1, 
+				aver_signal_R1, 
 				vari_signal_R1, -- Array index 14
-				mean_signal_G2, 
+				aver_signal_G2, 
 				vari_signal_G2, -- Array index 16
-				mean_signal_G3, 
+				aver_signal_G3, 
 				vari_signal_G3, -- Array index 18
-				mean_signal_B4, 
+				aver_signal_B4, 
 				vari_signal_B4  -- Array index 20
 		FROM image_v
 		WHERE state >= :state
@@ -846,10 +846,10 @@ def view_data_batch_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch, 
-			mean_signal_R1, vari_signal_R1,
-			mean_signal_G2, vari_signal_G2,
-			mean_signal_G3, vari_signal_G3,
-			mean_signal_B4, vari_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_v
 		WHERE batch = :batch
 		ORDER BY name ASC
@@ -864,10 +864,10 @@ def view_data_all_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch,
-			mean_signal_R1, vari_signal_R1,
-			mean_signal_G2, vari_signal_G2,
-			mean_signal_G3, vari_signal_G3,
-			mean_signal_B4, vari_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_v
 		ORDER BY batch DESC, name ASC
 		''', row)
@@ -885,10 +885,10 @@ def view_raw_data_batch_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch, 
-			mean_raw_signal_R1, vari_raw_signal_R1,
-			mean_raw_signal_G2, vari_raw_signal_G2,
-			mean_raw_signal_G3, vari_raw_signal_G3,
-			mean_raw_signal_B4, vari_raw_signal_B4
+			aver_raw_signal_R1, vari_raw_signal_R1,
+			aver_raw_signal_G2, vari_raw_signal_G2,
+			aver_raw_signal_G3, vari_raw_signal_G3,
+			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE batch = :batch
 		AND ((type = :light) OR (type = :unknown))
@@ -905,10 +905,10 @@ def view_raw_data_all_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch,
-			mean_raw_signal_R1, vari_raw_signal_R1,
-			mean_raw_signal_G2, vari_raw_signal_G2,
-			mean_raw_signal_G3, vari_raw_signal_G3,
-			mean_raw_signal_B4, vari_raw_signal_B4
+			aver_raw_signal_R1, vari_raw_signal_R1,
+			aver_raw_signal_G2, vari_raw_signal_G2,
+			aver_raw_signal_G3, vari_raw_signal_G3,
+			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE type = :type
 		AND ((type = :light) OR (type = :unknown))
@@ -928,10 +928,10 @@ def view_dark_data_batch_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch, 
-			mean_dark_R1, vari_dark_R1,
-			mean_dark_G2, vari_dark_G2,
-			mean_dark_G3, vari_dark_G3,
-			mean_dark_B4, vari_dark_B4
+			aver_dark_R1, vari_dark_R1,
+			aver_dark_G2, vari_dark_G2,
+			aver_dark_G3, vari_dark_G3,
+			aver_dark_B4, vari_dark_B4
 		FROM image_t
 		WHERE batch = :batch
 		ORDER BY name ASC
@@ -946,10 +946,10 @@ def view_dark_data_all_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch, 
-			mean_dark_R1, vari_dark_R1,
-			mean_dark_G2, vari_dark_G2,
-			mean_dark_G3, vari_dark_G3,
-			mean_dark_B4, vari_dark_B4
+			aver_dark_R1, vari_dark_R1,
+			aver_dark_G2, vari_dark_G2,
+			aver_dark_G3, vari_dark_G3,
+			aver_dark_B4, vari_dark_B4
 		FROM image_t
 		ORDER BY batch DESC, name ASC
 		''', row)
@@ -967,10 +967,10 @@ def view_master_dark_all_iterable(connection, batch):
 		'''
 		SELECT 
 			batch, N, roi            
-			mean_R1, vari_R1,             
-			mean_G2, vari_G2,         
-			mean_G3, vari_G3,             
-			mean_B4, vari_B4             
+			aver_R1, vari_R1,             
+			aver_G2, vari_G2,         
+			aver_G3, vari_G3,             
+			aver_B4, vari_B4             
 		FROM master_dark_t
 		ORDER BY batch DESC
 		''')
@@ -985,10 +985,10 @@ def view_master_dark_batch_iterable(connection, batch):
 		'''
 		SELECT 
 			batch, N, roi             
-			mean_R1, vari_R1,             
-			mean_G2, vari_G2,         
-			mean_G3, vari_G3,             
-			mean_B4, vari_B4
+			aver_R1, vari_R1,             
+			aver_G2, vari_G2,         
+			aver_G3, vari_G3,             
+			aver_B4, vari_B4
 		FROM master_dark_t
 		WHERE batch = :batch
 		''', row)
@@ -1017,10 +1017,10 @@ def view_dark_batch_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch, 
-			mean_raw_signal_R1, vari_raw_signal_R1,
-			mean_raw_signal_G2, vari_raw_signal_G2,
-			mean_raw_signal_G3, vari_raw_signal_G3,
-			mean_raw_signal_B4, vari_raw_signal_B4
+			aver_raw_signal_R1, vari_raw_signal_R1,
+			aver_raw_signal_G2, vari_raw_signal_G2,
+			aver_raw_signal_G3, vari_raw_signal_G3,
+			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE batch = :batch
 		AND type = :type
@@ -1037,10 +1037,10 @@ def view_dark_all_iterable(connection, batch):
 		'''
 		SELECT 
 			name, batch,
-			mean_raw_signal_R1, vari_raw_signal_R1,
-			mean_raw_signal_G2, vari_raw_signal_G2,
-			mean_raw_signal_G3, vari_raw_signal_G3,
-			mean_raw_signal_B4, vari_raw_signal_B4
+			aver_raw_signal_R1, vari_raw_signal_R1,
+			aver_raw_signal_G2, vari_raw_signal_G2,
+			aver_raw_signal_G3, vari_raw_signal_G3,
+			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE type = :type
 		ORDER BY batch DESC, name ASC
