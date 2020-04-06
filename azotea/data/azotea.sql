@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS image_t
 (
 	-- Image metadata
     name                TEXT  NOT NULL,   -- Image name without the path
-    hash                BLOB  UNIQUE,     -- Image hash
+    hash                BLOB,             -- Image hash
     observer            TEXT  NOT NULL,   -- Observer name
     organization        TEXT,             -- Observer organization
     email               TEXT,             -- Observer email
@@ -40,11 +40,11 @@ CREATE TABLE IF NOT EXISTS image_t
     mean_dark_B4        REAL DEFAULT 0.0, -- B4 dark level either master dark or dark_roi
     vari_dark_B4        REAL DEFAULT 0.0, -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    file_path           TEXT  NOT NULL,   -- original absolute file path
-    batch               TEXT  NOT NULL,   -- batch identifier
+    file_path           TEXT    NOT NULL, -- original absolute file path
+    batch               INTEGER NOT NULL, -- batch identifier
     type                TEXT,             -- LIGHT or DARK
     state               INTEGER REFERENCES state_t(state),            
-    PRIMARY KEY(name)
+    PRIMARY KEY(hash)
 );
 
 CREATE TABLE IF NOT EXISTS state_t (
@@ -110,7 +110,7 @@ FROM image_t AS i;
 
 CREATE TABLE IF NOT EXISTS master_dark_t
 (
-    batch               TEXT    NOT NULL,    -- batch id
+    batch               INTEGER,             -- batch id
     mean_R1             REAL    NOT NULL,    -- Red mean dark level in Red
     vari_R1             REAL    NOT NULL,    -- Red dark vari
     mean_G2             REAL    NOT NULL,    -- Green 1 mean dark level

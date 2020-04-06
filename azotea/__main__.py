@@ -278,6 +278,8 @@ def main():
 		logging.error("{0}".format(str(e)))
 	except NoBatchError as e:
 		logging.error("{0}".format(str(e)))
+	except sqlite3.IntegrityError as e:
+		logging.error("Detected duplicated images. Re-run with --slow option to find out which")
 	except Exception as e:
 		logging.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
 		traceback.print_exc()

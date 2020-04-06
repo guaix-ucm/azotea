@@ -331,7 +331,7 @@ def image_register_slow(connection,  file_list, metadata, options):
 			connection.rollback()
 			name2, path2 = find_by_hash(connection, metadata['hash'])
 			duplicated_file_paths.append({'original': path2, 'duplicated': metadata['file_path']})
-			logging.warn("{0} is duplicate of {1}".format(row['file_path'], path2))
+			logging.warn("Duplicate => {0} EQUALS {1}".format(row['file_path'], path2))
 		else:
 			logging.info("{0} registered in database".format(row['name']))
 
@@ -351,7 +351,6 @@ def image_register_fast(connection, file_list, metadata, options):
 		insert_new_images(connection, rows)
 	except sqlite3.IntegrityError as e:
 		connection.rollback()
-		logging.error("Detected duplicated images. Re-run with --slow option to find out which")
 		raise
 	else:
 		logging.info("{0} new images registered in database".format(len(rows)))
@@ -650,7 +649,7 @@ def do_image_export(connection, batch, src_iterable, options):
 		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	elif batch_processed(connection, batch):
 		# Write a batch CSV file
-		batch_csv_file = os.path.join(AZOTEA_BASE_DIR, batch + '.csv')
+		batch_csv_file = os.path.join(AZOTEA_BASE_DIR, str(batch) + '.csv')
 		with myopen(batch_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)
@@ -1076,7 +1075,7 @@ def image_reduce(connection, options):
 		raise NoWorkDirectoryError("image reduce")
 
 	if options.new:
-		batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+		batch = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 	else:
 		batch = latest_batch(connection)
 		if batch is None:
