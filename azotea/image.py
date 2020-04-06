@@ -655,7 +655,10 @@ def do_export(connection, batch, src_iterable, options):
 		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	elif batch_processed(connection, batch):
 		# Write a batch CSV file
-		batch_csv_file = os.path.join(AZOTEA_BASE_DIR, str(batch) + '.csv')
+		if not options.csv_file:
+			batch_csv_file = os.path.join(AZOTEA_BASE_DIR, str(batch) + '.csv')
+		else:
+			batch_csv_file =  options.csv_file
 		with myopen(batch_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)

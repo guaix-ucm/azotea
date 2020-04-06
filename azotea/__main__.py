@@ -211,6 +211,7 @@ def createParser():
 	
 	iex = subparser.add_parser('export',  help='export to CSV')
 	iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
+	iex.add_argument('--csv-file',     type=str, default=None, help='Optional session CSV file to export')
 
 	ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
 	irdex = ird.add_mutually_exclusive_group()
@@ -219,6 +220,7 @@ def createParser():
 	ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
 	ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
 	ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")
+	ird.add_argument('--csv-file',        type=str, default=None, help='Optional session CSV file to export')
 
 	return parser
 
