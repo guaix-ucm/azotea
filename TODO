@@ -3,12 +3,7 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
-
-  - PRIMARY KEY ON BLOB
-  - batch INTEGER NO STRING Y PONER UN INDEX
-  - PONER UN INDEX EN IMAGE NAME ? => VER LAS CONSULTAS QUE ;MAS IMPORTAN
   
- - Estados como numeros y tabla auxiliar de decodes
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
    - metodos setROY(roi_str) setDarkROI() a CameraImage

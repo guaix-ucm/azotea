@@ -333,7 +333,7 @@ def image_register_slow(connection,  file_list, metadata, options):
 			duplicated_file_paths.append({'original': path2, 'duplicated': metadata['file_path']})
 			logging.warn("Duplicate => {0} EQUALS {1}".format(row['file_path'], path2))
 		else:
-			logging.info("{0} registered in database".format(row['name']))
+			logging.info("{0} from {1} registered in database".format(row['name'], exif_metadata['model']))
 
 
 def image_register_fast(connection, file_list, metadata, options):
@@ -346,7 +346,7 @@ def image_register_fast(connection, file_list, metadata, options):
 		metadata['roi']       = str(options.roi)  # provisional
 		row   = merge_two_dicts(metadata, exif_metadata)
 		rows.append(row)
-		logging.info("{0} registering in database".format(row['name']))
+		logging.info("{0} from {1} being registered in database".format(row['name'], exif_metadata['model']))
 	try:
 		insert_new_images(connection, rows)
 	except sqlite3.IntegrityError as e:
@@ -953,12 +953,11 @@ def naster_dark_all_iterable(connection, batch):
 	cursor.execute(
 		'''
 		SELECT 
-			batch,              
+			batch, N, roi            
 			mean_R1, vari_R1,             
 			mean_G2, vari_G2,         
 			mean_G3, vari_G3,             
-			mean_B4, vari_B4,             
-			roi, N
+			mean_B4, vari_B4             
 		FROM master_dark_t
 		ORDER BY batch DESC
 		''')
@@ -972,12 +971,11 @@ def master_dark_batch_iterable(connection, batch):
 	cursor.execute(
 		'''
 		SELECT 
-			batch,              
+			batch, N, roi             
 			mean_R1, vari_R1,             
 			mean_G2, vari_G2,         
 			mean_G3, vari_G3,             
-			mean_B4, vari_B4,             
-			roi, N
+			mean_B4, vari_B4
 		FROM master_dark_t
 		WHERE batch = :batch
 		''', row)
@@ -985,12 +983,12 @@ def master_dark_batch_iterable(connection, batch):
 
 MASTER_DARK_HEADERS = [
 	"Batch", 
+	"# Darks",
+	"ROI",
 	"\u03BC R1", "\u03C3^2 R1", 
 	"\u03BC G2", "\u03C3^2 G2", 
 	"\u03BC G3", "\u03C3^2 G3",
 	"\u03BC B4", "\u03C3^2 B4",
-	"ROI",
-	"# Darks",
 ]
 
 
