@@ -34,6 +34,8 @@ from .backup   import backup_list, backup_delete, backup_restore
 from .image    import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
 from .image    import image_view
 from .reorg    import reorganize_images
+from .batch    import batch_current, batch_list
+
 #
 # -----------------------
 # Module global variables
@@ -93,6 +95,7 @@ def createParser():
     parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
     parser_back   = subparser.add_parser('backup', help='backup management')
     parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
+    parser_batch  = subparser.add_parser('batch', help='batch commands')
    
     # -----------------------------------------
     # Create second level parsers for 'dbase'
@@ -134,6 +137,25 @@ def createParser():
     rgi.add_argument('-o','--output-dir', type=str, required=True , help='Images output base diretory')
 
 
+    # ----------------------------------------
+    # Create second level parsers for 'batch'
+    # ----------------------------------------
+
+    subparser = parser_batch.add_subparsers(dest='subcommand')
+
+    bcu = subparser.add_parser('current', help="batch current list")
+    bcu.add_argument('-x', '--extended',  action='store_true', help='Extended info')
+    bcu.add_argument('--page-size',       type=int, default=10,  help="display page size")
+   
+    bli = subparser.add_parser('list', help="Batch list")
+    bliex = bli.add_mutually_exclusive_group(required=True)
+    bliex.add_argument('-b', '--batch',  type=str , help='batch identifier')
+    bliex.add_argument('-a', '--all',  action='store_true' , help='all batches')
+    bli.add_argument('-x', '--extended',  action='store_true', help='Extended info')
+    bli.add_argument('--page-size',       type=int, default=10,  help="display page size")
+   
+
+
     # -----------------------------------------
     # Create second level parsers for 'config'
     # -----------------------------------------
@@ -161,7 +183,6 @@ def createParser():
 
     ime = subparser.add_parser('view',    help='display image data')
     ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-    ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
     imeex = ime.add_mutually_exclusive_group(required=True)
     imeex.add_argument('--exif',  action="store_true", help="display EXIF metadata")
     imeex.add_argument('--general', action="store_true", help="display general metadata")
@@ -170,6 +191,7 @@ def createParser():
     imeex.add_argument('--raw-data',  action="store_true", help="raw signal averaged over roi")
     imeex.add_argument('--dark',  action="store_true", help="dark signal averaged over dark row or master dark")
     imeex.add_argument('--master',  action="store_true", help="display master dark data")
+    ime.add_argument('--page-size',       type=int, default=10,  help="display page size")
 
     ire = subparser.add_parser('register', help='register images in the database')
     ire.add_argument('-n' ,'--new',        action="store_true", help="Generate a new batch of images")

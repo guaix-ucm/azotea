@@ -125,13 +125,14 @@ def classification_algorithm1(name, file_path, options):
 		result = {'name': name, 'type': LIGHT_FRAME}
 	return result
 
+
 def batch_processed(connection, batch):
-	row = {'batch': batch}
+	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute('''
 		SELECT COUNT(*) 
 		FROM image_t 
-		WHERE state IS NOT NULL
+		WHERE state >= :state
 		AND batch = :batch
 		''',row)
 	return cursor.fetchone()[0]
@@ -557,7 +558,7 @@ VIEW_HEADERS = [
 		]
 
 def export_batch_iterable(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS}
+	row = {'batch': batch, 'state': RAW_STATS, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -583,13 +584,14 @@ def export_batch_iterable(connection, batch):
 				mean_signal_B4, 
 				vari_signal_B4  -- Array index 19
 		FROM image_v
-		WHERE state IS NOT NULL
+		WHERE state >= :state
+		AND   type = :type
 		AND   batch = :batch
 		''', row)
 	return cursor
 
 def export_all_iterable(connection, batch):
-	row = {'state': RAW_STATS}
+	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -615,7 +617,8 @@ def export_all_iterable(connection, batch):
 				mean_signal_B4, 
 				vari_signal_B4  -- Array index 19
 		FROM image_v
-		WHERE state >=:state
+		WHERE state >= :state
+		AND   type = :type
 		''', row)
 	return cursor
 

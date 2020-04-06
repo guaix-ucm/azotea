@@ -3,8 +3,11 @@ CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especific
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
 
 TO DO
- - VER una cosa rara en el glob.glob de image
- - image view --count mostrar #imagens por lote, ORDER by batch DESC
+
+  - PRIMARY KEY ON BLOB
+  - batch INTEGER NO STRING Y PONER UN INDEX
+  - PONER UN INDEX EN IMAGE NAME ? => VER LAS CONSULTAS QUE ;MAS IMPORTAN
+  
  - Estados como numeros y tabla auxiliar de decodes
 - algo con los strings de 8-bit en python 2 porbablkemente los exif metadata
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
@@ -17,14 +20,14 @@ TO DO
 - ejecutar los caso de prueba listados
 - ejecucion silenciosa 
 - batch management
-  - batch current [--extended] muestra los ficheros de la sesion últimna
-  - batch list [--exttended] muestra nnumero de imagenets de cada lote. Con --extended listado individual
-  - batch merge¿es neecsario? quizas no ...
+  - batch merge ¿es neecsario? quizas no ...
 - backup restore
 - informes a lo IDA con plantilla JINJA
 - fichero de log?, recuperar BD a partir de log?
 - patch management (list, apply)
 - documento con uso avanzado ¿readthedocs o Google Docs?
+- coger excepciones lanzadas poir image en el bucle principal y poner el mensaje bonito
+- improve copy by os.system (cp)
 
 
 CASOS DE PRUEBA:
