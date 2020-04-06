@@ -224,26 +224,6 @@ def createParser():
 	return parser
 
 
-# --------------------------
-# Configuration file loading
-# --------------------------
-
-from argparse import Namespace
-
-def loadConfig(filepath):
-	
-		'''Load EXIF metadata'''   
-		logging.debug("{0}: Loading EXIF metadata".format(self._name))
-		with open(self.filepath, "rb") as f:
-			self.metadata = exifread.process_file(f)
-		self.model = str(self.metadata.get('Image Model'))
-		return self.metadata
-# --------
-# Database
-# --------
-
-
-
 # ================ #
 # MAIN ENTRY POINT #
 # ================ #
@@ -266,7 +246,7 @@ def main():
 		create_database(connection, SQL_DATAMODEL, "SELECT COUNT(*) FROM image_t")
 		command      = options.command
 		subcommand   = options.subcommand
-		if not command in ["config"]: 
+		if (command, subcommand) in [ ("image","register"), ("image","reduce")]: 
 			file_options = load_config_file(DEF_CONFIG)
 			options      = merge_options(options, file_options)
 		# Call the function dynamically

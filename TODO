@@ -8,14 +8,12 @@ TO DO
 - constructor ROI.stproi("[x1:y1,y1:y2"]). Parsear la expresion regular
    - metodos setROY(roi_str) setDarkROI() a CameraImage
 - CameraCache en el modulo camimage.
-- Leer el fichero config SOLO EN LOS CASOS en register --new y reduce --new
   esto oblifga a poner la ROI a cameraimage dinamicamente, no en el constructor
   - master_dark_t añadir columnas exposure_min, exposure_max, exposure_ave
 - master dark por session y --all
 - ejecutar los caso de prueba listados
-- ejecucion silenciosa 
 - batch management
-  - batch merge ¿es neecsario? quizas no ...
+  - batch merge ¿es mecesario? quizas no ...
 - backup restore
 - informes a lo IDA con plantilla JINJA
 - fichero de log?, recuperar BD a partir de log?
