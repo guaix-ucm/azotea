@@ -11,6 +11,15 @@
 # Exceptions
 # ----------
 
+class ConfigFileError(ValueError):
+    '''No configuration file was found.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
 class NoBatchError(ValueError):
     '''No batch to operate upon.'''
     def __str__(self):

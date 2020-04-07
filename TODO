@@ -5,7 +5,7 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 TO DO
  
 - ejecutar los caso de prueba listados
-- azotea config diff
+
 - Perparar todo para pasar a un modelo de estrella
   - ejecucion de SQLs bajo un directorio
     data/sql/schema/azotea.sql

@@ -34,6 +34,7 @@ from .image   import image_register, image_classify, image_dark, image_stats, im
 from .image   import image_list, NoWorkDirectoryError, NoBatchError
 from .reorg   import reorganize_images
 from .batch   import batch_current, batch_list
+from .exceptions import *
 
 # -----------------------
 # Module global variables
@@ -193,6 +194,8 @@ def createParser():
 	cglex = cgl.add_mutually_exclusive_group(required=True)
 	cglex.add_argument('-c' ,'--create', action="store_true", help="Create global configuration file in user's HOME directory")
 	cglex.add_argument('-l' ,'--list',   action="store_true", help="List current global configuration file template")
+	cglex.add_argument('-d' ,'--diff',   action="store_true", help="Diff input config file with config file template")
+	cgl.add_argument('-i', '--input-file', type=str , help='Input config file for diff')
 
 	cca = subparser.add_parser('camera',  help="Create camera configuration file in user's HOME directory")
 	ccaex = cca.add_mutually_exclusive_group(required=True)
@@ -277,6 +280,8 @@ def main():
 		globals()[func](connection, options)
 	except KeyboardInterrupt as e:
 		logging.error("[{0}] Interrupted by user ".format(__name__))
+	except ConfigFileError as e:
+		logging.error("{0}".format(str(e)))
 	except NoWorkDirectoryError as e:
 		logging.error("{0}".format(str(e)))
 	except NoBatchError as e:
