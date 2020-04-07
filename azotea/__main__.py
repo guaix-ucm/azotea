@@ -217,6 +217,11 @@ def createParser():
 	return parser
 
 
+def python2_warning():
+	if sys.version_info[0] < 3:
+		logging.warning("This software des not run under Python 2 !")
+
+
 # ================ #
 # MAIN ENTRY POINT #
 # ================ #
@@ -235,6 +240,7 @@ def main():
 			os.mkdir(AZOTEA_LOG_DIR)
 		options = createParser().parse_args(sys.argv[1:])
 		configureLogging(options)
+		python2_warning()
 		connection = open_database(DEF_DBASE)
 		create_database(connection, SQL_DATAMODEL, "SELECT COUNT(*) FROM image_t")
 		command      = options.command
