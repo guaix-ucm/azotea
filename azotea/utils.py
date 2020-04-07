@@ -15,6 +15,7 @@ import sqlite3
 import os.path
 import logging
 import re
+import glob
 
 # Python3 catch
 try:
@@ -112,7 +113,7 @@ def open_database(dbase_path):
     return sqlite3.connect(dbase_path)
 
 
-def create_database(connection, datamodel_path, query):
+def create_database(connection, schema_path, data_dir_path, query):
     created = True
     cursor = connection.cursor()
     try:
@@ -120,11 +121,20 @@ def create_database(connection, datamodel_path, query):
     except Exception:
         created = False
     if not created:
-        with open(datamodel_path) as f: 
+        with open(schema_path) as f: 
             lines = f.readlines() 
         script = ''.join(lines)
         connection.executescript(script)
-        logging.info("Created data model from {0}".format(datamodel_path))
+        logging.info("Created data model from {0}".format(os.path.basename(schema_path)))
+        file_list = glob.glob(os.path.join(data_dir_path, '*.sql'))
+        for sql_file in file_list:
+            logging.info("Populating data model from {0}".format(os.path.basename(sql_file)))
+            with open(sql_file) as f: 
+                lines = f.readlines() 
+            script = ''.join(lines)
+            connection.executescript(script)
+        connection.commit()
+
 
 
 def merge_two_dicts(d1, d2):

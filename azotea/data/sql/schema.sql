@@ -53,10 +53,6 @@ CREATE TABLE IF NOT EXISTS state_t (
     PRIMARY KEY(state)
 );
 
-INSERT OR REPLACE INTO state_t(state, label) VALUES ( 0, "REGISTERED");
-INSERT OR REPLACE INTO state_t(state, label) VALUES ( 1, "NO DARK SUBSTRACTED");
-INSERT OR REPLACE INTO state_t(state, label) VALUES ( 2, "DARK SUBSTRACTED");
-
 ------------------------------------------------------------------------------------------------
 -- This View exists to automatically substract the dark levels and calculate resulting variances
 -- From the raw data without actually modifyng the underlying data

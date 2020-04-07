@@ -1,4 +1,4 @@
 include versioneer.py
 include azotea/_version.py
-include azotea/data/camera.ini
 recursive-include files *
+recursive-include data *

@@ -22,9 +22,8 @@ import traceback
 # local imports
 # -------------
 
+from .        import * 
 from .        import __version__
-from .        import  AZOTEA_BASE_DIR, AZOTEA_DB_DIR, AZOTEA_LOG_DIR, AZOTEA_CFG_DIR, AZOTEA_BAK_DIR
-from .        import DEF_WIDTH, DEF_HEIGHT, DEF_CAMERA, DEF_CONFIG, DEF_GLOBAL_CSV, DEF_DBASE, SQL_DATAMODEL
 from .config  import load_config_file, merge_options 
 from .utils   import chop, Point, ROI, open_database, create_database
 from .cfgcmds import config_global, config_camera
@@ -267,7 +266,7 @@ def main():
 		options = createParser().parse_args(sys.argv[1:])
 		setup(options)
 		connection = open_database(DEF_DBASE)
-		create_database(connection, SQL_DATAMODEL, "SELECT COUNT(*) FROM image_t")
+		create_database(connection, SQL_SCHEMA, SQL_DATA_DIR, SQL_TEST_STRING)
 		command      = options.command
 		if command == 'init':
 			return

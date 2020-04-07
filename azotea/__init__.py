@@ -33,10 +33,15 @@ from ._version import get_versions
 DEF_WIDTH  = 500
 DEF_HEIGHT = 400
 
+SQL_TEST_STRING = "SELECT COUNT(*) FROM image_t"
+
 # Configuration file templates are built-in the package
 DEF_CAMERA_TPL = resource_filename(__name__, os.path.join('data', 'camera.ini'))
 DEF_CONFIG_TPL = resource_filename(__name__, os.path.join('data', 'azotea.ini'))
-SQL_DATAMODEL  = resource_filename(__name__, os.path.join('data', 'azotea.sql'))
+SQL_SCHEMA     = resource_filename(__name__, os.path.join('data', 'sql', 'schema.sql'))
+SQL_PURGE      = resource_filename(__name__, os.path.join('data', 'sql', 'purge.sql'))
+SQL_DATA_DIR   = resource_filename(__name__, os.path.join('data', 'sql', 'data' ))
+
 
 # Configuration file templates are built-in the package
 AZOTEA_BASE_DIR = os.path.join(os.path.expanduser("~"), "azotea")
@@ -51,6 +56,8 @@ DEF_CAMERA     = os.path.join(AZOTEA_CFG_DIR, os.path.basename(DEF_CAMERA_TPL))
 DEF_CONFIG     = os.path.join(AZOTEA_CFG_DIR, os.path.basename(DEF_CONFIG_TPL))
 DEF_DBASE      = os.path.join(AZOTEA_DB_DIR, "azotea.db")
 DEF_GLOBAL_CSV = os.path.join(AZOTEA_BASE_DIR, "azotea.csv")
+
+
 
 DEF_TSTAMP = "%Y-%m-%dT%H:%M:%S"
 # -----------------------

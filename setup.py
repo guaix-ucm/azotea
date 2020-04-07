@@ -41,7 +41,12 @@ CLASSIFIERS  = [
 
 # Additional data inside the package
 PACKAGE_DATA = {
-    'azotea': ['data/camera.ini'],
+    'azotea': [
+                'data/camera.ini',
+                'data/azotea.ini',
+                'data/sql/*.sql',
+                'data/sql/data/*.sql',
+              ],
 }
 
 SCRIPTS = [
