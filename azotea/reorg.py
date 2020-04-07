@@ -22,6 +22,8 @@ import subprocess
 # Third party libraries
 # ---------------------
 
+import jdcal
+
 #--------------
 # local imports
 # -------------
@@ -55,6 +57,10 @@ def _copyfileobj_patched(fsrc, fdst, length=16*1024*1024):
 shutil.copyfileobj = _copyfileobj_patched
 
 
+def dir_name(jd2000, mjd):
+	year, month, day, fraction = jdcal.jd2gcal(jd2000, mjd)
+	return "{0:04d}-{1:02d}-{2:02d}".format(year, month, day)
+
 def scan_images(options):
 	count = 0
 	output_dir_set = set()
@@ -63,8 +69,8 @@ def scan_images(options):
 	for input_file_path in filepath_iterable:
 		image = CameraImage(input_file_path, options)
 		image.loadEXIF()
-		date = image.getJulianDate()
-		output_dir_path = os.path.join(options.output_dir,str(date))
+		date_string = dir_name(*image.getJulianDate())
+		output_dir_path = os.path.join(options.output_dir, date_string)
 		output_dir_set.add(output_dir_path)
 		image_list.append((input_file_path, output_dir_path))
 		count += 1
