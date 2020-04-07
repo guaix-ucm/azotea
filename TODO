@@ -5,6 +5,20 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 TO DO
  
 - ejecutar los caso de prueba listados
+- juliano oinverso en los directorios
+- Perparar todo para pasar a un modelo de estrella
+  - ejecucion de SQLs bajo un directorio
+    data/sql/schema/azotea.sql
+    data/sql/data/*.sql (auziliar.sql, date.sql, time.sqil , etc)
+  
+  - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
+  - emplear el filter(), map() reduce() para mapear los atributos de interes y ver que ha cambiado
+    ['zp', 'filter']
+    {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.50, 'filter': 'UV-IR/cut'} # ref
+    {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.32, 'filter': 'UV-IR/cut'} # cambio 1
+    {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.50, 'filter': 'GG543'}     # cambio 2
+    {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.43, 'filter': 'GG987'}
+
 - parsear el Exif ExporureTime
 - ver comno recuperar la config optica del EXIF. 
   En todo caso, añadir una seccion de configuracion optica en el fichero de config. Los datos EXIF si existen tuendran precedencia

@@ -53,6 +53,36 @@ def configureLogging(options):
 	logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
 
 
+
+def python2_warning():
+	if sys.version_info[0] < 3:
+		logging.warning("This software des not run under Python 2 !")
+
+
+def setup(options):
+	configureLogging(options)
+	python2_warning()
+	if not os.path.exists(AZOTEA_BASE_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_BASE_DIR))
+		os.mkdir(AZOTEA_BASE_DIR)
+	if not os.path.exists(AZOTEA_CFG_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_CFG_DIR))
+		os.mkdir(AZOTEA_CFG_DIR)
+	if not os.path.exists(AZOTEA_DB_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_DB_DIR))
+		os.mkdir(AZOTEA_DB_DIR)
+	if not os.path.exists(AZOTEA_BAK_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_BAK_DIR))
+		os.mkdir(AZOTEA_BAK_DIR)
+	if not os.path.exists(AZOTEA_LOG_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_LOG_DIR))
+		os.mkdir(AZOTEA_LOG_DIR)
+	if not os.path.exists(DEF_CONFIG):
+		shutil.copy2(filename, DEF_CONFIG)
+		logging.info("Created {0} file, please review it".format(DEF_CONFIG))
+
+
+
 def mkrect1(text):
 	'''Make a rectangle of width and height'''
 	l = chop(text,',')
@@ -82,6 +112,7 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 
+	parser_init = subparser.add_parser('init', help='init command')
 	parser_config = subparser.add_parser('config', help='config commands')
 	parser_image  = subparser.add_parser('image', help='image commands')
 	parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
@@ -89,6 +120,10 @@ def createParser():
 	parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
 	parser_batch  = subparser.add_parser('batch', help='batch commands')
    
+	# -----------------------------------------
+	# 'init' does not have a second level parser
+	# -----------------------------------------
+
 	# -----------------------------------------
 	# Create second level parsers for 'dbase'
 	# -----------------------------------------
@@ -217,11 +252,6 @@ def createParser():
 	return parser
 
 
-def python2_warning():
-	if sys.version_info[0] < 3:
-		logging.warning("This software des not run under Python 2 !")
-
-
 # ================ #
 # MAIN ENTRY POINT #
 # ================ #
@@ -231,19 +261,13 @@ def main():
 	Utility entry point
 	'''
 	try:
-		if not os.path.exists(AZOTEA_BASE_DIR):
-			logging.info("Creating directories under {0}".format(AZOTEA_BASE_DIR))
-			os.mkdir(AZOTEA_BASE_DIR)
-			os.mkdir(AZOTEA_CFG_DIR)
-			os.mkdir(AZOTEA_DB_DIR)
-			os.mkdir(AZOTEA_BAK_DIR)
-			os.mkdir(AZOTEA_LOG_DIR)
 		options = createParser().parse_args(sys.argv[1:])
-		configureLogging(options)
-		python2_warning()
+		setup(options)
 		connection = open_database(DEF_DBASE)
 		create_database(connection, SQL_DATAMODEL, "SELECT COUNT(*) FROM image_t")
 		command      = options.command
+		if command == 'init':
+			return
 		subcommand   = options.subcommand
 		if (command, subcommand) in [ ("image","register"), ("image","reduce")]: 
 			file_options = load_config_file(DEF_CONFIG)
