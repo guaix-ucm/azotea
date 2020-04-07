@@ -22,18 +22,18 @@ import traceback
 # local imports
 # -------------
 
-from .        import * 
-from .        import __version__
-from .config  import load_config_file, merge_options 
-from .utils   import chop, Point, ROI, open_database, create_database
-from .cfgcmds import config_global, config_camera
-from .dbase   import dbase_clear, dbase_purge, dbase_backup
-from .backup  import backup_list, backup_delete, backup_restore
-from .image   import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
-from .image   import image_list, NoWorkDirectoryError, NoBatchError
-from .reorg   import reorganize_images
-from .batch   import batch_current, batch_list
+from .           import *
 from .exceptions import *
+from .           import __version__
+from .config     import load_config_file, merge_options 
+from .utils      import chop, Point, ROI, open_database, create_database
+from .cfgcmds    import config_global, config_camera
+from .database   import database_clear, database_purge, database_backup
+from .backup     import backup_list, backup_delete, backup_restore
+from .image      import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
+from .image      import image_list, NoWorkDirectoryError, NoBatchError
+from .reorg      import reorganize_images
+from .batch      import batch_current, batch_list
 
 # -----------------------
 # Module global variables
@@ -115,7 +115,7 @@ def createParser():
 	parser_init = subparser.add_parser('init', help='init command')
 	parser_config = subparser.add_parser('config', help='config commands')
 	parser_image  = subparser.add_parser('image', help='image commands')
-	parser_dbase  = subparser.add_parser('dbase', help='database commands (mostly mainteinance)')
+	parser_database  = subparser.add_parser('database', help='database commands (mostly mainteinance)')
 	parser_back   = subparser.add_parser('backup', help='backup management')
 	parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
 	parser_batch  = subparser.add_parser('batch', help='batch commands')
@@ -125,10 +125,10 @@ def createParser():
 	# -----------------------------------------
 
 	# -----------------------------------------
-	# Create second level parsers for 'dbase'
+	# Create second level parsers for 'database'
 	# -----------------------------------------
 
-	subparser = parser_dbase.add_subparsers(dest='subcommand')
+	subparser = parser_database.add_subparsers(dest='subcommand')
 
 	dbc = subparser.add_parser('clear',  help="Clears the database (MAINTENANCE ONLY!)")
 	

@@ -4,22 +4,27 @@
 
 CREATE TABLE IF NOT EXISTS image_t
 (
-	-- Image metadata
-    name                TEXT  NOT NULL,   -- Image name without the path
-    hash                BLOB,             -- Image hash
+    -- Observer metadata
     observer            TEXT  NOT NULL,   -- Observer name
     organization        TEXT,             -- Observer organization
     email               TEXT,             -- Observer email
+    -- Location metadata
     location            TEXT  NOT NULL,   -- location name
-    scale               REAL,             -- image scale in arcsec/pixel
-    model               TEXT  NOT NULL,   -- Camera Model
-    tstamp              TEXT  NOT NULL,   -- ISO 8601 timestamp
-    iso                 TEXT  NOT NULL,   -- ISO sensivity
-    exptime             REAL  NOT NULL,   -- exposure time in seconds       
-    -- Measurements
+    -- Camera metadata
+    model               TEXT  NOT NULL,   -- Camera Model from EXIF
+    focal_length        INTEGER,          -- Either from config file or EXIF
+    f_ratio             INTEGER,          -- Either from config file or EXIF
+    -- Image metadata
+    name                TEXT  NOT NULL,   -- Image name without the path
+    hash                BLOB,             -- Image hash
+    tstamp              TEXT  NOT NULL,   -- ISO 8601 timestamp from EXIF
+    iso                 TEXT  NOT NULL,   -- ISO sensivity from EXIF
+    exptime             REAL  NOT NULL,   -- exposure time in seconds from EXIF      
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]
     dark_roi            TEXT,             -- dark region of interest: [x1:x2,y1:y2], NULL if not used
-    
+    scale               REAL,             -- image scale in arcsec/pixel
+
+    -- Image Measurements
     aver_raw_signal_R1  REAL,             -- R1 raw signal mean without dark substraction
     vari_raw_signal_R1  REAL,             -- R1 raw signal variance without dark substraction
     aver_dark_R1        REAL DEFAULT 0.0, -- R1 dark level R1 either from master dark or dark_roi
@@ -60,22 +65,26 @@ CREATE TABLE IF NOT EXISTS state_t (
 
 CREATE VIEW IF NOT EXISTS image_v AS
 SELECT
-    -- Image metadata
-    name                ,                 -- Image name without the path
-    hash                ,                 -- Image hash
+    -- Observer metadata
     observer            ,                 -- Observer name
     organization        ,                 -- Observer organization
     email               ,                 -- Observer email
+    -- Location metadata
     location            ,                 -- location name
-    scale               ,                 -- image scale in arcsec/pixel
-    model               ,                 -- Camera Model
+    -- Camera metadata
+    model               ,                 -- Camera Model from EXIF
+    focal_length        ,                 -- Either from config file or EXIF
+    f_ratio             ,                 -- Either from config file or EXIF
+    -- Image metadata
+    name                ,                 -- Image name without the path
+    hash                ,                 -- Image hash
     tstamp              ,                 -- ISO 8601 timestamp
     iso                 ,                 -- ISO sensivity
     exptime             ,                 -- exposure time in seconds       
-    -- Measurements
     roi                 ,                 -- region of interest: [x1:x2,y1:y2]
     dark_roi            ,                 -- dark region of interest: [x1:x2,y1:y2], NULL if not used
-    
+    scale               ,                 -- image scale in arcsec/pixel
+    -- Image Measurements
     (aver_raw_signal_R1 - aver_dark_R1) AS aver_signal_R1, -- R1 dark substracted signal
     (vari_raw_signal_R1 + vari_dark_R1) AS vari_signal_R1, -- R1 dark substracted signal variance
     aver_dark_R1        ,                 -- R1 dark level R1 either from master dark or dark_roi
@@ -100,7 +109,7 @@ SELECT
     batch               ,                -- batch identifier
     type                ,                -- LIGHT or DARK
     state                                -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
-FROM image_t AS i;
+FROM image_t;
 
 
 
