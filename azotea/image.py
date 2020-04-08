@@ -565,7 +565,6 @@ def export_batch_iterable(connection, batch):
 		SELECT  batch,
 				observer,
 				organization,
-				email,
 				location,
 				type,
 				tstamp, 
@@ -598,7 +597,6 @@ def export_all_iterable(connection, batch):
 	   SELECT   batch,
 				observer,
 				organization,
-				email,
 				location,
 				type,
 				tstamp, 
@@ -655,7 +653,7 @@ def var2std(item):
 
 
 def do_export(connection, batch, src_iterable, options):
-	fieldnames = ["batch","observer","organization", "email","location", "type"]
+	fieldnames = ["batch","observer","organization","location", "type"]
 	fieldnames.extend(VIEW_HEADERS)
 	if options.all:
 		with myopen(options.global_csv_file, 'w') as csvfile:
