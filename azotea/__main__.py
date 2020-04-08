@@ -17,6 +17,7 @@ import os
 import os.path
 import logging
 import traceback
+import shutil
 
 #--------------
 # local imports
