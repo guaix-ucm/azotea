@@ -76,12 +76,11 @@ def myopen(name, *args):
 	else:
 		return open(name,  *args, newline='')
 
-############ AQUI
 
 def already_in_database(connection):
 	cursor = connection.cursor()
-	cursor.execute("SELECT file_path FROM image_t")
-	return [item[0] for item in cursor]
+	cursor.execute("SELECT dir_path, name FROM image_t")
+	return [os.path.join(item[0], item[1]) for item in cursor]
 
 
 def candidates(directory, options):
@@ -91,13 +90,12 @@ def candidates(directory, options):
 	return file_list
 
 
-def insert_list(connection, directory, options):
+def insertion_list(connection, directory, options):
 	'''Returns the list of file mpaths that must be really inserted in the database'''
 	return list(set(candidates(directory, options)) - set(already_in_database(connection)))
 
 
-######### AQUI
-def classification_algorithm1(name, file_path, options):
+def classification_algorithm1(name,  file_path, options):
 	if name.upper().startswith(DARK_FRAME):
 		result = {'name': name, 'type': DARK_FRAME}
 	else:
@@ -127,13 +125,11 @@ def master_dark_for(connection, batch):
 	return cursor.fetchone()[0]
 
 
-########## AQUI
-
 def find_by_hash(connection, hash):
 	row = {'hash': hash}
 	cursor = connection.cursor()
 	cursor.execute('''
-		SELECT name, file_path
+		SELECT dir_path, name
 		FROM image_t 
 		WHERE hash = :hash
 		''',row)
@@ -179,7 +175,7 @@ def register_insert_image(connection, row):
 			INSERT INTO image_t (
 				name, 
 				hash,
-				file_path, 
+				dir_path, 
 				batch, 
 				observer, 
 				organization,
@@ -195,7 +191,7 @@ def register_insert_image(connection, row):
 			) VALUES (
 				:name, 
 				:hash,
-				:file_path, 
+				:dir_path, 
 				:batch, 
 				:observer, 
 				:organization, 
@@ -230,7 +226,7 @@ def register_insert_images(connection, rows):
 				iso,
 				exptime,
 				roi,
-				file_path, 
+				dir_path, 
 				batch,
 				type,
 				state
@@ -246,7 +242,7 @@ def register_insert_images(connection, rows):
 				:iso, 
 				:exptime,
 				:roi,
-				:file_path,
+				:dir_path,
 				:batch, 
 				:type,
 				:state
@@ -256,7 +252,7 @@ def register_insert_images(connection, rows):
 
 
 def register_preamble(connection, directory, batch, options):
-	file_list = insert_list(connection, directory, options)
+	file_list = insertion_list(connection, directory, options)
 	logging.info("Registering {0} new images".format(len(file_list)))
 	metadata = {
 		'batch'       : batch, 
@@ -269,7 +265,7 @@ def register_preamble(connection, directory, batch, options):
 	}
 	return file_list, metadata
 
-########## AQUI
+
 def register_slow(connection,  file_list, metadata, options):
 	
 	global duplicated_file_paths
@@ -278,7 +274,7 @@ def register_slow(connection,  file_list, metadata, options):
 	for file_path in file_list:
 		image = CameraImage(file_path, camera_cache)
 		exif_metadata = image.loadEXIF()
-		metadata['file_path'] = file_path
+		metadata['dir_path']  = os.path.dirname(file_path)
 		metadata['hash']      = image.hash()
 		metadata['roi']       = str(options.roi)  # provisional
 		row   = merge_two_dicts(metadata, exif_metadata)
@@ -286,13 +282,14 @@ def register_slow(connection,  file_list, metadata, options):
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
-			name2, path2 = find_by_hash(connection, metadata['hash'])
-			duplicated_file_paths.append({'original': path2, 'duplicated': metadata['file_path']})
+			dir2, name2 = find_by_hash(connection, metadata['hash'])
+			path2 = os.path.join(dir2, path2)
+			duplicated_file_paths.append({'original': path2, 'duplicated': file_path})
 			logging.warn("Duplicate => {0} EQUALS {1}".format(row['file_path'], path2))
 		else:
 			logging.info("{0} from {1} registered in database".format(row['name'], exif_metadata['model']))
 
-############ AQUI
+
 def register_fast(connection, file_list, metadata, options):
 	rows = []
 	camera_cache = CameraCache(options.camera) 
@@ -300,7 +297,7 @@ def register_fast(connection, file_list, metadata, options):
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		exif_metadata = image.loadEXIF()
-		metadata['file_path'] = file_path
+		metadata['dir_path']  = os.path.dirname(file_path)
 		metadata['hash']      = image.hash()
 		metadata['roi']       = str(options.roi)  # provisional
 		row   = merge_two_dicts(metadata, exif_metadata)
@@ -346,38 +343,38 @@ def classify_update_db(connection, rows):
 		''', rows)
 	connection.commit()
 
-######### AQUI
+
 def classify_all_iterable(connection, batch):
 	row = {'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT name, file_path
+		SELECT dir_path, name
 		FROM image_t
 		WHERE type = :type
 		''',row)
 	return cursor
 
 
-######### AQUI
 def classify_batch_iterable(connection, batch):
 	row = {'batch': batch, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT name, file_path
+		SELECT dir_path, name
 		FROM image_t
 		WHERE type = :type
 		AND batch = :batch
 		''', row)
 	return cursor
 
-##### AQUI
-def do_classyfy(connection, batch, src_iterable, options):
+
+def do_classify(connection, batch, src_iterable, options):
 	rows = []
-	for name, file_path in src_iterable(connection, batch):
+	for dir_path, name in src_iterable(connection, batch):
+		file_path = os.path.join(dir_path, name)
 		row = classification_algorithm1(name, file_path, options)
-		logging.info("{0} is type {1}".format(name,row['type']))
+		logging.info("{0} is type {1}".format(name, row['type']))
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
@@ -408,36 +405,37 @@ def stats_update_db(connection, rows):
 		''', rows)
 	connection.commit()
 
-########## AQUI
+
 def stats_all_iterable(connection, batch):
 	row = {'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT name, file_path
+		SELECT dir_path, name
 		FROM image_t
 		WHERE state < :state
 		''', row)
 	return cursor
 
-########## AQUI
+
 def stats_batch_iterable(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT name, file_path
+		SELECT dir_path, name
 		FROM image_t
 		WHERE state < :state
 		AND batch = :batch
 		''', row)
 	return cursor
 
-########## AQUI
+
 def do_stats(connection, batch, src_iterable, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
-	for name, file_path in src_iterable(connection, batch):
+	for dir_path, name in src_iterable(connection, batch):
+		file_path = os.path.join(dir_path, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		image.loadEXIF()    # we need to find out the camera model before reading
@@ -625,33 +623,30 @@ def export_all_iterable(connection, batch):
 	return cursor
 
 
-####### AQUI
 def export_is_same_dif(connection, batch):
 	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-	    SELECT  MIN(file_path), MIN(file_path) == MAX(file_path),
+	    SELECT  MIN(dir_path), MIN(dir_path) == MAX(dir_path)
 		FROM image_t
 		WHERE state >= :state
 		AND   type == :type
 		''', row)
 	return cursor.fetchone()
 
+
 def get_file_path(connection, batch, options):
-	
 	# respct user's whisjes
 	if options.csv_file:
 		return options.csv_file
-
 	base_dir, same_dir = export_is_same_dif(connection, batch)
-
 	if same_dir:
 		name = "batch-" + os.path.basename(base_dir) + '.csv'
 	else:
 		name = "batch-" + str(batch) + '.csv'
-
 	return os.path.join(AZOTEA_BASE_DIR,name)
+
 
 def var2std(item):
 	'''From Variance to StdDev in seevral columns'''
@@ -672,10 +667,7 @@ def do_export(connection, batch, src_iterable, options):
 		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	elif batch_processed(connection, batch):
 		# Write a batch CSV file
-		if not options.csv_file:
-			batch_csv_file = os.path.join(AZOTEA_BASE_DIR, str(batch) + '.csv')
-		else:
-			batch_csv_file =  options.csv_file
+		batch_csv_file = get_file_path(connection, batch, options)
 		with myopen(batch_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)
@@ -1126,7 +1118,7 @@ def image_register(connection, options):
 def image_classify(connection, options):
 	batch = latest_batch(connection)
 	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_classyfy(connection, batch, classify_batch_iterable, options)
+	do_classify(connection, batch, classify_batch_iterable, options)
 
 
 def image_stats(connection, options):
@@ -1169,7 +1161,7 @@ def image_reduce(connection, options):
 
 	# Step 3
 	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_classyfy(connection, batch, iterable, options)
+	do_classify(connection, batch, iterable, options)
 
 	# Step 4
 	do_apply_dark(connection, batch, options)

@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS image_t
     aver_dark_B4        REAL DEFAULT 0.0, -- B4 dark level either master dark or dark_roi
     vari_dark_B4        REAL DEFAULT 0.0, -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    file_path           TEXT    NOT NULL, -- original absolute file path
+    dir_path            TEXT    NOT NULL, -- original directory path
     batch               INTEGER NOT NULL, -- batch identifier
     type                TEXT,             -- LIGHT or DARK
     state               INTEGER REFERENCES state_t(state),            
@@ -105,7 +105,7 @@ SELECT
     aver_dark_B4        ,                                  -- B4 dark level either master dark or dark_roi
     vari_dark_B4        ,                                  -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    file_path           ,                -- original absolute file path
+    dir_path           ,                 -- original directory path
     batch               ,                -- batch identifier
     type                ,                -- LIGHT or DARK
     state                                -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
