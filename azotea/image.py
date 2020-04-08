@@ -283,9 +283,9 @@ def register_slow(connection,  file_list, metadata, options):
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
 			dir2, name2 = find_by_hash(connection, metadata['hash'])
-			path2 = os.path.join(dir2, path2)
+			path2 = os.path.join(dir2, name2)
 			duplicated_file_paths.append({'original': path2, 'duplicated': file_path})
-			logging.warn("Duplicate => {0} EQUALS {1}".format(row['file_path'], path2))
+			logging.warn("Duplicate => {0} EQUALS {1}".format(file_path, path2))
 		else:
 			logging.info("{0} from {1} registered in database".format(row['name'], exif_metadata['model']))
 
