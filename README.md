@@ -23,7 +23,7 @@ pip install --user -U azotea
 Comprobar la version instalada
 
 ```bash
-~$ python3 -m azotea --version
+~$ azotea --version
 ```
 
 ```
@@ -43,7 +43,7 @@ Antes de poder operar con AZOTEA hay que crear un fichero de configuración para
 La primera vez que se vaya a usar azotea, se puede hacer lo siguiente:
 
 ```bash
-~$ python3 -m azotea init
+~$ azotea init
 ```
 
 
@@ -103,7 +103,7 @@ python -m azotea image export --all
 2. Primera inicializacion
 
 ```bash
-~$ python3 -m azotea init
+~$ azotea init
 ```
 
 ```
@@ -121,7 +121,7 @@ python -m azotea image export --all
 3. Reorganizacion de un lote de observaciones de varias noches
 
 ```bash
- ~$ python3 -m azotea reorganize images --input-dir mis_observaciones --output-dir zamorano
+ ~$ azotea reorganize images --input-dir mis_observaciones --output-dir zamorano
 ```
 
 ```
@@ -136,7 +136,7 @@ python -m azotea image export --all
 ***Noche del 25 al 26 de Marzo de 2020***
 
 ```bash
-~$ python3 -m azotea image reduce --new --work-dir zamorano/2020-03-25
+~$ azotea image reduce --new --work-dir zamorano/2020-03-25
 ```
 
 ```
@@ -158,7 +158,7 @@ python -m azotea image export --all
 ***Noche del 25 al 26 de Marzo de 2020***
 
 ```bash
-~$ python3 -m azotea image reduce --new --work-dir zamorano/2020-03-26
+~$ azotea image reduce --new --work-dir zamorano/2020-03-26
 ```
 
 ```
@@ -182,7 +182,7 @@ La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020
 5. Obtencion de un fichero global CSV con todas las mediciones de todos los lotes
 
 ```bash
-~$ python3 -m azotea image export --all
+~$ azotea image export --all
 ```
 
 ```
@@ -193,7 +193,7 @@ La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020
 
 
 ```bash
-~$ python3 -m azotea database clear
+~$ azotea database clear
 ```
 
 ```
@@ -209,7 +209,7 @@ Y a empezar el proceso desde el punto 4.
 Para ir añadiendo camaras no conocidas hasta la fecha a un fichero:
 
 ```bash
-python3 -m azotea config camera --create
+azotea config camera --create
 emacs ~$/azotea/config/camera.ini
 ```
 
@@ -231,14 +231,14 @@ mkdir contribuciones/jizquierdo
 3. Reorganizar las imagenes por noche de observacion
 
 ```bash
-python3 -m azotea reorganize images --input-dir contribuciones/jizquierdo --output-dir clasificadas/jizquierdo
+azotea reorganize images --input-dir contribuciones/jizquierdo --output-dir clasificadas/jizquierdo
 ls clasificadas/jizquierdo
 ```
 
 4. Reducir las imágenes usuando su fichero de configuración
 
 ```
-python3 -m azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --new --work-dir clasificadas/jizquierdo/<directorio de fecha>
+azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --new --work-dir clasificadas/jizquierdo/<directorio de fecha>
 
 ## Cuando hemos terminado
 
@@ -246,7 +246,7 @@ python3 -m azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/conf
 
 
 ```bash
-~$ python3 -m azotea image export --all
+~$ azotea image export --all
 ```
 
 
