@@ -27,7 +27,7 @@ Comprobar la version instalada
 ```
 
 ```
-azotea 0.2.4
+azotea 0.2.5
 ```
 
 
@@ -69,7 +69,7 @@ python -m azotea config camera --create
 ```
 
 ```
-2020-04-01 19:25:12,998 [INFO] Created /home/rafa/camera.ini file
+2020-04-01 19:25:12,998 [INFO] Created /home/rafa/azotea/config/camera.ini file
 ```
 
 Para probar la cámara comn este nuevo fichero en todos los comandos `azotea` posteriores hay que especificarlo como opción global antes de los comandos. Ejemplo:
@@ -125,7 +125,6 @@ python -m azotea image export --all
 ```
 
 ```
-~$ python3 -m azotea reorganize images --input-dir mis_observaciones --output-dir zamorano
 2020-04-08 11:53:43,826 [INFO] read 6 images
 2020-04-08 11:53:43,826 [INFO] creating 2 output directories
 2020-04-08 11:53:43,826 [INFO] copying images to output directories
@@ -202,6 +201,53 @@ La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020
 ```
 
 Y a empezar el proceso desde el punto 4.
+
+# Procesado para varios observadores
+
+## Fichero de camaras
+
+Para ir añadiendo camaras no conocidas hasta la fecha a un fichero:
+
+```bash
+python3 -m azotea config camera --create
+emacs ~$/azotea/config/camera.ini
+```
+
+## Por cada observador:
+
+1. Preparar su fichero exclusivo de configuracion global y colocarlo en $HOME/azotea/config/
+
+```bash
+cp $HOME/azotea/config/azotea.ini $HOME/azotea/config/jizquierdo.ini
+emacs $HOME/azotea/config/jizquierdo.ini
+```
+
+2. Recolectar las imágenes de los observadores cada una en un direcorio distinto
+
+```bash
+mkdir contribuciones/jizquierdo
+```
+
+3. Reorganizar las imagenes por noche de observacion
+
+```bash
+python3 -m azotea reorganize images --input-dir contribuciones/jizquierdo --output-dir clasificadas/jizquierdo
+ls clasificadas/jizquierdo
+```
+
+4. Reducir las imágenes usuando su fichero de configuración
+
+```
+python3 -m azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --new --work-dir clasificadas/jizquierdo/<directorio de fecha>
+
+## Cuando hemos terminado
+
+1. Exportar el fichero global que incluye las contribuciones de todos los observadores
+
+
+```bash
+~$ python3 -m azotea image export --all
+```
 
 
 ## La version larga

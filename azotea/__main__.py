@@ -273,7 +273,7 @@ def main():
 			return
 		subcommand   = options.subcommand
 		if (command, subcommand) in [ ("image","register"), ("image","reduce")]: 
-			file_options = load_config_file(DEF_CONFIG)
+			file_options = load_config_file(options.config)
 			options      = merge_options(options, file_options)
 		# Call the function dynamically
 		func = command + '_' + subcommand
