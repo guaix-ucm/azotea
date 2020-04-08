@@ -253,7 +253,6 @@ def register_insert_images(connection, rows):
 
 def register_preamble(connection, directory, batch, options):
 	file_list = insertion_list(connection, directory, options)
-	logging.info("Registering {0} new images".format(len(file_list)))
 	metadata = {
 		'batch'       : batch, 
 		'observer'    : options.observer, 
@@ -639,7 +638,7 @@ def get_file_path(connection, batch, options):
 	# respct user's whisjes
 	if options.csv_file:
 		return options.csv_file
-	base_dir, same_dir = export_is_same_dif(connection, batch)
+	base_dir, same_dir = export_is_same_dir(connection, batch)
 	if same_dir:
 		name = "batch-" + os.path.basename(base_dir) + '.csv'
 	else:
