@@ -621,8 +621,8 @@ def export_all_iterable(connection, batch):
 	return cursor
 
 
-def export_is_same_dif(connection, batch):
-	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
+def export_is_same_dir(connection, batch):
+	row = {'state': RAW_STATS, 'type': LIGHT_FRAME, 'batch': batch}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -630,6 +630,7 @@ def export_is_same_dif(connection, batch):
 		FROM image_t
 		WHERE state >= :state
 		AND   type == :type
+		AND batch == :batch
 		''', row)
 	return cursor.fetchone()
 
