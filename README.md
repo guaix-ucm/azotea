@@ -58,14 +58,14 @@ AZOTEA se irá actualizando a medida que soporte más cámaras.
 Los modelos de camara soportados hasta el momento se pueden ver listando el fichero de configuracion interno
 
 ```bash
-python -m azotea config camera --list
+azotea config camera --list
 ```
 
 ***Uso Avanzado, no recomendado***: Si hay necesidad de crar una entrada más a este fichero, se puede hacer una copia de él y luego editarlo de manera análoga a la configuración global. Este fichero no es para todo el mundo, sólo los que entienden cómo funciona el software deben hacerlo.
 
 
 ```bash
-python -m azotea config camera --create
+azotea config camera --create
 ```
 
 ```
@@ -76,7 +76,7 @@ Para probar la cámara comn este nuevo fichero en todos los comandos `azotea` po
 
 
 ```bash
-python -m azotea --camera mycamera.ini stats compute
+azotea --camera mycamera.ini stats compute
 ```
 
 # Operativa
@@ -94,8 +94,8 @@ Para observadores impacientes que quieren reducir la observación una noche en u
 4. ¡Por fin! ejecutar en una linea de comandos:
 
 ```bash
-python -m azotea image reduce --new --work-dir <directorio donde están las imágenes>
-python -m azotea image export --all
+azotea image reduce --new --work-dir <directorio donde están las imágenes>
+azotea image export --all
 ```
 
 ## Ejemplo de sesion de reducción
@@ -266,34 +266,34 @@ El pipeline de AZOTEA consta de los siguientes pasos en secuencia:
 1. Registro de las imágenes en la base de datos
 
 ```bash
-python -m azotea image register --help
+azotea image register --help
 ```
 
 3. Calculo de estadístcas en la región de interés (ROI) (media y varianza)
 
 
 ```bash
-python -m azotea image stats --help
+azotea image stats --help
 ```
 
 
 2. Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
 
 ```bash
-python -m azotea image classify --help
+azotea image classify --help
 ```
 
 4. Elaboración de un DARK maestro si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT
 
 
 ```bash
-python -m azotea image dark --help
+azotea image dark --help
 ```
 
 5. Exportación de los resultados a un fichero. En la actualidad sólo se soporta un solo formato de tipo CSV
 
 ```bash
-python -m azotea image export --help
+azotea image export --help
 ```
 
 Todos estos pasos se pueden efectuar por separado o combinadamente con `azotea image reduce`
@@ -346,7 +346,7 @@ El fichero CSV tiene una cabecera con los nombres de las columnas, a saber:
 1. Version del programa
 
 ```bash 
-python -m azotea --version
+azotea --version
 ```
 
 2. Comandos
@@ -357,29 +357,29 @@ La lista de comandos soportados por AZOTEA puede ir cambiando con las versiones.
 La invocación de AZOTEA tiene la forma general de:
 
 ```
-python -m azotea [--opcion1, --opcion2, ...] <comando>  <subcomando> [--opcion3, --opcion4, ...]
+azotea [--opcion1, --opcion2, ...] <comando>  <subcomando> [--opcion3, --opcion4, ...]
 ```
 
 Cada comando y subcomando dentro del comando tienen su propia ayuda:
 
 ```bash
-python -m azotea --help
-python -m azotea <comando> --help
-python -m azotea <comando> <subcomando> --help
+azotea --help
+azotea <comando> --help
+azotea <comando> <subcomando> --help
 ```
 
 
 ```bash
-python -m azotea --help
-python -m azotea image --help
-python -m azotea image list --help
+azotea --help
+azotea image --help
+azotea image list --help
 ```
 
 
 Ejemplos:
 
 ```bash
-python -m azotea --help
+azotea --help
 ```
 
 
@@ -415,7 +415,7 @@ Según se ver, los comandos disponibles son `config` `image` y `dbase` y 'backup
 Para ver las opciones del comando `image` se teclea
 
 ```bash
-python -m azotea image --help
+azotea image --help
 ```
 
 ```
@@ -444,7 +444,7 @@ optional arguments:
 Para ver las opciones del subcomando `list` se teclea
 
 ```bash
-python -m azotea image list --help
+azotea image list --help
 ```
 
 ```
