@@ -264,12 +264,11 @@ def register_preamble(connection, directory, batch, options):
 		'organization': options.organization,
 		'email'       : options.email, 
 		'location'    : options.location,
-		'focal_length': options.focal_length,
-		'f_ratio'     : options.f_ratio,
 		'state'       : REGISTERED,
 		'type'        : UNKNOWN,
 	}
 	return file_list, metadata
+
 
 def register_slow(connection,  file_list, metadata, options):
 	

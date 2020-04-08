@@ -1,15 +1,13 @@
 
 CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especifica --new. Todo lo demás
-se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion. Asi los ficheros AZOTEA serán diarios.
+se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion.
 
 TO DO
  
 - ejecutar los caso de prueba listados
 
 - Perparar todo para pasar a un modelo de estrella
-  - ejecucion de SQLs bajo un directorio
-    data/sql/schema/azotea.sql
-    data/sql/data/*.sql (auziliar.sql, date.sql, time.sqil , etc)
+ 
   
   - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
   - emplear el filter(), map() reduce() para mapear los atributos de interes y ver que ha cambiado
@@ -27,11 +25,9 @@ TO DO
   - batch merge ¿es mecesario? quizas no ...
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
-- fichero de log?, recuperar BD a partir de log?
+- fichero de log?,
 - patch management (list, apply)
 - documento con uso avanzado ¿readthedocs o Google Docs?
-- algo con los strings de 8-bit en python 2 porbablemente los exif metadata
-
 
 CASOS DE PRUEBA:
 2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
