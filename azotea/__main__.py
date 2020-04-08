@@ -79,7 +79,7 @@ def setup(options):
 		logging.info("Creating {0} directory".format(AZOTEA_LOG_DIR))
 		os.mkdir(AZOTEA_LOG_DIR)
 	if not os.path.exists(DEF_CONFIG):
-		shutil.copy2(filename, DEF_CONFIG)
+		shutil.copy2(DEF_CONFIG_TPL, DEF_CONFIG)
 		logging.info("Created {0} file, please review it".format(DEF_CONFIG))
 
 
