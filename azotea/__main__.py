@@ -132,6 +132,10 @@ def createParser():
 	subparser = parser_database.add_subparsers(dest='subcommand')
 
 	dbc = subparser.add_parser('clear',  help="Clears the database (MAINTENANCE ONLY!)")
+	dbcex = dbc.add_mutually_exclusive_group(required=True)
+	dbcex.add_argument('-l', '--last',  action='store_true', help='clear last batch')
+	dbcex.add_argument('-a', '--all',   action='store_true' , help='clear all data')
+	
 	
 	dbp = subparser.add_parser('purge',  help="Purge the database  (MAINTENANCE ONLY!)")
 
