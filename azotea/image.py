@@ -76,6 +76,7 @@ def myopen(name, *args):
 	else:
 		return open(name,  *args, newline='')
 
+############ AQUI
 
 def already_in_database(connection):
 	cursor = connection.cursor()
@@ -95,6 +96,7 @@ def insert_list(connection, directory, options):
 	return list(set(candidates(directory, options)) - set(already_in_database(connection)))
 
 
+######### AQUI
 def classification_algorithm1(name, file_path, options):
 	if name.upper().startswith(DARK_FRAME):
 		result = {'name': name, 'type': DARK_FRAME}
@@ -124,6 +126,8 @@ def master_dark_for(connection, batch):
 		''',row)
 	return cursor.fetchone()[0]
 
+
+########## AQUI
 
 def find_by_hash(connection, hash):
 	row = {'hash': hash}
@@ -166,7 +170,7 @@ def latest_batch(connection):
 # --------------
 # Image Register
 # --------------
-
+########### AQUI
 def register_insert_image(connection, row):
 	'''slow version to find out the exact duplicate'''
 	cursor = connection.cursor()
@@ -220,8 +224,6 @@ def register_insert_images(connection, rows):
 				email, 
 				location,
 				model,
-				focal_length,
-				f_ratio,
 				name, 
 				hash,
 				tstamp, 
@@ -238,8 +240,6 @@ def register_insert_images(connection, rows):
 				:email, 
 				:location,
 				:model,
-				:focal_length,
-				:f_ratio,
 				:name, 
 				:hash,
 				:tstamp, 
@@ -269,7 +269,7 @@ def register_preamble(connection, directory, batch, options):
 	}
 	return file_list, metadata
 
-
+########## AQUI
 def register_slow(connection,  file_list, metadata, options):
 	
 	global duplicated_file_paths
@@ -292,7 +292,7 @@ def register_slow(connection,  file_list, metadata, options):
 		else:
 			logging.info("{0} from {1} registered in database".format(row['name'], exif_metadata['model']))
 
-
+############ AQUI
 def register_fast(connection, file_list, metadata, options):
 	rows = []
 	camera_cache = CameraCache(options.camera) 
@@ -346,7 +346,7 @@ def classify_update_db(connection, rows):
 		''', rows)
 	connection.commit()
 
-
+######### AQUI
 def classify_all_iterable(connection, batch):
 	row = {'type': UNKNOWN}
 	cursor = connection.cursor()
@@ -359,6 +359,7 @@ def classify_all_iterable(connection, batch):
 	return cursor
 
 
+######### AQUI
 def classify_batch_iterable(connection, batch):
 	row = {'batch': batch, 'type': UNKNOWN}
 	cursor = connection.cursor()
@@ -371,7 +372,7 @@ def classify_batch_iterable(connection, batch):
 		''', row)
 	return cursor
 
-
+##### AQUI
 def do_classyfy(connection, batch, src_iterable, options):
 	rows = []
 	for name, file_path in src_iterable(connection, batch):
@@ -407,6 +408,7 @@ def stats_update_db(connection, rows):
 		''', rows)
 	connection.commit()
 
+########## AQUI
 def stats_all_iterable(connection, batch):
 	row = {'state': RAW_STATS}
 	cursor = connection.cursor()
@@ -418,6 +420,7 @@ def stats_all_iterable(connection, batch):
 		''', row)
 	return cursor
 
+########## AQUI
 def stats_batch_iterable(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
@@ -430,7 +433,7 @@ def stats_batch_iterable(connection, batch):
 		''', row)
 	return cursor
 
-
+########## AQUI
 def do_stats(connection, batch, src_iterable, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
@@ -621,6 +624,34 @@ def export_all_iterable(connection, batch):
 		''', row)
 	return cursor
 
+
+####### AQUI
+def export_is_same_dif(connection, batch):
+	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+	    SELECT  MIN(file_path), MIN(file_path) == MAX(file_path),
+		FROM image_t
+		WHERE state >= :state
+		AND   type == :type
+		''', row)
+	return cursor.fetchone()
+
+def get_file_path(connection, batch, options):
+	
+	# respct user's whisjes
+	if options.csv_file:
+		return options.csv_file
+
+	base_dir, same_dir = export_is_same_dif(connection, batch)
+
+	if same_dir:
+		name = "batch-" + os.path.basename(base_dir) + '.csv'
+	else:
+		name = "batch-" + str(batch) + '.csv'
+
+	return os.path.join(AZOTEA_BASE_DIR,name)
 
 def var2std(item):
 	'''From Variance to StdDev in seevral columns'''
