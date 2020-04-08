@@ -351,29 +351,10 @@ python -m azotea --version
 
 2. Comandos
 
-La lista de comandos soportados por AZOTEA puede ir cambiando con las versiones. Aún así lusage: azotea [-h] [--version] [-v | -q] [--camera CAMERA] [--config CONFIG]
-              {init,config,image,database,backup,reorganize,batch} ...
+La lista de comandos soportados por AZOTEA puede ir cambiando con las versiones. Aún así siempre se podrán averiguar todos con la opcion --help en cada nivel.
 
-AZOTEA analysis tool
 
-positional arguments:
-  {init,config,image,database,backup,reorganize,batch}
-    init                init command
-    config              config commands
-    image               image commands
-    database            database commands (mostly mainteinance)
-    backup              backup management
-    reorganize          reorganize commands
-    batch               batch commands
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -v, --verbose         Verbose output.
-  -q, --quiet           Quiet output.
-  --camera CAMERA       Optional alternate camera configuration file
-  --config CONFIG       Optional alternate global configuration file
-a invocación de AZOTEA tiene la forma general de:
+La invocación de AZOTEA tiene la forma general de:
 
 ```
 python -m azotea [--opcion1, --opcion2, ...] <comando>  <subcomando> [--opcion3, --opcion4, ...]
