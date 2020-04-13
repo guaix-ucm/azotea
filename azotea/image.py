@@ -446,8 +446,6 @@ def stats_update_db(connection, rows):
 
 
 
-
-
 def stats_batch_iterable(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
