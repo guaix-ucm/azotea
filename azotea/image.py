@@ -443,6 +443,20 @@ def stats_update_db(connection, rows):
 	connection.commit()
 
 
+
+def stats_batch_reset(connection, batch):
+	row = {'batch': batch, 'state': RAW_STATS, 'new_state': REGISTERED}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		UPDATE image_t
+		SET state = :new_state
+		WHERE state >= :state
+		AND batch = :batch
+		''', row)
+	connection.commit()
+
+
 def stats_batch_iterable(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
@@ -457,6 +471,8 @@ def stats_batch_iterable(connection, batch):
 
 
 def do_stats(connection, batch, work_dir, options):
+	if options.reset:
+		stats_batch_reset(connection, batch)
 	camera_cache = CameraCache(options.camera)
 	rows = []
 	for name, in stats_batch_iterable(connection, batch):
