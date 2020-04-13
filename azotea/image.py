@@ -111,6 +111,15 @@ def master_dark_for(connection, batch):
 
 
 
+def find_by_hash(connection, hash):
+	row = {'hash': hash}
+	cursor = connection.cursor()
+	cursor.execute('''
+		SELECT name
+		FROM image_t 
+		WHERE hash = :hash
+		''',row)
+	return cursor.fetchone()
 
 
 def latest_batch(connection):
@@ -145,15 +154,19 @@ def myhash(filepath):
     return file_hash.digest()
 
 
-def find_by_hash(connection, hash):
-	row = {'hash': hash}
+def image_batch_state_reset(connection, batch):
+	row = {'batch': batch, 'state': RAW_STATS, 'new_state': REGISTERED, 'type': UNKNOWN}
 	cursor = connection.cursor()
-	cursor.execute('''
-		SELECT name
-		FROM image_t 
-		WHERE hash = :hash
-		''',row)
-	return cursor.fetchone()
+	cursor.execute(
+		'''
+		UPDATE image_t
+		SET state = :new_state, type = :type
+		WHERE state >= :state
+		AND batch = :batch
+		''', row)
+	connection.commit()
+
+
 
 
 def create_candidates_temp_table(connection):
@@ -381,24 +394,13 @@ def classify_update_db(connection, rows):
 	connection.commit()
 
 
-def classify_all_iterable(connection, batch):
-	row = {'type': UNKNOWN}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT dir_path, name
-		FROM image_t
-		WHERE type = :type
-		''',row)
-	return cursor
-
 
 def classify_batch_iterable(connection, batch):
 	row = {'batch': batch, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT dir_path, name
+		SELECT name
 		FROM image_t
 		WHERE type = :type
 		AND batch = :batch
@@ -406,10 +408,10 @@ def classify_batch_iterable(connection, batch):
 	return cursor
 
 
-def do_classify(connection, batch, src_iterable, options):
+def do_classify(connection, batch, work_dir, options):
 	rows = []
-	for dir_path, name in src_iterable(connection, batch):
-		file_path = os.path.join(dir_path, name)
+	for name, in classify_batch_iterable(connection, batch):
+		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
 		logging.info("{0} is type {1}".format(name, row['type']))
 		rows.append(row)
@@ -444,17 +446,6 @@ def stats_update_db(connection, rows):
 
 
 
-def stats_batch_reset(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS, 'new_state': REGISTERED}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET state = :new_state
-		WHERE state >= :state
-		AND batch = :batch
-		''', row)
-	connection.commit()
 
 
 def stats_batch_iterable(connection, batch):
@@ -471,8 +462,6 @@ def stats_batch_iterable(connection, batch):
 
 
 def do_stats(connection, batch, work_dir, options):
-	if options.reset:
-		stats_batch_reset(connection, batch)
 	camera_cache = CameraCache(options.camera)
 	rows = []
 	for name, in stats_batch_iterable(connection, batch):
@@ -1228,12 +1217,14 @@ def image_reduce(connection, options):
 	# Step 1: registering
 	do_register(connection, options.work_dir, options.filter, batch)
 	
+	if options.reset:
+		image_batch_state_reset(connection, batch)
 	# Step 2
 	do_stats(connection, batch, options.work_dir, options)
 
 	# Step 3
 	#iterable = classify_all_iterable if options.all else classify_batch_iterable
-	#do_classify(connection, batch, iterable, options)
+	do_classify(connection, batch, options.work_dir, options)
 
 	# Step 4
 	#do_apply_dark(connection, batch, options)
