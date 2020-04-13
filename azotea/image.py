@@ -72,13 +72,6 @@ if sys.version_info[0] == 2:
 # Utility functions
 # -----------------
 
-def already_in_database(connection):
-	cursor = connection.cursor()
-	cursor.execute("SELECT dir_path, name FROM image_t")
-	return [os.path.join(item[0], item[1]) for item in cursor]
-
-
-
 
 def classification_algorithm1(name,  file_path, options):
 	if name.upper().startswith(DARK_FRAME):
@@ -99,28 +92,6 @@ def batch_processed(connection, batch):
 		''',row)
 	return cursor.fetchone()[0]
 
-def master_dark_for(connection, batch):
-	row = {'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute('''
-		SELECT COUNT(*) 
-		FROM master_dark_t
-		WHERE batch = :batch
-		''',row)
-	return cursor.fetchone()[0]
-
-
-
-def find_by_hash(connection, hash):
-	row = {'hash': hash}
-	cursor = connection.cursor()
-	cursor.execute('''
-		SELECT name
-		FROM image_t 
-		WHERE hash = :hash
-		''',row)
-	return cursor.fetchone()
-
 
 def latest_batch(connection):
 	'''Get Last recorded batch'''
@@ -130,7 +101,6 @@ def latest_batch(connection):
 		FROM image_t 
 		''')
 	return cursor.fetchone()[0]
-
 
 
 ### LO BUENO DE LAS UTILIDADES AQUI DEBAJO
@@ -154,6 +124,17 @@ def myhash(filepath):
     return file_hash.digest()
 
 
+def find_by_hash(connection, hash):
+	row = {'hash': hash}
+	cursor = connection.cursor()
+	cursor.execute('''
+		SELECT name
+		FROM image_t 
+		WHERE hash = :hash
+		''',row)
+	return cursor.fetchone()
+
+
 def image_batch_state_reset(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS, 'new_state': REGISTERED, 'type': UNKNOWN}
 	cursor = connection.cursor()
@@ -167,8 +148,6 @@ def image_batch_state_reset(connection, batch):
 	connection.commit()
 
 
-
-
 def create_candidates_temp_table(connection):
 	cursor = connection.cursor()
 	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
@@ -176,7 +155,6 @@ def create_candidates_temp_table(connection):
 
 
 def work_dir_to_batch(connection, work_dir, filt):
-
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
 	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
@@ -203,39 +181,15 @@ def work_dir_to_batch(connection, work_dir, filt):
 	return batch
 
 
-def candidates(connection, work_dir, filt, batch):
-	'''candidate list of images to be inserted/removed to/from the database'''
-	
-
-	# New Images in the work dir that should be added to database
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT name
-		FROM candidate_t
-		WHERE name NOT IN (SELECT name FROM image_t)
-		'''
-		)
-	result = cursor.fetchall()
-	if result:
-		names_to_add, = zip(*result)
-	else:
-		names_to_add = []
-	# Images no longer in the work dir, they should be deleted from database
+def master_dark_for(connection, batch):
 	row = {'batch': batch}
-	cursor.execute(
-		'''
-		SELECT name
-		FROM image_t
-		WHERE name NOT IN (SELECT name FROM candidate_t)
-		AND batch = :batch
-		''', row)
-	result = cursor.fetchall()
-	if result:
-		names_to_del, = zip(*result)
-	else:
-		names_to_del = []
-	return names_to_add, names_to_del
+	cursor = connection.cursor()
+	cursor.execute('''
+		SELECT COUNT(*) 
+		FROM master_dark_t
+		WHERE batch = :batch
+		''',row)
+	return cursor.fetchone()[0]
 
 
 # ------------------
@@ -301,6 +255,39 @@ def register_insert_images(connection, rows):
 			)
 			''', rows)
 	connection.commit()
+
+
+def candidates(connection, work_dir, filt, batch):
+	'''candidate list of images to be inserted/removed to/from the database'''
+	# New Images in the work dir that should be added to database
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT name
+		FROM candidate_t
+		WHERE name NOT IN (SELECT name FROM image_t)
+		'''
+		)
+	result = cursor.fetchall()
+	if result:
+		names_to_add, = zip(*result)
+	else:
+		names_to_add = []
+	# Images no longer in the work dir, they should be deleted from database
+	row = {'batch': batch}
+	cursor.execute(
+		'''
+		SELECT name
+		FROM image_t
+		WHERE name NOT IN (SELECT name FROM candidate_t)
+		AND batch = :batch
+		''', row)
+	result = cursor.fetchall()
+	if result:
+		names_to_del, = zip(*result)
+	else:
+		names_to_del = []
+	return names_to_add, names_to_del
 
 
 def register_delete_images(connection, rows):
@@ -430,8 +417,13 @@ def stats_update_db(connection, rows):
 	cursor.executemany(
 		'''
 		UPDATE image_t
-		SET state               = :state,
-			roi                 = :roi, 
+		SET 
+		    state               = :state,
+		    roi                 = :roi, 
+            model               = :model,	-- EXIF
+            iso                 = :iso,     -- EXIF
+            tstamp              = :tstamp,  -- EXIF
+            exptime             = :exptime, -- EXIF
 			aver_raw_signal_R1  = :aver_raw_signal_R1, 
 			aver_raw_signal_G2  = :aver_raw_signal_G2, 
 			aver_raw_signal_G3  = :aver_raw_signal_G3,
@@ -467,7 +459,7 @@ def do_stats(connection, batch, work_dir, options):
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		try:
-			image.loadEXIF()
+			metadata = image.loadEXIF()
 		except MetadataError as e:
 			logging.info(e)    # we need to find out the camera model before reading
 		else:
@@ -478,6 +470,10 @@ def do_stats(connection, batch, work_dir, options):
 			row['organization'] = options.organization
 			row['email']        = options.email
 			row['location']     = options.location
+			row['model']        = metadata['model']
+			row['iso']          = metadata['iso']
+			row['tstamp']       = metadata['tstamp']
+			row['exptime']      = metadata['exptime']
 			rows.append(row)
 	if rows:
 		stats_update_db(connection, rows)
@@ -530,12 +526,6 @@ def master_dark_db_update_all(connection, batch):
 	connection.commit()
 
 
-def master_dark_all_batches_iterable(connection):
-	cursor = connection.cursor()
-	cursor.execute("SELECT batch from master_dark_t")
-	return cursor;
-
-
 def dark_update_columns(connection, batch):
 	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
 	cursor = connection.cursor()
@@ -561,14 +551,11 @@ def dark_update_columns(connection, batch):
 
 def do_apply_dark(connection, batch, options):
 	master_dark_db_update_all(connection, batch)
-	if options.all:
-		logging.info("Applying dark substraction to all images")
-		for batch, in master_dark_all_batches_iterable(connection):
-			dark_update_columns(connection, batch)
+	if master_dark_for(connection, batch):
+		logging.info("Applying dark substraction to current working directory")
+		dark_update_columns(connection, batch)
 	else:
-		if master_dark_for(connection, batch):
-			logging.info("Applying dark substraction to current batch")
-			dark_update_columns(connection, batch)
+		logging.info("No dark frame found for current working directory")
 
 # -----------
 # Image Export
@@ -582,7 +569,7 @@ VIEW_HEADERS = [
 			'iso'            ,
 			'roi'            ,
 			'dark_roi'       ,
-			'exptime'       ,
+			'exptime'        ,
 			'aver_signal_R1' ,
 			'std_signal_R1'  ,
 			'aver_signal_G2' ,
@@ -1138,72 +1125,8 @@ def image_list(connection, options):
 	do_image_view(connection, batch, iterable, headers, options)
 
 
-# These are the pipelien stages in execution order
-
-def image_register(connection, options):
-	if options.new:
-		batch = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-	else:
-		batch = latest_batch(connection)
-		if batch is None:
-			raise NoBatchError("image regiter")
-	do_register(connection, options.work_dir, batch, options)
-
-
-def image_classify(connection, options):
-	batch = latest_batch(connection)
-	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_classify(connection, batch, classify_batch_iterable, options)
-
-
-def image_stats(connection, options):
-	batch = latest_batch(connection)
-	iterable = stats_all_iterable if options.all else stats_batch_iterable
-	do_stats(connection, batch, iterable, options)
-
-
-def image_dark(connection, options):
-	batch = latest_batch(connection)
-	do_apply_dark(connection, batch, options)
-
-
 def image_export(connection, options):
-	batch = latest_batch(connection)
-	iterable = export_all_iterable if options.all else export_batch_iterable
-	do_export(connection, batch, iterable, options)
-
-
-def image_reduce(connection, options):
-	# Step 1 is a bit tricky in the generic pipeline
-	if options.new and not options.work_dir:
-		raise NoWorkDirectoryError("image reduce")
-	if not options.all and not options.work_dir:
-		raise NoWorkDirectoryError("image reduce")
-
-	if options.new:
-		batch = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-	else:
-		batch = latest_batch(connection)
-		if batch is None:
-			raise NoBatchError("image reduce")
-
-	if not options.all:
-		do_register(connection, options.work_dir, batch, options)
-	
-	# Step 2
-	iterable = stats_all_iterable if options.all else stats_batch_iterable
-	do_stats(connection, batch, iterable, options)
-
-	# Step 3
-	iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_classify(connection, batch, iterable, options)
-
-	# Step 4
-	do_apply_dark(connection, batch, options)
-	# Step 5
-	iterable = export_all_iterable if options.all else export_batch_iterable
-	do_export(connection, batch, iterable, options)
-
+	pass
 
 def image_reduce(connection, options):
 	
@@ -1225,7 +1148,7 @@ def image_reduce(connection, options):
 	do_classify(connection, batch, options.work_dir, options)
 
 	# Step 4
-	#do_apply_dark(connection, batch, options)
+	do_apply_dark(connection, batch, options)
 	# Step 5
 	#iterable = export_all_iterable if options.all else export_batch_iterable
 	#do_export(connection, batch, iterable, options)

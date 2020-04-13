@@ -31,8 +31,7 @@ from .utils      import chop, Point, ROI, open_database, create_database
 from .cfgcmds    import config_global, config_camera
 from .database   import database_clear, database_purge, database_backup
 from .backup     import backup_list, backup_delete, backup_restore
-from .image      import image_register, image_classify, image_dark, image_stats, image_export, image_reduce
-from .image      import image_list, NoWorkDirectoryError, NoBatchError
+from .image      import image_list, image_export, image_reduce
 from .reorg      import reorganize_images
 from .batch      import batch_current, batch_list
 
@@ -276,6 +275,7 @@ def main():
 		logging.error("{0}".format(str(e)))
 	except sqlite3.IntegrityError as e:
 		logging.error("Detected duplicated images. Re-run with --slow option to find out which")
+		traceback.print_exc()
 	except Exception as e:
 		logging.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
 		traceback.print_exc()
