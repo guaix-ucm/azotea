@@ -68,6 +68,9 @@ def setup(options):
 	if not os.path.exists(AZOTEA_CFG_DIR):
 		logging.info("Creating {0} directory".format(AZOTEA_CFG_DIR))
 		os.mkdir(AZOTEA_CFG_DIR)
+	if not os.path.exists(AZOTEA_CSV_DIR):
+		logging.info("Creating {0} directory".format(AZOTEA_CSV_DIR))
+		os.mkdir(AZOTEA_CSV_DIR)
 	if not os.path.exists(AZOTEA_DB_DIR):
 		logging.info("Creating {0} directory".format(AZOTEA_DB_DIR))
 		os.mkdir(AZOTEA_DB_DIR)

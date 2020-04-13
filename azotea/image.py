@@ -28,7 +28,7 @@ import hashlib
 # local imports
 # -------------
 
-from .           import AZOTEA_BASE_DIR
+from .           import AZOTEA_CSV_DIR
 from .camera     import CameraImage, CameraCache, MetadataError
 from .utils      import merge_two_dicts, paging
 from .exceptions import NoBatchError, NoWorkDirectoryError
@@ -192,22 +192,6 @@ def master_dark_for(connection, batch):
 	return cursor.fetchone()[0]
 
 
-# ------------------
-# Database iterables
-# ------------------
-
-
-
-
-
-
-# ------------------
-# Database inserters
-# ------------------
-
-
-
-
 
 # --------------
 # Image Register
@@ -357,11 +341,6 @@ def do_register(connection, work_dir, filt, batch):
 			register_slow(connection, work_dir, names_to_add, batch)
 	logging.info("{0} new images registered in database".format(len(names_to_add)))
 	logging.info("{0} images deleted from database".format(len(names_to_del)))
-
-
-# --------------
-# Image Dark
-# --------------
 
 
 
@@ -598,13 +577,13 @@ def export_batch_iterable(connection, batch):
 				dark_roi,
 				exptime, 
 				aver_signal_R1, 
-				vari_signal_R1, -- Array index 14
+				vari_signal_R1, -- Array index 13
 				aver_signal_G2, 
-				vari_signal_G2, -- Array index 16
+				vari_signal_G2, -- Array index 15
 				aver_signal_G3, 
-				vari_signal_G3, -- Array index 18
+				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
-				vari_signal_B4  -- Array index 20
+				vari_signal_B4  -- Array index 19
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
@@ -630,13 +609,13 @@ def export_all_iterable(connection, batch):
 				dark_roi,
 				exptime, 
 				aver_signal_R1, 
-				vari_signal_R1, -- Array index 14
+				vari_signal_R1, -- Array index 13
 				aver_signal_G2, 
-				vari_signal_G2, -- Array index 16
+				vari_signal_G2, -- Array index 15
 				aver_signal_G3, 
-				vari_signal_G3, -- Array index 18
+				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
-				vari_signal_B4  -- Array index 20
+				vari_signal_B4  -- Array index 19
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
@@ -644,62 +623,48 @@ def export_all_iterable(connection, batch):
 	return cursor
 
 
-def export_is_same_dir(connection, batch):
-	row = {'state': RAW_STATS, 'type': LIGHT_FRAME, 'batch': batch}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-	    SELECT  MIN(dir_path), MIN(dir_path) == MAX(dir_path)
-		FROM image_t
-		WHERE state >= :state
-		AND   type == :type
-		AND batch == :batch
-		''', row)
-	return cursor.fetchone()
 
-
-def get_file_path(connection, batch, options):
-	# respct user's whisjes
+def get_file_path(connection, batch, work_dir, options):
+	# respct user's wishes
 	if options.csv_file:
 		return options.csv_file
-	base_dir, same_dir = export_is_same_dir(connection, batch)
-	if same_dir:
-		name = "batch-" + os.path.basename(base_dir) + '.csv'
-	else:
-		name = "batch-" + str(batch) + '.csv'
-	return os.path.join(AZOTEA_BASE_DIR,name)
+	name = "batch-" + os.path.basename(work_dir) + '.csv'
+	return os.path.join(AZOTEA_CSV_DIR, name)
 
 
 def var2std(item):
 	'''From Variance to StdDev in seevral columns'''
 	index, value = item
-	return round(math.sqrt(value),1) if index in [14, 16, 18, 20] else value
+	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
 
 
-def do_export(connection, batch, src_iterable, options):
+def do_export_all(connection, batch, src_iterable, options):
 	fieldnames = ["batch","observer","organization","location", "type"]
 	fieldnames.extend(VIEW_HEADERS)
-	if options.all:
-		with myopen(options.global_csv_file, 'w') as csvfile:
-			writer = csv.writer(csvfile, delimiter=';')
-			writer.writerow(fieldnames)
-			for row in src_iterable(connection, batch):
-				row = map(var2std, enumerate(row))
-				writer.writerow(row)
-		logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
-	elif batch_processed(connection, batch):
+	with myopen(options.global_csv_file, 'w') as csvfile:
+		writer = csv.writer(csvfile, delimiter=';')
+		writer.writerow(fieldnames)
+		for row in export_all_iterable(connection, batch):
+			row = map(var2std, enumerate(row))
+			writer.writerow(row)
+	logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+	
+
+def do_export_work_dir(connection, batch, work_dir, options):
+	fieldnames = ["batch","observer","organization","location", "type"]
+	fieldnames.extend(VIEW_HEADERS)
+	if batch_processed(connection, batch):
 		# Write a batch CSV file
-		batch_csv_file = get_file_path(connection, batch, options)
+		batch_csv_file = get_file_path(connection, batch, work_dir, options)
 		with myopen(batch_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)
-			for row in src_iterable(connection, batch):
+			for row in export_batch_iterable(connection, batch):
 				row = map(var2std, enumerate(row))
 				writer.writerow(row)
 		logging.info("Saved data to batch  CSV file {0}".format(batch_csv_file))
 	else:
 		logging.info("No new CSV file generation")
-	
 	
 
 # ==================================
@@ -1152,3 +1117,4 @@ def image_reduce(connection, options):
 	# Step 5
 	#iterable = export_all_iterable if options.all else export_batch_iterable
 	#do_export(connection, batch, iterable, options)
+	do_export_work_dir(connection, batch, options.work_dir, options)
