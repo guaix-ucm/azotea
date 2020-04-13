@@ -58,6 +58,9 @@ UNKNOWN     = "UNKNOWN"
 
 duplicated_file_paths = []
 
+work_dir_map = {}
+
+
 if sys.version_info[0] == 2:
 	import errno
 	class FileExistsError(OSError):
@@ -78,16 +81,6 @@ def already_in_database(connection):
 	return [os.path.join(item[0], item[1]) for item in cursor]
 
 
-def candidates(directory, options):
-	'''candidate list of images to be inserted in the database'''
-	file_list = sorted(glob.glob(os.path.join(directory, options.filter)))
-	logging.info("Found {0} images to analyze".format(len(file_list)))
-	return file_list
-
-
-def insertion_list(connection, directory, options):
-	'''Returns the list of file mpaths that must be really inserted in the database'''
-	return list(set(candidates(directory, options)) - set(already_in_database(connection)))
 
 
 def classification_algorithm1(name,  file_path, options):
@@ -166,12 +159,11 @@ def find_by_hash(connection, hash):
 	return cursor.fetchone()
 
 
-def create_candidate_table(connection):
+def create_candidates_temp_table(connection):
 	cursor = connection.cursor()
 	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
 	connection.commit()
 
-work_dir_map = {}
 
 def work_dir_to_batch(connection, work_dir, filt):
 
@@ -182,6 +174,7 @@ def work_dir_to_batch(connection, work_dir, filt):
 
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
+	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
 	cursor = connection.cursor()
 	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name) VALUES (:name)", names_list)
 	connection.commit()
@@ -205,10 +198,10 @@ def work_dir_to_batch(connection, work_dir, filt):
 	return batch
 
 
-def candidates(connection, work_dir, filt):
+def candidates(connection, work_dir, filt, batch):
 	'''candidate list of images to be inserted/removed to/from the database'''
 	
-	old_batch = work_dir_to_batch(connection, work_dir, filt)
+
 	# New Images in the work dir that should be added to database
 	cursor = connection.cursor()
 	cursor.execute(
@@ -224,7 +217,7 @@ def candidates(connection, work_dir, filt):
 	else:
 		names_to_add = []
 	# Images no longer in the work dir, they should be deleted from database
-	row = {'batch': old_batch}
+	row = {'batch': batch}
 	cursor.execute(
 		'''
 		SELECT name
@@ -237,7 +230,7 @@ def candidates(connection, work_dir, filt):
 		names_to_del, = zip(*result)
 	else:
 		names_to_del = []
-	return names_to_add, names_to_del, old_batch
+	return names_to_add, names_to_del
 
 
 # ------------------
@@ -318,8 +311,6 @@ def register_delete_images(connection, rows):
 
 
 
-
-
 def register_slow(connection, work_dir, names_list, batch):
 	logging.info("SLOW REGISTER")
 	global duplicated_file_paths
@@ -351,7 +342,7 @@ def register_fast(connection, work_dir, names_list, batch):
 	register_insert_images(connection, rows)
 	
 
-def register_unregister(connection, work_dir, names_list, batch):
+def register_unregister(connection, names_list, batch):
 	rows = []
 	row  = {'batch': batch}
 	for name in names_list:
@@ -362,13 +353,11 @@ def register_unregister(connection, work_dir, names_list, batch):
 	register_delete_images(connection, rows)
 	
 
-def do_register(connection, work_dir, filt, batch, options):
-	create_candidate_table(connection)
-	names_to_add, names_to_del, old_batch = candidates(connection, work_dir, filt)
+def do_register(connection, work_dir, filt, batch):
+	names_to_add, names_to_del = candidates(connection, work_dir, filt, batch)
 	if names_to_del:
-		register_unregister(connection, work_dir, names_to_del, old_batch)	
+		register_unregister(connection, names_to_del, batch)	
 	if names_to_add:
-		batch = batch if old_batch is None else old_batch
 		try:
 			register_fast(connection, work_dir, names_to_add, batch)
 		except sqlite3.IntegrityError as e:
@@ -503,6 +492,24 @@ def register_preamble(connection, directory, batch, options):
 
 
 def do_stats(connection, batch, src_iterable, options):
+	camera_cache = CameraCache(options.camera)
+	rows = []
+	for dir_path, name in src_iterable(connection, batch):
+		file_path = os.path.join(dir_path, name)
+		image = CameraImage(file_path, camera_cache)
+		image.setROI(options.roi)
+		image.loadEXIF()    # we need to find out the camera model before reading
+		image.read()
+		row = image.stats()
+		row['state']        = RAW_STATS
+		rows.append(row)
+	if rows:
+		stats_update_db(connection, rows)
+	else:
+		logging.info("No image statistics to be computed")
+
+
+def do_stats(connection, work_dir, src_iterable, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
 	for dir_path, name in src_iterable(connection, batch):
@@ -1245,11 +1252,14 @@ def image_reduce(connection, options):
 
 
 def image_reduce(connection, options):
-	# Step 1 is a bit tricky in the generic pipeline
+	
+	create_candidates_temp_table(connection)
+	old_batch = work_dir_to_batch(connection, options.work_dir, options.filter)
+	new_batch = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+	batch = new_batch if old_batch is None else old_batch
 
-	# New batch, may be we need it
-	batch = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-	do_register(connection, options.work_dir, options.filter, batch, options)
+	# Step 1: registering
+	do_register(connection, options.work_dir, options.filter, batch)
 	
 	# Step 2
 	#iterable = stats_all_iterable if options.all else stats_batch_iterable
