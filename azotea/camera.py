@@ -75,7 +75,7 @@ class ConfigError(ValueError):
         return s
 
 class MetadataError(ValueError):
-    '''TError reading metadata for image'''
+    '''Error reading metadata for image'''
     def __str__(self):
         s = self.__doc__
         if self.args:

@@ -29,7 +29,7 @@ import hashlib
 # -------------
 
 from .           import AZOTEA_BASE_DIR
-from .camera     import CameraImage, CameraCache
+from .camera     import CameraImage, CameraCache, MetadataError
 from .utils      import merge_two_dicts, paging
 from .exceptions import NoBatchError, NoWorkDirectoryError
 from .exceptions import MixingCandidates
@@ -57,9 +57,6 @@ UNKNOWN     = "UNKNOWN"
 # -----------------------
 
 duplicated_file_paths = []
-
-work_dir_map = {}
-
 
 if sys.version_info[0] == 2:
 	import errno
@@ -167,11 +164,6 @@ def create_candidates_temp_table(connection):
 
 def work_dir_to_batch(connection, work_dir, filt):
 
-	global work_dir_map
-
-	if work_dir in work_dir_map:
-		return work_dir_map
-
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
 	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
@@ -194,7 +186,7 @@ def work_dir_to_batch(connection, work_dir, filt):
 		batch = batches[0]
 	else:
 		batch = None
-	work_dir_map[work_dir] = batch
+
 	return batch
 
 
@@ -451,24 +443,12 @@ def stats_update_db(connection, rows):
 	connection.commit()
 
 
-def stats_all_iterable(connection, batch):
-	row = {'state': RAW_STATS}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT dir_path, name
-		FROM image_t
-		WHERE state < :state
-		''', row)
-	return cursor
-
-
 def stats_batch_iterable(connection, batch):
 	row = {'batch': batch, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT dir_path, name
+		SELECT name
 		FROM image_t
 		WHERE state < :state
 		AND batch = :batch
@@ -476,55 +456,26 @@ def stats_batch_iterable(connection, batch):
 	return cursor
 
 
-def register_preamble(connection, directory, batch, options):
-	file_list = insertion_list(connection, directory, options)
-	metadata = {
-		'batch'       : batch, 
-		'observer'    : options.observer, 
-		'organization': options.organization,
-		'email'       : options.email, 
-		'location'    : options.location,
-		'state'       : REGISTERED,
-		'type'        : UNKNOWN,
-	}
-	return file_list, metadata
-
-
-
-def do_stats(connection, batch, src_iterable, options):
+def do_stats(connection, batch, work_dir, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
-	for dir_path, name in src_iterable(connection, batch):
-		file_path = os.path.join(dir_path, name)
+	for name, in stats_batch_iterable(connection, batch):
+		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
-		image.loadEXIF()    # we need to find out the camera model before reading
-		image.read()
-		row = image.stats()
-		row['state']        = RAW_STATS
-		rows.append(row)
-	if rows:
-		stats_update_db(connection, rows)
-	else:
-		logging.info("No image statistics to be computed")
-
-
-def do_stats(connection, work_dir, src_iterable, options):
-	camera_cache = CameraCache(options.camera)
-	rows = []
-	for dir_path, name in src_iterable(connection, batch):
-		file_path = os.path.join(dir_path, name)
-		image = CameraImage(file_path, camera_cache)
-		image.setROI(options.roi)
-		image.loadEXIF()    # we need to find out the camera model before reading
-		image.read()
-		row = image.stats()
-		row['state']        = RAW_STATS
-		row['observer']     = options.observer
-		row['organization'] = options.organization
-		row['email']        = options.email
-		row['location']     = options.location
-		rows.append(row)
+		try:
+			image.loadEXIF()
+		except MetadataError as e:
+			logging.info(e)    # we need to find out the camera model before reading
+		else:
+			image.read()
+			row = image.stats()
+			row['state']        = RAW_STATS
+			row['observer']     = options.observer
+			row['organization'] = options.organization
+			row['email']        = options.email
+			row['location']     = options.location
+			rows.append(row)
 	if rows:
 		stats_update_db(connection, rows)
 	else:
@@ -1262,8 +1213,7 @@ def image_reduce(connection, options):
 	do_register(connection, options.work_dir, options.filter, batch)
 	
 	# Step 2
-	#iterable = stats_all_iterable if options.all else stats_batch_iterable
-	#do_stats(connection, batch, iterable, options)
+	do_stats(connection, batch, options.work_dir, options)
 
 	# Step 3
 	#iterable = classify_all_iterable if options.all else classify_batch_iterable
