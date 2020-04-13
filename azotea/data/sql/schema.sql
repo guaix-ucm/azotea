@@ -5,21 +5,21 @@
 CREATE TABLE IF NOT EXISTS image_t
 (
     -- Observer metadata
-    observer            TEXT  NOT NULL,   -- Observer name
+    observer            TEXT,             -- Observer name
     organization        TEXT,             -- Observer organization
     email               TEXT,             -- Observer email
     -- Location metadata
-    location            TEXT  NOT NULL,   -- location name
+    location            TEXT,             -- location name
     -- Camera metadata
-    model               TEXT  NOT NULL,   -- Camera Model from EXIF
+    model               TEXT,             -- Camera Model from EXIF
     focal_length        INTEGER,          -- Either from config file or EXIF
     f_ratio             INTEGER,          -- Either from config file or EXIF
     -- Image metadata
     name                TEXT  NOT NULL,   -- Image name without the path
     hash                BLOB,             -- Image hash
-    tstamp              TEXT  NOT NULL,   -- ISO 8601 timestamp from EXIF
-    iso                 TEXT  NOT NULL,   -- ISO sensivity from EXIF
-    exptime             REAL  NOT NULL,   -- exposure time in seconds from EXIF      
+    tstamp              TEXT,             -- ISO 8601 timestamp from EXIF
+    iso                 TEXT,             -- ISO sensivity from EXIF
+    exptime             REAL,             -- exposure time in seconds from EXIF      
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]
     dark_roi            TEXT,             -- dark region of interest: [x1:x2,y1:y2], NULL if not used
     scale               REAL,             -- image scale in arcsec/pixel
@@ -45,10 +45,9 @@ CREATE TABLE IF NOT EXISTS image_t
     aver_dark_B4        REAL DEFAULT 0.0, -- B4 dark level either master dark or dark_roi
     vari_dark_B4        REAL DEFAULT 0.0, -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    dir_path            TEXT    NOT NULL, -- original directory path
     batch               INTEGER NOT NULL, -- batch identifier
-    type                TEXT,             -- LIGHT or DARK
-    state               INTEGER REFERENCES state_t(state),            
+    type                TEXT    NOT NULL, -- LIGHT or DARK
+    state               INTEGER NOT NULL REFERENCES state_t(state),            
     PRIMARY KEY(hash)
 );
 
@@ -105,7 +104,6 @@ SELECT
     aver_dark_B4        ,                                  -- B4 dark level either master dark or dark_roi
     vari_dark_B4        ,                                  -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    dir_path           ,                 -- original directory path
     batch               ,                -- batch identifier
     type                ,                -- LIGHT or DARK
     state                                -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"

@@ -219,42 +219,26 @@ def createParser():
 	ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
 	imeex = ime.add_mutually_exclusive_group(required=True)
 	imeex.add_argument('--exif',      action="store_true", help="display EXIF metadata")
-	imeex.add_argument('--generic',    action="store_true", help="display global metadata")
+	imeex.add_argument('--generic',   action="store_true", help="display global metadata")
 	imeex.add_argument('--state',     action="store_true", help="display processing state")
 	imeex.add_argument('--data',      action="store_true", help="dark substracted signal averaged over roi")
 	imeex.add_argument('--raw-data',  action="store_true", help="raw signal averaged over roi")
 	imeex.add_argument('--dark',      action="store_true", help="raw signal of DARK images")
 	imeex.add_argument('--dark-data', action="store_true", help="dark signal of LIGHT averaged over dark row or master dark")
 	imeex.add_argument('--master',    action="store_true", help="display master dark data")
-	ime.add_argument('--page-size', type=int, default=10,  help="display page size")
-
-	ire = subparser.add_parser('register', help='register images in the database')
-	ire.add_argument('-n' ,'--new',        action="store_true", help="Generate a new batch of images")
-	ire.add_argument('-w' ,'--work-dir',   required=True, type=str, help='Input working directory')
-	ire.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
-	ire.add_argument('-s' ,'--slow',       action="store_true", help="Use slow registering mode to detect duplicates")
-
-	icl = subparser.add_parser('classify', help='classify LIGHT/DARK images')
-	icl.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-
-	isb = subparser.add_parser('dark',    help='apply master DARK to LIGHT images')
-	isb.add_argument('-a' ,'--all',        action="store_true", help="apply to all images in database")
-	
-	ist = subparser.add_parser('stats',   help='compute image statistics')
-	ist.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-	
-	iex = subparser.add_parser('export',  help='export to CSV')
-	iex.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
-	iex.add_argument('--csv-file',     type=str, default=None, help='Optional session CSV file to export')
+	ime.add_argument('--page-size',   type=int, default=10,  help="display page size")
 
 	ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
-	irdex = ird.add_mutually_exclusive_group()
-	irdex.add_argument('-n' ,'--new',     action="store_true", help="Generate a new batch of images")
-	irdex.add_argument('-a' ,'--all',     action="store_true", help="apply to all existing batches")
-	ird.add_argument('-w' ,'--work-dir',  type=str, help='Input working directory')
+	ird.add_argument('-w' ,'--work-dir',  type=str, required=True, help='Input working directory')
 	ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
-	ird.add_argument('-s' ,'--slow',      action="store_true", help="Use slow registration mode")
+	ird.add_argument('-r' ,'--reset',     action="store_true",    help="Reprocess from start")
 	ird.add_argument('--csv-file',        type=str, default=None, help='Optional session CSV file to export')
+	
+	iex = subparser.add_parser('export',  help='export to CSV')
+	ieeex = iex.add_mutually_exclusive_group(required=True)
+	ieeex.add_argument('-a' ,'--all',      action="store_true", help="apply to all images in database")
+	ieeex.add_argument('-w' ,'--work-dir', type=str, help='Input working directory')
+	iex.add_argument('--csv-file',         type=str, default=None, help='Optional session CSV file to export')
 
 	return parser
 
