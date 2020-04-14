@@ -97,6 +97,12 @@ Para observadores impacientes que quieren reducir la observación una noche en u
 azotea image reduce --work-dir <directorio donde están las imágenes>
 ```
 
+Si se desea detalle del proceso, ejecutar en su lugar
+
+```bash
+azotea --verbose image reduce --work-dir <directorio donde están las imágenes>
+```
+
 ## Ejemplo de sesion de reducción
 
 1. Primera inicializacion

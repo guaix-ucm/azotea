@@ -406,6 +406,8 @@ def stats_update_db(connection, rows):
             iso                 = :iso,     -- EXIF
             tstamp              = :tstamp,  -- EXIF
             exptime             = :exptime, -- EXIF
+            focal_length        = :focal_length, -- EXIF
+            f_number            = :f_number,     -- EXIF
 			aver_raw_signal_R1  = :aver_raw_signal_R1, 
 			aver_raw_signal_G2  = :aver_raw_signal_G2, 
 			aver_raw_signal_G3  = :aver_raw_signal_G3,
@@ -472,6 +474,8 @@ def do_stats(connection, session, work_dir, options):
 			row['iso']          = metadata['iso']
 			row['tstamp']       = metadata['tstamp']
 			row['exptime']      = metadata['exptime']
+			row['focal_length'] = metadata['focal_length']
+			row['f_number']     = metadata['f_number']
 			rows.append(row)
 	if rows_to_delete:
 		stats_delete_db(connection, rows_to_delete)
@@ -702,6 +706,8 @@ EXIF_HEADERS = [
 	'Model',
 	'Exposure',
 	'ISO',
+	'Focal',
+	'f/'
 ]
 
 GLOBAL_HEADERS = [
@@ -773,7 +779,7 @@ def view_meta_exif_all_iterable(connection, session):
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, session, tstamp, model, exptime, iso
+		SELECT name, session, tstamp, model, exptime, iso, focal_length, f_number
 		FROM image_t
 		ORDER BY session DESC, name ASC
 		''')
@@ -787,7 +793,7 @@ def view_meta_exif_session_iterable(connection, session):
 	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT name, session, tstamp, model, exptime, iso
+		SELECT name, session, tstamp, model, exptime, iso, focal_length, f_number
 		FROM image_t
 		WHERE session = :session
 		ORDER BY name DESC

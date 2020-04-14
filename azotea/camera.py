@@ -16,6 +16,7 @@ import logging
 import datetime
 import hashlib
 import math
+import re
 
 try:
     # Python 2
@@ -60,6 +61,7 @@ BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
 
+EXPOSURE_REGEXP = re.compile(r'(\d)/(\d+)')
 
 
 # ----------
@@ -117,7 +119,6 @@ class CameraCache(object):
         
 
 
-
 class CameraImage(object):
 
     HEADERS = [
@@ -128,6 +129,8 @@ class CameraImage(object):
             'roi'            ,
             'dark_roi'       ,
             'exptime'        ,
+            'focal_length'   ,
+            'f_number'       ,
             'aver_raw_signal_R1',
             'vari_raw_signal_R1',
             'aver_raw_signal_G2',
@@ -164,15 +167,28 @@ class CameraImage(object):
         '''Load EXIF metadata'''   
         #logging.debug("{0}: Loading EXIF metadata".format(self.name))
         with open(self.filepath, "rb") as f:
-            self.exif = exifread.process_file(f)
+            logging.disable(logging.INFO)
+            self.exif = exifread.process_file(f, details=False)
+            logging.disable(logging.NOTSET)
         if not self.exif:
             raise MetadataError(self.filepath)
-        self.model = str(self.exif.get('Image Model'))
-        self.metadata['name']      = self.name
-        self.metadata['model']     = self.model
-        self.metadata['tstamp']    = self._iso8601(str(self.exif.get('Image DateTime')))
-        self.metadata['exptime']   = str(self.exif.get('EXIF ExposureTime'))
-        self.metadata['iso']       = str(self.exif.get('EXIF ISOSpeedRatings'))
+        self.metadata['name']         = self.name
+        self.model                    = str(self.exif.get('Image Model'))
+        self.metadata['model']        = self.model
+        self.metadata['tstamp']       = self._iso8601(str(self.exif.get('Image DateTime')))
+        self.metadata['iso']          = str(self.exif.get('EXIF ISOSpeedRatings'))
+        try:
+            temp = str(self.exif.get('EXIF ExposureTime'))
+            temp = int(temp)
+        except ValueError:
+            matchobj = regexp.search(temp)
+            if matchobj:
+                temp = float(matchobj.group(1))/matchobj.group(2)
+        self.metadata['exptime']      =  temp
+        temp = self.exif.get('EXIF FocalLength', None)
+        self.metadata['focal_length'] = str(temp) if temp is not None else None
+        temp = self.exif.get('EXIF FNumber', None)
+        self.metadata['f_number']     = str(temp) if temp is not None else None
         return self.metadata
 
 

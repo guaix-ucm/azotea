@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS image_t
     -- Camera metadata
     model               TEXT,             -- Camera Model from EXIF
     focal_length        INTEGER,          -- Either from config file or EXIF
-    f_ratio             INTEGER,          -- Either from config file or EXIF
+    f_number            INTEGER,          -- Either from config file or EXIF
     -- Image metadata
     name                TEXT  NOT NULL,   -- Image name without the path
     hash                BLOB,             -- Image hash
@@ -73,7 +73,7 @@ SELECT
     -- Camera metadata
     model               ,                 -- Camera Model from EXIF
     focal_length        ,                 -- Either from config file or EXIF
-    f_ratio             ,                 -- Either from config file or EXIF
+    f_number            ,                 -- Either from config file or EXIF
     -- Image metadata
     name                ,                 -- Image name without the path
     hash                ,                 -- Image hash
