@@ -1,7 +1,3 @@
-
-CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (session) cuando se especifica --new. Todo lo demás
-se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion.
-
 TO DO
  
  - integrar exiftool con subrpcess
@@ -20,11 +16,7 @@ TO DO
     {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.50, 'filter': 'GG543'}     # cambio 2
     {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.43, 'filter': 'GG987'}
 
-- ver comno recuperar la config optica del EXIF. 
-  En todo caso, añadir una seccion de configuracion optica en el fichero de config. Los datos EXIF si existen tuendran precedencia
-. Completar modelos de canaras
-- session management
-  - session merge ¿es mecesario? quizas no ...
+- Completar modelos de canaras
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
 - fichero de log?,
@@ -35,9 +27,6 @@ TO DO
 CASOS DE PRUEBA:
 2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
 3) Sesion inicial y añadir 2 DARK más. Se debería rehacer el master DARK y recalcular los LIGHT restantes
-4) Sesion multireduccion
-  - unico observador
-  - con multiples directorios , un de ellos con register --new y los demas con register --work-dir
 4) Sesion de  multiobservador multireducción
   - varios observadores
   - varios directorios por observador
