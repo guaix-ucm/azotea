@@ -149,7 +149,7 @@ def work_dir_to_session(connection, work_dir, filt):
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
 	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
 	cursor = connection.cursor()
-	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT)")
+	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
 	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name) VALUES (:name)", names_list)
 	connection.commit()
 	# Common images to database and work-dir
@@ -266,7 +266,7 @@ def candidates(connection, work_dir, filt, session):
 
 
 def register_delete_images(connection, rows):
-	'''fast version'''
+	'''delete images'''
 	cursor = connection.cursor()
 	cursor.executemany(
 			'''
@@ -277,14 +277,12 @@ def register_delete_images(connection, rows):
 	connection.commit()
 
 
-
 def register_slow(connection, work_dir, names_list, session):
 	duplicated_file_paths = []
 	counter = LogCounter(N_COUNT)
 	for name in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
-		row['name'] = name
+		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hash(file_path)
 		counter.tick("Registered {0} images in database (slow method)")
 		try:
@@ -296,7 +294,7 @@ def register_slow(connection, work_dir, names_list, session):
 			logging.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
 		else:
 			logging.debug("{0} registered in database".format(row['name']))
-	counter.end("Registered {0} images in database")
+	counter.end("Registered {0} images in database (slow method)")
 
 
 def register_fast(connection, work_dir, names_list, session):
@@ -304,8 +302,7 @@ def register_fast(connection, work_dir, names_list, session):
 	counter = LogCounter(N_COUNT)
 	for name in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
-		row['name'] = name
+		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hash(file_path)
 		rows.append(row)
 		logging.debug("{0} being registered in database".format(row['name']))
@@ -316,14 +313,11 @@ def register_fast(connection, work_dir, names_list, session):
 
 def register_unregister(connection, names_list, session):
 	rows = []
-	row  = {'session': session}
 	counter = LogCounter(N_COUNT)
 	logging.info("Unregistering images from database")
 	for name in names_list:
-		row['name']  = name
-		row['session'] = session
-		rows.append(row)
-		logging.debug("{0} being removed from database".format(row['name']))
+		rows.append({'session': session, 'name': name, 'session': session})
+		logging.debug("{0} being removed from database".format(name))
 		counter.tick("Removed {0} images from database")
 	counter.end("Removed {0} images from database")
 	register_delete_images(connection, rows)

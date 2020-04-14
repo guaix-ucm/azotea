@@ -51,11 +51,14 @@ CREATE TABLE IF NOT EXISTS image_t
     PRIMARY KEY(hash)
 );
 
+CREATE INDEX IF NOT EXISTS image_i1 ON image_t(name);
+
 CREATE TABLE IF NOT EXISTS state_t (
     state              INTEGER,
     label              TEXT,
     PRIMARY KEY(state)
 );
+
 
 ------------------------------------------------------------------------------------------------
 -- This View exists to automatically substract the dark levels and calculate resulting variances
@@ -104,7 +107,7 @@ SELECT
     aver_dark_B4        ,                                  -- B4 dark level either master dark or dark_roi
     vari_dark_B4        ,                                  -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    session               ,              -- session identifier
+    session             ,                -- session identifier
     type                ,                -- LIGHT or DARK
     state                                -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
 FROM image_t;
@@ -113,7 +116,7 @@ FROM image_t;
 
 CREATE TABLE IF NOT EXISTS master_dark_t
 (
-    session               INTEGER,           -- session id
+    session             INTEGER,             -- session id
     aver_R1             REAL    NOT NULL,    -- Red mean dark level in Red
     vari_R1             REAL    NOT NULL,    -- Red dark vari
     aver_G2             REAL    NOT NULL,    -- Green 1 mean dark level
