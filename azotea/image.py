@@ -533,6 +533,49 @@ def master_dark_db_update_all(connection, session):
 	connection.commit()
 
 
+def master_dark_db_update_session(connection, session):
+	row = {'type': DARK_FRAME, 'state': RAW_STATS, 'session': session}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		INSERT OR REPLACE INTO master_dark_t (
+			session, 
+			roi, 
+			N, 
+			aver_R1, 
+			aver_G2, 
+			aver_G3, 
+			aver_B4,
+			vari_R1, 
+			vari_G2, 
+			vari_G3, 
+			vari_B4,
+			min_exptime,
+			max_exptime
+		)
+		SELECT 
+			session, 
+			MIN(roi), 
+			COUNT(*), 
+			AVG(aver_raw_signal_R1), 
+			AVG(aver_raw_signal_G2), 
+			AVG(aver_raw_signal_G3), 
+			AVG(aver_raw_signal_B4),
+			SUM(vari_raw_signal_R1)/COUNT(*),
+			SUM(vari_raw_signal_G2)/COUNT(*),
+			SUM(vari_raw_signal_G3)/COUNT(*),
+			SUM(vari_raw_signal_B4)/COUNT(*),
+			MIN(exptime),
+			MAX(exptime)
+		FROM image_t
+		WHERE session = :session 
+		AND   type    = :type
+		AND   state  >= :state
+		GROUP BY session
+		''', row)
+	connection.commit()
+
+
 def dark_update_columns(connection, session):
 	row = {'type': LIGHT_FRAME, 'session': session, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
 	cursor = connection.cursor()
@@ -557,7 +600,7 @@ def dark_update_columns(connection, session):
 
 
 def do_apply_dark(connection, session, options):
-	master_dark_db_update_all(connection, session)
+	master_dark_db_update_session(connection, session)
 	if master_dark_for(connection, session):
 		logging.info("Applying dark substraction to current working directory")
 		dark_update_columns(connection, session)
@@ -656,7 +699,10 @@ def get_file_path(connection, session, work_dir, options):
 	# respct user's wishes
 	if options.csv_file:
 		return options.csv_file
-	name = "session-" + os.path.basename(work_dir) + '.csv'
+	middle = os.path.basename(work_dir)
+	if middle == '':
+		middle = os.path.basename(work_dir[:-1])
+	name = "session-" + middle + '.csv'
 	return os.path.join(AZOTEA_CSV_DIR, name)
 
 

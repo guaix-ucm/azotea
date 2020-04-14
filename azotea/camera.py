@@ -238,7 +238,7 @@ class CameraImage(object):
     def getJulianDate(self):
         jd2000, mjd = jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)
         fraction = (self._date.hour*3600 + self._date.minute*60 + self._date.second)/86400.0
-        return jd2000, mjd + fraction
+        return jd2000, mjd + fraction - 0.5
 
         
     def stats(self):
