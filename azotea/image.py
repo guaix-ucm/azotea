@@ -474,8 +474,8 @@ def do_stats(connection, session, work_dir, options):
 			row['iso']          = metadata['iso']
 			row['tstamp']       = metadata['tstamp']
 			row['exptime']      = metadata['exptime']
-			row['focal_length'] = metadata['focal_length']
-			row['f_number']     = metadata['f_number']
+			row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
+			row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
 			rows.append(row)
 	if rows_to_delete:
 		stats_delete_db(connection, rows_to_delete)

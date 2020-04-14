@@ -4,10 +4,6 @@ se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noch
 
 TO DO
  
- - Cabeceras EXIF "Focal Length" y "F Number" leer con get(cabecera, None)
- - Parseo de Focal Length nn mm (nn equivalent to ...)
- - Parseo de Exposure cuando viene como 1/nn
- - Parseo de F Number como integer
  - integrar exiftool con subrpcess
    - solo leer una imagen => tabla separada de session_t
 - update time de procesado?

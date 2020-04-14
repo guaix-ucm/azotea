@@ -186,9 +186,9 @@ class CameraImage(object):
                 temp = float(matchobj.group(1))/matchobj.group(2)
         self.metadata['exptime']      =  temp
         temp = self.exif.get('EXIF FocalLength', None)
-        self.metadata['focal_length'] = str(temp) if temp is not None else None
+        self.metadata['focal_length'] = int(str(temp)) if temp is not None and str(temp) != '0' else None
         temp = self.exif.get('EXIF FNumber', None)
-        self.metadata['f_number']     = str(temp) if temp is not None else None
+        self.metadata['f_number']     = float(str(temp)) if temp is not None and str(temp) != '0' else None
         return self.metadata
 
 
