@@ -101,6 +101,24 @@ class ROI(object):
     def __repr__(self):
         return "[{0}:{1},{2}:{3}]".format(self.x1, self.x2, self.y1, self.y2)
 
+
+class LogCounter(object):
+    """ Point class represents and manipulates x,y coords. """
+    def __init__(self, N):
+        """ Create a new point at the origin """
+        self.N = N
+        self.i = 0
+
+    def tick(self, *args):
+        self.i += 1
+        if (self.i % self.N) == 0:
+            logging.info(args[0].format(self.i))
+
+    def end(self, *args):
+        logging.info(args[0].format(self.i))
+       
+
+
 # -----------------------
 # Module global functions
 # -----------------------

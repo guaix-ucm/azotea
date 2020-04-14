@@ -21,7 +21,6 @@ import logging
 # -------------
 
 from .utils      import paging
-from .exceptions import NoBatchError
 
 # ----------------
 # Module constants
@@ -40,47 +39,47 @@ from .exceptions import NoBatchError
 # Utility functions
 # -----------------
 
-def lookup_batch(connection, batch):
-	'''Get one  batch'''
-	row = {'batch': batch}
+def lookup_session(connection, session):
+	'''Get one  session'''
+	row = {'session': session}
 	cursor = connection.cursor()
 	cursor.execute('''
-		SELECT batch
+		SELECT session
 		FROM image_t
-		WHERE batch = batch 
+		WHERE session = session 
 		''', row)
 	return cursor.fetchone()[0]
 
 
-def latest_batch(connection):
-	'''Get Last recorded batch'''
+def latest_session(connection):
+	'''Get Last recorded session'''
 	cursor = connection.cursor()
 	cursor.execute('''
-		SELECT MAX(batch)
+		SELECT MAX(session)
 		FROM image_t 
 		''')
 	return cursor.fetchone()[0]
 
 
-def batch_all_count(cursor):
+def session_all_count(cursor):
 	cursor.execute(
 		'''
 		SELECT COUNT(*)
 		FROM image_t
-		GROUP BY batch
+		GROUP BY session
 		''')
 	result = [ x[0] for x in cursor.fetchall()]
 	return sum(result)
 
 
-def batch_batch_count(cursor, batch):
-	row = {'batch': batch}
+def session_session_count(cursor, session):
+	row = {'session': session}
 	cursor.execute(
 		'''
 		SELECT COUNT(*)
 		FROM image_t
-		WHERE batch = :batch
-		GROUP BY batch, type, state
+		WHERE session = :session
+		GROUP BY session, type, state
 		''',row)
 	result = [ x[0] for x in cursor.fetchall()]
 	return sum(result)
@@ -91,60 +90,60 @@ def batch_batch_count(cursor, batch):
 # ------------------
 
 
-def batch_summary_all_iterable(connection, batch):
+def session_summary_all_iterable(connection, session):
 	cursor = connection.cursor()
-	count = batch_all_count(cursor)
+	count = session_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT batch, type, s.label, COUNT(*)
+		SELECT session, type, s.label, COUNT(*)
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		GROUP BY batch, type, state
-		ORDER BY batch DESC, type, state 
+		GROUP BY session, type, state
+		ORDER BY session DESC, type, state 
 		''')
 	return cursor, count
 
 
-def batch_extended_all_iterable(connection, batch):
+def session_extended_all_iterable(connection, session):
 	cursor = connection.cursor()
-	count = batch_all_count(cursor)
+	count = session_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT batch, name, tstamp, type, s.label
+		SELECT session, name, tstamp, type, s.label
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		ORDER BY batch DESC, name ASC, type
+		ORDER BY session DESC, name ASC, type
 		''')
 	return cursor, count
 
 
-def batch_summary_batch_iterable(connection, batch):
-	row = {'batch': batch}
+def session_summary_session_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = batch_batch_count(cursor, batch)
+	count = session_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT batch, type, s.label, COUNT(*)
+		SELECT session, type, s.label, COUNT(*)
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		WHERE batch = :batch
-		GROUP BY batch, type, state
-		ORDER BY batch DESC, type, state 
+		WHERE session = :session
+		GROUP BY session, type, state
+		ORDER BY session DESC, type, state 
 		''', row)
 	return cursor, count
 
 
-def batch_extended_batch_iterable(connection, batch):
-	row = {'batch': batch}
+def session_extended_session_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = batch_batch_count(cursor, batch)
+	count = session_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT batch, name, tstamp, type, s.label
+		SELECT session, name, tstamp, type, s.label
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		WHERE batch = :batch
-		ORDER BY batch DESC, name ASC, type
+		WHERE session = :session
+		ORDER BY session DESC, name ASC, type
 		''', row)
 	return cursor, count
 
@@ -161,7 +160,7 @@ def batch_extended_batch_iterable(connection, batch):
 
 
 SUMMARY_HEADERS = [
-	'Batch',
+	'Session',
 	'Type',
 	'State',
 	'# Images',
@@ -169,7 +168,7 @@ SUMMARY_HEADERS = [
 
 
 EXTENDED_HEADERS = [
-	'Batch',
+	'Session',
 	'Name',
 	'Date',
 	'Type',
@@ -179,8 +178,8 @@ EXTENDED_HEADERS = [
 
 
 
-def do_batch_view(connection, batch, iterable, headers, options):
-	cursor, count = iterable(connection, batch)
+def do_session_view(connection, session, iterable, headers, options):
+	cursor, count = iterable(connection, session)
 	paging(cursor, headers, maxsize=count, page_size=options.page_size)
 
 
@@ -189,34 +188,34 @@ def do_batch_view(connection, batch, iterable, headers, options):
 # =====================
 
 
-def batch_current(connection, options):
-	batch = latest_batch(connection)
+def session_current(connection, options):
+	session = latest_session(connection)
 	if options.extended:
 		headers = EXTENDED_HEADERS
-		iterable = batch_extended_batch_iterable 
+		iterable = session_extended_session_iterable 
 	else:
 		headers = SUMMARY_HEADERS
-		iterable = batch_summary_batch_iterable
-	do_batch_view(connection, batch, iterable, headers, options)
+		iterable = session_summary_session_iterable
+	do_session_view(connection, session, iterable, headers, options)
 
 
-def batch_list(connection, options):
+def session_list(connection, options):
 	if options.all and options.extended:
 		headers = EXTENDED_HEADERS
-		batch = None
-		iterable = batch_extended_all_iterable
+		session = None
+		iterable = session_extended_all_iterable
 	elif options.all and not options.extended:
 		headers = SUMMARY_HEADERS
-		batch = None
-		iterable = batch_summary_all_iterable
+		session = None
+		iterable = session_summary_all_iterable
 	elif not options.all and options.extended:
 		headers = EXTENDED_HEADERS
-		batch = lookup_batch(connection, options.batch)
-		iterable = batch_extended_batch_iterable
+		session = lookup_session(connection, options.session)
+		iterable = session_extended_session_iterable
 	else:
 		headers = SUMMARY_HEADERS
-		batch = lookup_batch(connection, options.batch)
-		iterable = batch_summary_batch_iterable
-	do_batch_view(connection, batch, iterable, headers, options)
+		session = lookup_session(connection, options.session)
+		iterable = session_summary_session_iterable
+	do_session_view(connection, session, iterable, headers, options)
 
 

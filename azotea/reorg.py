@@ -28,7 +28,8 @@ import jdcal
 # local imports
 # -------------
 
-from .camera import  CameraImage
+from .camera import CameraImage
+from .utils  import LogCounter
 
 # ----------------
 # Module constants
@@ -62,9 +63,9 @@ def dir_name(jd2000, mjd):
 	return "{0:04d}-{1:02d}-{2:02d}".format(year, month, day)
 
 def scan_images(options):
-	count = 0
 	output_dir_set = set()
 	image_list = []
+	counter = LogCounter(N_FILES)
 	filepath_iterable = glob.iglob(os.path.join(options.input_dir, '*'))
 	for input_file_path in filepath_iterable:
 		image = CameraImage(input_file_path, options)
@@ -73,10 +74,8 @@ def scan_images(options):
 		output_dir_path = os.path.join(options.output_dir, date_string)
 		output_dir_set.add(output_dir_path)
 		image_list.append((input_file_path, output_dir_path))
-		count += 1
-		if (count % N_FILES) == 0:
-			logging.info("read {0} images".format(count))
-	logging.info("read {0} images".format(count))
+		counter.tick("read {0} images")
+	counter.end("read {0} images")
 	return output_dir_set, image_list
 
 

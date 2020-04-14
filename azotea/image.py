@@ -30,8 +30,7 @@ import hashlib
 
 from .           import AZOTEA_CSV_DIR
 from .camera     import CameraImage, CameraCache, MetadataError
-from .utils      import merge_two_dicts, paging
-from .exceptions import NoBatchError, NoWorkDirectoryError
+from .utils      import merge_two_dicts, paging, LogCounter
 from .exceptions import MixingCandidates
 
 
@@ -49,14 +48,13 @@ LIGHT_FRAME = "LIGHT"
 DARK_FRAME  = "DARK"
 UNKNOWN     = "UNKNOWN"
 
-
-
+N_COUNT = 50
 
 # -----------------------
 # Module global variables
 # -----------------------
 
-duplicated_file_paths = []
+
 
 if sys.version_info[0] == 2:
 	import errno
@@ -81,29 +79,27 @@ def classification_algorithm1(name,  file_path, options):
 	return result
 
 
-def batch_processed(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS}
+def session_processed(connection, session):
+	row = {'session': session, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute('''
 		SELECT COUNT(*) 
 		FROM image_t 
 		WHERE state >= :state
-		AND batch = :batch
+		AND session = :session
 		''',row)
 	return cursor.fetchone()[0]
 
 
-def latest_batch(connection):
-	'''Get Last recorded batch'''
+def latest_session(connection):
+	'''Get Last recorded session'''
 	cursor = connection.cursor()
 	cursor.execute('''
-		SELECT MAX(batch)
+		SELECT MAX(session)
 		FROM image_t 
 		''')
 	return cursor.fetchone()[0]
 
-
-### LO BUENO DE LAS UTILIDADES AQUI DEBAJO
 
 def myopen(name, *args):
 	if sys.version_info[0] < 3:
@@ -112,7 +108,7 @@ def myopen(name, *args):
 		return open(name,  *args, newline='')
 
 
-def myhash(filepath):
+def hash(filepath):
     '''Compute a hash from the image'''
     BLOCK_SIZE = 65536*65536 # The size of each read from the file
     file_hash = hashlib.sha256()
@@ -135,59 +131,54 @@ def find_by_hash(connection, hash):
 	return cursor.fetchone()
 
 
-def image_batch_state_reset(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS, 'new_state': REGISTERED, 'type': UNKNOWN}
+def image_session_state_reset(connection, session):
+	row = {'session': session, 'state': RAW_STATS, 'new_state': REGISTERED, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		UPDATE image_t
 		SET state = :new_state, type = :type
 		WHERE state >= :state
-		AND batch = :batch
+		AND session = :session
 		''', row)
 	connection.commit()
 
 
-def create_candidates_temp_table(connection):
-	cursor = connection.cursor()
-	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
-	connection.commit()
-
-
-def work_dir_to_batch(connection, work_dir, filt):
+def work_dir_to_session(connection, work_dir, filt):
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
 	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
 	cursor = connection.cursor()
+	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT)")
 	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name) VALUES (:name)", names_list)
 	connection.commit()
 	# Common images to database and work-dir
 	cursor.execute(
 		'''
-		SELECT MAX(batch), MAX(batch) == MIN(batch)
+		SELECT MAX(session), MAX(session) == MIN(session)
 		FROM image_t
 		WHERE name IN (SELECT name FROM candidate_t)
 		'''
 		)
 	result = cursor.fetchall()
 	if result:
-		batches, flags = zip(*result)
+		sessiones, flags = zip(*result)
 		if flags[0] and not all(flags):
 			raise MixingCandidates(names_common)
-		batch = batches[0]
+		session = sessiones[0]
 	else:
-		batch = None
+		session = None
 
-	return batch
+	return session
 
 
-def master_dark_for(connection, batch):
-	row = {'batch': batch}
+def master_dark_for(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
 	cursor.execute('''
 		SELECT COUNT(*) 
 		FROM master_dark_t
-		WHERE batch = :batch
+		WHERE session = :session
 		''',row)
 	return cursor.fetchone()[0]
 
@@ -205,13 +196,13 @@ def register_insert_image(connection, row):
 			INSERT INTO image_t (
 				name, 
 				hash,
-				batch, 
+				session, 
 				type,
 				state
 			) VALUES (
 				:name, 
 				:hash,
-				:batch,
+				:session,
 				:type,
 				:state
 			)
@@ -227,13 +218,13 @@ def register_insert_images(connection, rows):
 			INSERT INTO image_t (
 				name, 
 				hash,
-				batch,
+				session,
 				type,
 				state
 			) VALUES (
 				:name, 
 				:hash,
-				:batch, 
+				:session, 
 				:type,
 				:state
 			)
@@ -241,7 +232,7 @@ def register_insert_images(connection, rows):
 	connection.commit()
 
 
-def candidates(connection, work_dir, filt, batch):
+def candidates(connection, work_dir, filt, session):
 	'''candidate list of images to be inserted/removed to/from the database'''
 	# New Images in the work dir that should be added to database
 	cursor = connection.cursor()
@@ -258,13 +249,13 @@ def candidates(connection, work_dir, filt, batch):
 	else:
 		names_to_add = []
 	# Images no longer in the work dir, they should be deleted from database
-	row = {'batch': batch}
+	row = {'session': session}
 	cursor.execute(
 		'''
 		SELECT name
 		FROM image_t
 		WHERE name NOT IN (SELECT name FROM candidate_t)
-		AND batch = :batch
+		AND session = :session
 		''', row)
 	result = cursor.fetchall()
 	if result:
@@ -281,64 +272,72 @@ def register_delete_images(connection, rows):
 			'''
 			DELETE FROM image_t 
 			WHERE name  == :name
-			AND   batch == :batch
+			AND   session == :session
 			''', rows)
 	connection.commit()
 
 
 
-def register_slow(connection, work_dir, names_list, batch):
-	logging.info("SLOW REGISTER")
-	global duplicated_file_paths
+def register_slow(connection, work_dir, names_list, session):
+	duplicated_file_paths = []
+	counter = LogCounter(N_COUNT)
 	for name in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'batch': batch, 'state': REGISTERED, 'type': UNKNOWN,}
+		row  = {'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['name'] = name
-		row['hash'] = myhash(file_path)
+		row['hash'] = hash(file_path)
+		counter.tick("registered {0} images in database (slow method)")
 		try:
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
 			name2, = find_by_hash(connection, row['hash'])
 			duplicated_file_paths.append({'original': name2, 'duplicated': file_path})
-			logging.warn("Duplicate => {0} EQUALS {1}".format(file_path, name2))
+			logging.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
 		else:
-			logging.info("{0} registered in database".format(row['name']))
+			logging.debug("{0} registered in database".format(row['name']))
 
 
-def register_fast(connection, work_dir, names_list, batch):
+def register_fast(connection, work_dir, names_list, session):
 	rows = []
+	counter = LogCounter(N_COUNT)
 	for name in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'batch': batch, 'state': REGISTERED, 'type': UNKNOWN,}
+		row  = {'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['name'] = name
-		row['hash'] = myhash(file_path)
+		row['hash'] = hash(file_path)
 		rows.append(row)
-		logging.info("{0} being registered in database".format(row['name']))
+		logging.debug("{0} being registered in database".format(row['name']))
+		counter.tick("registered {0} images in database")
+	counter.end("registered {0} images in database")
 	register_insert_images(connection, rows)
 	
 
-def register_unregister(connection, names_list, batch):
+def register_unregister(connection, names_list, session):
 	rows = []
-	row  = {'batch': batch}
+	row  = {'session': session}
+	counter = LogCounter(N_COUNT)
+	logging.info("Unregistering images from database")
 	for name in names_list:
 		row['name']  = name
-		row['batch'] = batch
+		row['session'] = session
 		rows.append(row)
-		logging.info("{0} being removed from database".format(row['name']))
+		logging.debug("{0} being removed from database".format(row['name']))
+		counter.tick("removed {0} images from database")
+	counter.end("removed {0} images from database")
 	register_delete_images(connection, rows)
 	
 
-def do_register(connection, work_dir, filt, batch):
-	names_to_add, names_to_del = candidates(connection, work_dir, filt, batch)
+def do_register(connection, work_dir, filt, session):
+	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
 	if names_to_del:
-		register_unregister(connection, names_to_del, batch)	
+		register_unregister(connection, names_to_del, session)	
 	if names_to_add:
 		try:
-			register_fast(connection, work_dir, names_to_add, batch)
+			register_fast(connection, work_dir, names_to_add, session)
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
-			register_slow(connection, work_dir, names_to_add, batch)
+			register_slow(connection, work_dir, names_to_add, session)
 	logging.info("{0} new images registered in database".format(len(names_to_add)))
 	logging.info("{0} images deleted from database".format(len(names_to_del)))
 
@@ -361,28 +360,32 @@ def classify_update_db(connection, rows):
 
 
 
-def classify_batch_iterable(connection, batch):
-	row = {'batch': batch, 'type': UNKNOWN}
+def classify_session_iterable(connection, session):
+	row = {'session': session, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name
 		FROM image_t
 		WHERE type = :type
-		AND batch = :batch
+		AND session = :session
 		''', row)
 	return cursor
 
 
-def do_classify(connection, batch, work_dir, options):
+def do_classify(connection, session, work_dir, options):
 	rows = []
-	for name, in classify_batch_iterable(connection, batch):
+	counter = LogCounter(N_COUNT)
+	logging.info("Classifying images")
+	for name, in classify_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
-		logging.info("{0} is type {1}".format(name, row['type']))
+		logging.debug("{0} is type {1}".format(name, row['type']))
+		counter.tick("classified {0} images")
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
+		counter.end("classified {0} images")
 	else:
 		logging.info("No image type classification is needed")
 
@@ -416,31 +419,47 @@ def stats_update_db(connection, rows):
 	connection.commit()
 
 
+def stats_delete_db(connection, rows):
+	row = {'session': session, 'state': RAW_STATS}
+	cursor = connection.cursor()
+	cursor.executemany(
+		'''
+		DELETE FROM image_t
+		WHERE name  = :name
+		AND session = :session
+		''', rows)
+	connection.commit()
 
-def stats_batch_iterable(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS}
+
+def stats_session_iterable(connection, session):
+	row = {'session': session, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		SELECT name
 		FROM image_t
 		WHERE state < :state
-		AND batch = :batch
+		AND session = :session
 		''', row)
 	return cursor
 
 
-def do_stats(connection, batch, work_dir, options):
+def do_stats(connection, session, work_dir, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
-	for name, in stats_batch_iterable(connection, batch):
+	rows_to_delete = []
+	counter = LogCounter(N_COUNT)
+	logging.info("Computing image statistics")
+	for name, in stats_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
+		counter.tick("Statistics for {0} images done")
 		try:
 			metadata = image.loadEXIF()
 		except MetadataError as e:
-			logging.info(e)    # we need to find out the camera model before reading
+			logging.warning(e)    # we need to find out the camera model before reading
+			rows_to_delete().append({'session': session, 'name': name})
 		else:
 			image.read()
 			row = image.stats()
@@ -454,7 +473,11 @@ def do_stats(connection, batch, work_dir, options):
 			row['tstamp']       = metadata['tstamp']
 			row['exptime']      = metadata['exptime']
 			rows.append(row)
+	if rows_to_delete:
+		stats_delete_db(connection, rows_to_delete)
+		logging.info("Unregistered {0} data base entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
 	if rows:
+		counter.end("Statistics for {0} images done")
 		stats_update_db(connection, rows)
 	else:
 		logging.info("No image statistics to be computed")
@@ -463,13 +486,13 @@ def do_stats(connection, batch, work_dir, options):
 # Image Apply Dark Substraction
 # -----------------------------
 
-def master_dark_db_update_all(connection, batch):
+def master_dark_db_update_all(connection, session):
 	row = {'type': DARK_FRAME, 'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		INSERT OR REPLACE INTO master_dark_t (
-			batch, 
+			session, 
 			roi, 
 			N, 
 			aver_R1, 
@@ -484,7 +507,7 @@ def master_dark_db_update_all(connection, batch):
 			max_exptime
 		)
 		SELECT 
-			batch, 
+			session, 
 			MIN(roi), 
 			COUNT(*), 
 			AVG(aver_raw_signal_R1), 
@@ -500,39 +523,39 @@ def master_dark_db_update_all(connection, batch):
 		FROM image_t
 		WHERE type = :type
 		AND   state >= :state
-		GROUP BY batch
+		GROUP BY session
 		''', row)
 	connection.commit()
 
 
-def dark_update_columns(connection, batch):
-	row = {'type': LIGHT_FRAME, 'batch': batch, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
+def dark_update_columns(connection, session):
+	row = {'type': LIGHT_FRAME, 'session': session, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
 		UPDATE image_t
 		SET
 			state        = :new_state,
-			aver_dark_R1 = (SELECT aver_R1 FROM master_dark_t WHERE batch = :batch),
-			aver_dark_G2 = (SELECT aver_G2 FROM master_dark_t WHERE batch = :batch),
-			aver_dark_G3 = (SELECT aver_G3 FROM master_dark_t WHERE batch = :batch),
-			aver_dark_B4 = (SELECT aver_B4 FROM master_dark_t WHERE batch = :batch),
-			vari_dark_R1 = (SELECT vari_R1 FROM master_dark_t WHERE batch = :batch),
-			vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE batch = :batch),
-			vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE batch = :batch),
-			vari_dark_B4 = (SELECT vari_B4 FROM master_dark_t WHERE batch = :batch)
-		WHERE batch = :batch
+			aver_dark_R1 = (SELECT aver_R1 FROM master_dark_t WHERE session = :session),
+			aver_dark_G2 = (SELECT aver_G2 FROM master_dark_t WHERE session = :session),
+			aver_dark_G3 = (SELECT aver_G3 FROM master_dark_t WHERE session = :session),
+			aver_dark_B4 = (SELECT aver_B4 FROM master_dark_t WHERE session = :session),
+			vari_dark_R1 = (SELECT vari_R1 FROM master_dark_t WHERE session = :session),
+			vari_dark_G2 = (SELECT vari_G2 FROM master_dark_t WHERE session = :session),
+			vari_dark_G3 = (SELECT vari_G3 FROM master_dark_t WHERE session = :session),
+			vari_dark_B4 = (SELECT vari_B4 FROM master_dark_t WHERE session = :session)
+		WHERE session = :session
 		AND   state BETWEEN :state AND :new_state
 		AND   type  = :type
 		''',row)
 	connection.commit()
 
 
-def do_apply_dark(connection, batch, options):
-	master_dark_db_update_all(connection, batch)
-	if master_dark_for(connection, batch):
+def do_apply_dark(connection, session, options):
+	master_dark_db_update_all(connection, session)
+	if master_dark_for(connection, session):
 		logging.info("Applying dark substraction to current working directory")
-		dark_update_columns(connection, batch)
+		dark_update_columns(connection, session)
 	else:
 		logging.info("No dark frame found for current working directory")
 
@@ -559,12 +582,12 @@ VIEW_HEADERS = [
 			'std_signal_B4'  ,
 		]
 
-def export_batch_iterable(connection, batch):
-	row = {'batch': batch, 'state': RAW_STATS, 'type': LIGHT_FRAME}
+def export_session_iterable(connection, session):
+	row = {'session': session, 'state': RAW_STATS, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT  batch,
+		SELECT  session,
 				observer,
 				organization,
 				location,
@@ -587,16 +610,16 @@ def export_batch_iterable(connection, batch):
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
-		AND   batch = :batch
+		AND   session = :session
 		''', row)
 	return cursor
 
-def export_all_iterable(connection, batch):
+def export_all_iterable(connection):
 	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-	   SELECT   batch,
+	   SELECT   session,
 				observer,
 				organization,
 				location,
@@ -624,11 +647,11 @@ def export_all_iterable(connection, batch):
 
 
 
-def get_file_path(connection, batch, work_dir, options):
+def get_file_path(connection, session, work_dir, options):
 	# respct user's wishes
 	if options.csv_file:
 		return options.csv_file
-	name = "batch-" + os.path.basename(work_dir) + '.csv'
+	name = "session-" + os.path.basename(work_dir) + '.csv'
 	return os.path.join(AZOTEA_CSV_DIR, name)
 
 
@@ -638,31 +661,31 @@ def var2std(item):
 	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
 
 
-def do_export_all(connection, batch, src_iterable, options):
-	fieldnames = ["batch","observer","organization","location", "type"]
+def do_export_all(connection,  options):
+	fieldnames = ["session","observer","organization","location", "type"]
 	fieldnames.extend(VIEW_HEADERS)
 	with myopen(options.global_csv_file, 'w') as csvfile:
 		writer = csv.writer(csvfile, delimiter=';')
 		writer.writerow(fieldnames)
-		for row in export_all_iterable(connection, batch):
+		for row in export_all_iterable(connection):
 			row = map(var2std, enumerate(row))
 			writer.writerow(row)
 	logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	
 
-def do_export_work_dir(connection, batch, work_dir, options):
-	fieldnames = ["batch","observer","organization","location", "type"]
+def do_export_work_dir(connection, session, work_dir, options):
+	fieldnames = ["session","observer","organization","location", "type"]
 	fieldnames.extend(VIEW_HEADERS)
-	if batch_processed(connection, batch):
-		# Write a batch CSV file
-		batch_csv_file = get_file_path(connection, batch, work_dir, options)
-		with myopen(batch_csv_file, 'w') as csvfile:
+	if session_processed(connection, session):
+		# Write a session CSV file
+		session_csv_file = get_file_path(connection, session, work_dir, options)
+		with myopen(session_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)
-			for row in export_batch_iterable(connection, batch):
+			for row in export_session_iterable(connection, session):
 				row = map(var2std, enumerate(row))
 				writer.writerow(row)
-		logging.info("Saved data to batch  CSV file {0}".format(batch_csv_file))
+		logging.info("Saved data to session  CSV file {0}".format(session_csv_file))
 	else:
 		logging.info("No new CSV file generation")
 	
@@ -674,7 +697,7 @@ def do_export_work_dir(connection, batch, work_dir, options):
 
 EXIF_HEADERS = [
 	'Name',
-	'Batch',
+	'Session',
 	'Timestamp',
 	'Model',
 	'Exposure',
@@ -684,7 +707,7 @@ EXIF_HEADERS = [
 GLOBAL_HEADERS = [
 	'Name',
 	'Type',
-	'Batch',
+	'Session',
 	'Observer',
 	'Organiztaion',
 	'Location',
@@ -693,13 +716,13 @@ GLOBAL_HEADERS = [
 
 STATE_HEADERS = [
 	"Name",
-	"Batch",
+	"Session",
 	"Type", 
 	"State",
 ]
 
 DATA_HEADERS = [
-	"Name", "Batch",
+	"Name", "Session",
 	"\u03BC R1", "\u03C3^2 R1", 
 	"\u03BC G2", "\u03C3^2 G2", 
 	"\u03BC G3", "\u03C3^2 G3",
@@ -707,7 +730,7 @@ DATA_HEADERS = [
 ]
 
 RAW_DATA_HEADERS = [
-	"Name", "Batch" ,
+	"Name", "Session" ,
 	"Raw \u03BC R1", "Raw \u03C3^2 R1", 
 	"Raw \u03BC G2", "Raw \u03C3^2 G2", 
 	"Raw \u03BC G3", "Raw \u03C3^2 G3",
@@ -715,20 +738,20 @@ RAW_DATA_HEADERS = [
 ]
 
 DARK_DATA_HEADERS = [
-	"Name", "Batch" ,
+	"Name", "Session" ,
 	"Dark \u03BC R1", "Dark \u03C3^2 R1", 
 	"Dark \u03BC G2", "Dark \u03C3^2 G2", 
 	"Dark \u03BC G3", "Dark \u03C3^2 G3",
 	"Dark \u03BC B4", "Dark \u03C3^2 B4",
 ]
 
-def view_batch_count(cursor, batch):
-	row = {'batch': batch}
+def view_session_count(cursor, session):
+	row = {'session': session}
 	cursor.execute(
 		'''
 		SELECT COUNT(*)
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		''', row)
 	return cursor.fetchone()[0]
 
@@ -745,28 +768,28 @@ def view_all_count(cursor):
 # Image metadata
 # --------------
 
-def view_meta_exif_all_iterable(connection, batch):
+def view_meta_exif_all_iterable(connection, session):
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, batch, tstamp, model, exptime, iso
+		SELECT name, session, tstamp, model, exptime, iso
 		FROM image_t
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''')
 	return cursor, count
 
 
-def view_meta_exif_batch_iterable(connection, batch):
-	'''batch may be None for NULL'''
-	row = {'batch': batch}
+def view_meta_exif_session_iterable(connection, session):
+	'''session may be None for NULL'''
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT name, batch, tstamp, model, exptime, iso
+		SELECT name, session, tstamp, model, exptime, iso
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		ORDER BY name DESC
 		''', row)
 	return cursor, count
@@ -775,28 +798,28 @@ def view_meta_exif_batch_iterable(connection, batch):
 # Image General
 # -------------
 
-def view_meta_global_all_iterable(connection, batch):
+def view_meta_global_all_iterable(connection, session):
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, type, batch, observer, organization, email, location, roi
+		SELECT name, type, session, observer, organization, email, location, roi
 		FROM image_t
-		ORDER BY batch DESC
+		ORDER BY session DESC
 		''')
 	return cursor, count
 
 
-def view_meta_global_batch_iterable(connection, batch):
-	'''batch may be None for NULL'''
-	row = {'batch': batch}
+def view_meta_global_session_iterable(connection, session):
+	'''session may be None for NULL'''
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT name, type, batch, observer, organization, email, location, roi
+		SELECT name, type, session, observer, organization, email, location, roi
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
@@ -805,31 +828,31 @@ def view_meta_global_batch_iterable(connection, batch):
 # Image State
 # -----------
 
-def view_state_batch_iterable(connection, batch):
-	row = {'batch': batch}
+def view_state_session_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
-		SELECT name, batch, type, s.label
+		SELECT name, session, type, s.label
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		WHERE batch = :batch
-		ORDER BY batch DESC, name ASC
+		WHERE session = :session
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
 
-def view_state_all_iterable(connection, batch):
-	row = {'batch': batch}
+def view_state_all_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
-		SELECT name, batch, type, s.label
+		SELECT name, session, type, s.label
 		FROM image_t
 		JOIN state_t AS s USING(state)
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -837,38 +860,38 @@ def view_state_all_iterable(connection, batch):
 # Image Data
 # -----------
 
-def view_data_batch_iterable(connection, batch):
-	row = {'batch': batch}
+def view_data_session_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch, 
+			name, session, 
 			aver_signal_R1, vari_signal_R1,
 			aver_signal_G2, vari_signal_G2,
 			aver_signal_G3, vari_signal_G3,
 			aver_signal_B4, vari_signal_B4
 		FROM image_v
-		WHERE batch = :batch
+		WHERE session = :session
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
 
 
-def view_data_all_iterable(connection, batch):
+def view_data_all_iterable(connection, session):
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch,
+			name, session,
 			aver_signal_R1, vari_signal_R1,
 			aver_signal_G2, vari_signal_G2,
 			aver_signal_G3, vari_signal_G3,
 			aver_signal_B4, vari_signal_B4
 		FROM image_v
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -876,34 +899,34 @@ def view_data_all_iterable(connection, batch):
 # Raw Image Data
 # --------------
 
-def view_raw_data_batch_iterable(connection, batch):
-	row = {'batch': batch, 'light': LIGHT_FRAME, 'unknown': UNKNOWN}
+def view_raw_data_session_iterable(connection, session):
+	row = {'session': session, 'light': LIGHT_FRAME, 'unknown': UNKNOWN}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch, 
+			name, session, 
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
 			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		AND ((type = :light) OR (type = :unknown))
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
 
 
-def view_raw_data_all_iterable(connection, batch):
+def view_raw_data_all_iterable(connection, session):
 	row = {'light': LIGHT_FRAME, 'unknown': UNKNOWN}
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch,
+			name, session,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
@@ -911,7 +934,7 @@ def view_raw_data_all_iterable(connection, batch):
 		FROM image_t
 		WHERE type = :type
 		AND ((type = :light) OR (type = :unknown))
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -919,38 +942,38 @@ def view_raw_data_all_iterable(connection, batch):
 # Dark Image Data
 # ---------------
 
-def view_dark_data_batch_iterable(connection, batch):
-	row = {'batch': batch}
+def view_dark_data_session_iterable(connection, session):
+	row = {'session': session}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch, 
+			name, session, 
 			aver_dark_R1, vari_dark_R1,
 			aver_dark_G2, vari_dark_G2,
 			aver_dark_G3, vari_dark_G3,
 			aver_dark_B4, vari_dark_B4
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
 
 
-def view_dark_data_all_iterable(connection, batch):
+def view_dark_data_all_iterable(connection, session):
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch, 
+			name, session, 
 			aver_dark_R1, vari_dark_R1,
 			aver_dark_G2, vari_dark_G2,
 			aver_dark_G3, vari_dark_G3,
 			aver_dark_B4, vari_dark_B4
 		FROM image_t
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
@@ -958,44 +981,44 @@ def view_dark_data_all_iterable(connection, batch):
 # View Master Dark
 # -----------------
 
-def view_master_dark_all_iterable(connection, batch):
+def view_master_dark_all_iterable(connection, session):
 	cursor = connection.cursor()
 	cursor.execute("SELECT COUNT(*) FROM master_dark_t")
 	count = cursor.fetchone()[0]
 	cursor.execute(
 		'''
 		SELECT 
-			batch, N, roi            
+			session, N, roi            
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
 			aver_B4, vari_B4             
 		FROM master_dark_t
-		ORDER BY batch DESC
+		ORDER BY session DESC
 		''')
 	return cursor, count
 
-def view_master_dark_batch_iterable(connection, batch):
+def view_master_dark_session_iterable(connection, session):
 	cursor = connection.cursor()
-	row = {'batch': batch}
-	cursor.execute("SELECT COUNT(*) FROM master_dark_t WHERE batch = :batch", row)
+	row = {'session': session}
+	cursor.execute("SELECT COUNT(*) FROM master_dark_t WHERE session = :session", row)
 	count = cursor.fetchone()[0]
 	cursor.execute(
 		'''
 		SELECT 
-			batch, N, roi,           
+			session, N, roi,           
 			(min_exptime == max_exptime) as good_flag,
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
 			aver_B4, vari_B4
 		FROM master_dark_t
-		WHERE batch = :batch
+		WHERE session = :session
 		''', row)
 	return cursor, count
 
 MASTER_DARK_HEADERS = [
-	"Batch", 
+	"Session", 
 	"# Darks",
 	"ROI",
 	"Good?",
@@ -1010,47 +1033,47 @@ MASTER_DARK_HEADERS = [
 # View Dark
 # ----------
 
-def view_dark_batch_iterable(connection, batch):
-	row = {'batch': batch, 'type': DARK_FRAME}
+def view_dark_session_iterable(connection, session):
+	row = {'session': session, 'type': DARK_FRAME}
 	cursor = connection.cursor()
-	count = view_batch_count(cursor, batch)
+	count = view_session_count(cursor, session)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch, 
+			name, session, 
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
 			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
-		WHERE batch = :batch
+		WHERE session = :session
 		AND type = :type
 		ORDER BY name ASC
 		''', row)
 	return cursor, count
 
 
-def view_dark_all_iterable(connection, batch):
-	row = {'batch': batch, 'type': DARK_FRAME}
+def view_dark_all_iterable(connection, session):
+	row = {'session': session, 'type': DARK_FRAME}
 	cursor = connection.cursor()
 	count = view_all_count(cursor)
 	cursor.execute(
 		'''
 		SELECT 
-			name, batch,
+			name, session,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
 			aver_raw_signal_B4, vari_raw_signal_B4
 		FROM image_t
 		WHERE type = :type
-		ORDER BY batch DESC, name ASC
+		ORDER BY session DESC, name ASC
 		''', row)
 	return cursor, count
 
 
-def do_image_view(connection, batch, iterable, headers, options):
-	cursor, count = iterable(connection, batch)
+def do_image_view(connection, session, iterable, headers, options):
+	cursor, count = iterable(connection, session)
 	paging(cursor, headers, maxsize=count, page_size=options.page_size)
 
 # =====================
@@ -1060,61 +1083,70 @@ def do_image_view(connection, batch, iterable, headers, options):
 # These display various data
 
 def image_list(connection, options):
-	batch = latest_batch(connection)
+	session = latest_session(connection)
 	if options.exif:
 		headers = EXIF_HEADERS
-		iterable = view_meta_exif_all_iterable if options.all else view_meta_exif_batch_iterable
+		iterable = view_meta_exif_all_iterable if options.all else view_meta_exif_session_iterable
 	elif options.generic:
 		headers = GLOBAL_HEADERS
-		iterable = view_meta_global_all_iterable if options.all else view_meta_global_batch_iterable
+		iterable = view_meta_global_all_iterable if options.all else view_meta_global_session_iterable
 	elif options.state:
 		headers = STATE_HEADERS
-		iterable = view_state_all_iterable if options.all else view_state_batch_iterable
+		iterable = view_state_all_iterable if options.all else view_state_session_iterable
 	elif options.data:
 		headers = DATA_HEADERS
-		iterable = view_data_all_iterable if options.all else view_data_batch_iterable
+		iterable = view_data_all_iterable if options.all else view_data_session_iterable
 	elif options.raw_data:
 		headers = RAW_DATA_HEADERS
-		iterable = view_raw_data_all_iterable if options.all else view_raw_data_batch_iterable
+		iterable = view_raw_data_all_iterable if options.all else view_raw_data_session_iterable
 	elif options.dark_data:
 		headers = DARK_DATA_HEADERS
-		iterable = view_dark_data_all_iterable if options.all else view_dark_data_batch_iterable
+		iterable = view_dark_data_all_iterable if options.all else view_dark_data_session_iterable
 	elif options.dark:
 		headers = RAW_DATA_HEADERS
-		iterable = view_dark_all_iterable if options.all else view_dark_batch_iterable
+		iterable = view_dark_all_iterable if options.all else view_dark_session_iterable
 	elif options.master:
 		headers = MASTER_DARK_HEADERS
-		iterable = view_master_dark_all_iterable if options.all else view_master_dark_batch_iterable
+		iterable = view_master_dark_all_iterable if options.all else view_master_dark_session_iterable
 	else:
 		return
-	do_image_view(connection, batch, iterable, headers, options)
+	do_image_view(connection, session, iterable, headers, options)
 
 
 def image_export(connection, options):
-	pass
+
+	if options.all:
+		do_export_all(connection, options)
+		return
+
+	session = work_dir_to_session(connection, options.work_dir, '*')
+	if session:
+		do_export_work_dir(connection, session, options.work_dir, options)
+	else:
+		logging.warn("No data to export in {0}".format(options.work_dir))		
+
 
 def image_reduce(connection, options):
 	
-	create_candidates_temp_table(connection)
-	old_batch = work_dir_to_batch(connection, options.work_dir, options.filter)
-	new_batch = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-	batch = new_batch if old_batch is None else old_batch
+	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
+	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+	session = new_session if old_session is None else old_session
 
 	# Step 1: registering
-	do_register(connection, options.work_dir, options.filter, batch)
+	do_register(connection, options.work_dir, options.filter, session)
 	
 	if options.reset:
-		image_batch_state_reset(connection, batch)
+		image_session_state_reset(connection, session)
 	# Step 2
-	do_stats(connection, batch, options.work_dir, options)
+	do_stats(connection, session, options.work_dir, options)
 
 	# Step 3
-	#iterable = classify_all_iterable if options.all else classify_batch_iterable
-	do_classify(connection, batch, options.work_dir, options)
+	#iterable = classify_all_iterable if options.all else classify_session_iterable
+	do_classify(connection, session, options.work_dir, options)
 
 	# Step 4
-	do_apply_dark(connection, batch, options)
+	do_apply_dark(connection, session, options)
 	# Step 5
-	#iterable = export_all_iterable if options.all else export_batch_iterable
-	#do_export(connection, batch, iterable, options)
-	do_export_work_dir(connection, batch, options.work_dir, options)
+	#iterable = export_all_iterable if options.all else export_session_iterable
+	#do_export(connection, session, iterable, options)
+	do_export_work_dir(connection, session, options.work_dir, options)

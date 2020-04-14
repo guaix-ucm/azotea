@@ -37,8 +37,9 @@ import jdcal
 # local imports
 # -------------
 
-from .      import DEF_CAMERA_TPL, DEF_TSTAMP
-from .utils import chop, Point, ROI
+from .           import DEF_CAMERA_TPL, DEF_TSTAMP
+from .utils      import chop, Point, ROI
+from .exceptions import ConfigError, MetadataError, TimestampError
 
 # ----------------
 # Module constants
@@ -65,33 +66,6 @@ BG_Y2 = 350
 # Exceptions
 # ----------
 
-class ConfigError(ValueError):
-    '''This camera model is not supported by AZOTEA'''
-    def __str__(self):
-        s = self.__doc__
-        if self.args:
-            s = "{0}: '{1}'".format(s, self.args[0])
-        s = '{0}.'.format(s)
-        return s
-
-class MetadataError(ValueError):
-    '''Error reading metadata for image'''
-    def __str__(self):
-        s = self.__doc__
-        if self.args:
-            s = "{0}: '{1}'".format(s, self.args[0])
-        s = '{0}.'.format(s)
-        return s
-
-class TimestampError(ValueError):
-    '''EXIF timestamp not supported by AZOTEA'''
-    def __str__(self):
-        s = self.__doc__
-        if self.args:
-            s = "{0}: '{1}'".format(s, self.args[0])
-        s = '{0}.'.format(s)
-        return s
-
 
 # =======
 # CLASSES
@@ -104,6 +78,7 @@ class CameraCache(object):
         self._steps_cache = {}
         self._camerapath = camerapath
 
+
     def lookup(self, model):
         '''
         Load camera configuration from configuration file
@@ -112,7 +87,6 @@ class CameraCache(object):
             return self._points_cache[model], self._steps_cache[model]
 
         if not (os.path.exists(self._camerapath)):
-            logging.debug("No camera config file found at {0}, using default file".format(self._camerapath))
             self._camerapath = DEF_CAMERA_TPL
 
         parser  =  ConfigParser.RawConfigParser()
@@ -188,7 +162,7 @@ class CameraImage(object):
 
     def loadEXIF(self):
         '''Load EXIF metadata'''   
-        logging.debug("{0}: Loading EXIF metadata".format(self.name))
+        #logging.debug("{0}: Loading EXIF metadata".format(self.name))
         with open(self.filepath, "rb") as f:
             self.exif = exifread.process_file(f)
         if not self.exif:
@@ -205,9 +179,9 @@ class CameraImage(object):
     def read(self):
         '''Read RAW pixels''' 
         self._lookup()
-        logging.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
+        #logging.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
         self.image = rawpy.imread(self.filepath)
-        logging.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
+        #logging.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
         # R1 channel
         self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
         # G2 channel
@@ -252,7 +226,6 @@ class CameraImage(object):
 
         
     def stats(self):
-        logging.debug("{0}: Computing stats".format(self.name))
         r1_mean, r1_vari = self._region_stats(self.signal[R1], self.roi)
         g2_mean, g2_vari = self._region_stats(self.signal[G2], self.roi)
         g3_mean, g3_vari = self._region_stats(self.signal[G3], self.roi)
@@ -280,7 +253,7 @@ class CameraImage(object):
             round(math.sqrt(g3_vari),1), 
             round(math.sqrt(b4_vari),1)
         ]
-        logging.info("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
+        logging.debug("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
         return result
 
     # ============== #

@@ -1,5 +1,5 @@
 
-CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (batch) cuando se especifica --new. Todo lo demás
+CONCEPTO IMPORTANTE: solo se abre una nueva sesion = (session) cuando se especifica --new. Todo lo demás
 se añade a la ultima sesion abierta. Es bueno que haya una sola sesion por noche de observacion.
 
 TO DO
@@ -8,28 +8,10 @@ TO DO
  - Parseo de Focal Length nn mm (nn equivalent to ...)
  - Parseo de Exposure cuando viene como 1/nn
  - Parseo de F Number como integer
- - REDISEÑO
+ - integrar exiftool con subrpcess
+   - solo leer una imagen => tabla separada de session_t
+- update time de procesado?
 
-   Un solo comando image reduce con --work-dir y --filter
-   - cambia el modelo de datos
-    - usar una temp table para hacer la lista de imagenes candidatas y hacer
-      la resta de conjuntos via una sola SQL en lugar de un bucle python
-   - si se añaden ficheros nuevos al work dir se registrane en la BD
-   - si se boirran fichers de l work dir se desregistran de la BD
-   - se necesita el batch id pero nada de directorios en la BD
-   - importante los dos conjuntos diferencia:
-     - imagenes nuevas que aparecen en el work dir
-     . imagenes que se registraron con un batch id pero ya eno estan en el work dir
-     - asumimos que todas las imagenes de un work dir tienen un mismo batch id pero no esta de mas
-        hacer un chequeo
-   - combinar el register fast y register slow en uno solo. Si falla el fast, dispatrar el slow
-   - el registro solo debe actuañoizar el batch ID, el hash, el nomnbre de la imagen, et estado s REGSITERED y el tipo a UNKMPOWN
-   - todos los demás metadatos tanto del fichero como del EXIF se insertan en al calculo de stats
-   - al calcular las estadisticas, si al leer el EXIF salta una excepción es que noes una imagen y se debe desregistrar
-   - n el registro, primero dar de baja y luego de alta, para manejar los renombrados
-   - en cualquier caso recomputar el master dark del batch
-   - la exportacion del CSV del lote se hace si o si con el nombre del work dir
-   - export lo mantenemos como "export csv --latest |--all<2
 - ejecutar los caso de prueba listados
 
  
@@ -42,17 +24,15 @@ TO DO
     {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.50, 'filter': 'GG543'}     # cambio 2
     {'name': "stars1", 'mac': '12:34:56:78:90:AB', 'zp': 20.43, 'filter': 'GG987'}
 
-- parsear el Exif ExporureTime
 - ver comno recuperar la config optica del EXIF. 
   En todo caso, añadir una seccion de configuracion optica en el fichero de config. Los datos EXIF si existen tuendran precedencia
 . Completar modelos de canaras
-- batch management
-  - batch merge ¿es mecesario? quizas no ...
+- session management
+  - session merge ¿es mecesario? quizas no ...
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
 - fichero de log?,
 - patch management (list, apply)
-- documento con uso avanzado ¿readthedocs o Google Docs?
 - Perparar todo para pasar a un modelo de estrella
 
 

@@ -20,29 +20,29 @@ class MixingCandidates(Exception):
         s = '{0}.'.format(s)
         return s
 
-class ConfigFileError(ValueError):
-    '''No configuration file was found.'''
+class ConfigError(ValueError):
+    '''This camera model is not supported by AZOTEA'''
     def __str__(self):
         s = self.__doc__
         if self.args:
-            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+            s = "{0}: '{1}'".format(s, self.args[0])
         s = '{0}.'.format(s)
         return s
 
-class NoBatchError(ValueError):
-    '''No batch to operate upon.'''
+class MetadataError(ValueError):
+    '''Error reading EXIF metadata for image'''
     def __str__(self):
         s = self.__doc__
         if self.args:
-            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+            s = "{0}: '{1}'".format(s, self.args[0])
         s = '{0}.'.format(s)
         return s
 
-class NoWorkDirectoryError(ValueError):
-    '''No working directory specified.'''
+class TimestampError(ValueError):
+    '''EXIF timestamp not supported by AZOTEA'''
     def __str__(self):
         s = self.__doc__
         if self.args:
-            s = "{0} \nre-run '{1} --new --work-dir WORK_DIR'".format(s, self.args[0])
+            s = "{0}: '{1}'".format(s, self.args[0])
         s = '{0}.'.format(s)
         return s

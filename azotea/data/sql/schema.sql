@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS image_t
     aver_dark_B4        REAL DEFAULT 0.0, -- B4 dark level either master dark or dark_roi
     vari_dark_B4        REAL DEFAULT 0.0, -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    batch               INTEGER NOT NULL, -- batch identifier
+    session             INTEGER NOT NULL, -- session identifier
     type                TEXT    NOT NULL, -- LIGHT or DARK
     state               INTEGER NOT NULL REFERENCES state_t(state),            
     PRIMARY KEY(hash)
@@ -104,7 +104,7 @@ SELECT
     aver_dark_B4        ,                                  -- B4 dark level either master dark or dark_roi
     vari_dark_B4        ,                                  -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
-    batch               ,                -- batch identifier
+    session               ,              -- session identifier
     type                ,                -- LIGHT or DARK
     state                                -- NULL = UNPROCESSED, "RAW STATS", DARK SUBSTRACTED"
 FROM image_t;
@@ -113,7 +113,7 @@ FROM image_t;
 
 CREATE TABLE IF NOT EXISTS master_dark_t
 (
-    batch               INTEGER,             -- batch id
+    session               INTEGER,           -- session id
     aver_R1             REAL    NOT NULL,    -- Red mean dark level in Red
     vari_R1             REAL    NOT NULL,    -- Red dark vari
     aver_G2             REAL    NOT NULL,    -- Green 1 mean dark level
@@ -122,9 +122,9 @@ CREATE TABLE IF NOT EXISTS master_dark_t
     vari_G3             REAL    NOT NULL,    -- Green 2 dark variance
     aver_B4             REAL    NOT NULL,    -- Blue mean dark level in Blue
     vari_B4             REAL    NOT NULL,    -- Blue dark variance
-    min_exptime         REAL    NOT NULL,    -- Minimun batch exposure time
-    max_exptime         REAL    NOT NULL,    -- Maximun batch exposure time
+    min_exptime         REAL    NOT NULL,    -- Minimun session exposure time
+    max_exptime         REAL    NOT NULL,    -- Maximun session exposure time
     roi                 TEXT    NOT NULL,    -- region of interest: [x1:x2,y1:y2]
     N                   INTEGER NOT NULL,    -- number of darks used to average
-    PRIMARY KEY(batch)
+    PRIMARY KEY(session)
 );

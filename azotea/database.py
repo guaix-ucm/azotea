@@ -39,11 +39,11 @@ from . import  *
 # Module global functions
 # -----------------------
 
-def latest_batch(connection):
-    '''Get Last recorded batch'''
+def latest_session(connection):
+    '''Get Last recorded session'''
     cursor = connection.cursor()
     cursor.execute('''
-        SELECT MAX(batch)
+        SELECT MAX(session)
         FROM image_t 
         ''')
     return cursor.fetchone()[0]
@@ -57,20 +57,20 @@ def dbase_do_backup(comment):
     logging.info("database backup to {0}".format(dest_file))
 
 
-def dbase_delete_selected_images(connection, batch):
-    row = {'batch': batch}
+def dbase_delete_selected_images(connection, session):
+    row = {'session': session}
     cursor = connection.cursor()
     cursor.execute('''
         DELETE FROM image_t
-        WHERE batch == :batch 
+        WHERE session == :session 
         ''', row)
 
-def dbase_delete_selected_master_dark(connection, batch):
-    row = {'batch': batch}
+def dbase_delete_selected_master_dark(connection, session):
+    row = {'session': session}
     cursor = connection.cursor()
     cursor.execute('''
         DELETE FROM master_dark_t
-        WHERE batch == :batch 
+        WHERE session == :session 
         ''', row)
 
 # =====================
@@ -85,10 +85,10 @@ def database_clear(connection, options):
         cursor.execute("DELETE FROM master_dark_t")
         logging.info("Cleared all data from database {0}".format(os.path.basename(DEF_DBASE)))
     else:
-        batch = latest_batch(connection)
-        dbase_delete_selected_master_dark(connection, batch)
-        dbase_delete_selected_images(connection, batch)
-        logging.info("Cleared data from batch {1} in database {0}, ".format(os.path.basename(DEF_DBASE), batch))
+        session = latest_session(connection)
+        dbase_delete_selected_master_dark(connection, session)
+        dbase_delete_selected_images(connection, session)
+        logging.info("Cleared data from session {1} in database {0}, ".format(os.path.basename(DEF_DBASE), session))
     connection.commit()
 
 

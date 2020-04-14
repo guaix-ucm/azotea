@@ -27,7 +27,7 @@ Comprobar la version instalada
 ```
 
 ```
-azotea 0.2.5
+azotea 0.3.0
 ```
 
 
@@ -94,13 +94,12 @@ Para observadores impacientes que quieren reducir la observación una noche en u
 4. ¡Por fin! ejecutar en una linea de comandos:
 
 ```bash
-azotea image reduce --new --work-dir <directorio donde están las imágenes>
-azotea image export --all
+azotea image reduce --work-dir <directorio donde están las imágenes>
 ```
 
 ## Ejemplo de sesion de reducción
 
-2. Primera inicializacion
+1. Primera inicializacion
 
 ```bash
 ~$ azotea init
@@ -118,7 +117,7 @@ azotea image export --all
 2020-04-08 10:58:21,452 [INFO] Populating data model from auxiliar.sql
 ```
 
-3. Reorganizacion de un lote de observaciones de varias noches
+2. Reorganizacion de un lote de observaciones de varias noches
 
 ```bash
  ~$ azotea reorganize images --input-dir mis_observaciones --output-dir zamorano
@@ -131,12 +130,12 @@ azotea image export --all
 2020-04-08 11:53:43,885 [INFO] copied 6 images
 ```
 
-4. Reducción separada de cada noche
+3. Reducción separada de cada noche
 
 ***Noche del 25 al 26 de Marzo de 2020***
 
 ```bash
-~$ azotea image reduce --new --work-dir zamorano/2020-03-25
+~$ azotea image reduce --work-dir zamorano/2020-03-25
 ```
 
 ```
@@ -152,13 +151,13 @@ azotea image export --all
 2020-04-08 11:57:21,398 [INFO] 2020_03_2523_59_139999.CR2 is type LIGHT
 2020-04-08 11:57:21,398 [INFO] 2020_03_2522_50_529999.CR2 is type LIGHT
 2020-04-08 11:57:21,398 [INFO] 2020_03_2519_07_239999.CR2 is type LIGHT
-2020-04-08 11:57:21,466 [INFO] Saved data to batch  CSV file /home/rafa/azotea/batch-2020-03-25.csv
+2020-04-08 11:57:21,466 [INFO] Saved data to session  CSV file /home/rafa/azotea/session-2020-03-25.csv
 ```
 
 ***Noche del 25 al 26 de Marzo de 2020***
 
 ```bash
-~$ azotea image reduce --new --work-dir zamorano/2020-03-26
+~$ azotea image reduce --work-dir zamorano/2020-03-26
 ```
 
 ```
@@ -174,12 +173,12 @@ azotea image export --all
 2020-04-08 11:57:42,599 [INFO] 2020_03_2600_00_199999.CR2 is type LIGHT
 2020-04-08 11:57:42,599 [INFO] 2020_03_2602_45_139999.CR2 is type LIGHT
 2020-04-08 11:57:42,600 [INFO] 2020_03_2604_31_319999.CR2 is type LIGHT
-2020-04-08 11:57:42,667 [INFO] Saved data to batch  CSV file /home/rafa/azotea/batch-2020-03-26.csv
+2020-04-08 11:57:42,667 [INFO] Saved data to session  CSV file /home/rafa/azotea/session-2020-03-26.csv
 ```
 
-La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020-03-25.csv` y `$HOME/azotea/batch-2020-03-26.csv` respectivamente
+La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/session-2020-03-25.csv` y `$HOME/azotea/session-2020-03-26.csv` respectivamente
 
-5. Obtencion de un fichero global CSV con todas las mediciones de todos los lotes
+4. Obtencion de un fichero global CSV con todas las mediciones de todas las sesiones de reduccion de datos
 
 ```bash
 ~$ azotea image export --all
@@ -188,6 +187,18 @@ La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020
 ```
 2020-04-08 11:58:33,750 [INFO] Saved data to global CSV file /home/rafa/azotea/azotea.csv
 ```
+
+
+5. Volver a reprocesar un directorio 
+
+Si hemos cambiado la region de interes en el fichero config.ini, 
+debemos reprocesar los directorios que nos interese, especificando la opcion --reset.
+
+
+```bash
+~$ azotea image reduce --reset --work-dir zamorano/2020-03-26
+```
+
 
 ## Por si todo va mal ...
 
@@ -200,7 +211,7 @@ La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/batch-2020
 2020-04-08 11:49:57,045 [INFO] Cleared data from database azotea.db
 ```
 
-Y a empezar el proceso desde el punto 4.
+Y a empezar el proceso desde el punto 3.
 
 # Procesado para varios observadores
 
@@ -238,7 +249,7 @@ ls clasificadas/jizquierdo
 4. Reducir las imágenes usuando su fichero de configuración
 
 ```
-azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --new --work-dir clasificadas/jizquierdo/<directorio de fecha>
+azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --work-dir clasificadas/jizquierdo/<directorio de fecha>
 
 ## Cuando hemos terminado
 
@@ -254,49 +265,22 @@ azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.i
 
 ### Pîpeline de reducción de datos
 
-AZOTEA es un programa complejo, con muchas opciones, que lleva una pequeña base de datos incorporada para recordar los valores medidos y el estado de procesamiento de las imagenes. El usuario nunca trata con la base de datos directamente sino que actua con comandos. Las imagenes nunca se modifican ni se cambian de lugar y tipicamente se genera un lote de procesado (*batch*) por cada directorio. Lo habitual sería un directorio por día lleno de imagenes.
+AZOTEA es un programa que lleva una pequeña base de datos incorporada para recordar los valores medidos y el estado de procesamiento de las imagenes. El usuario nunca trata con la base de datos directamente sino que actua con comandos. Las imagenes nunca se modifican ni se cambian de lugar y tipicamente se genera una sesion de procesado con el lote de imágenes del directorio de trabajo. Lo habitual sería un directorio por día lleno de imagenes.
 
 Los datos de interés se guardan en la base de datos y a partir de ellos se generan ficheros para publicar o compartir. 
 
 Si la base de datos se corrompe o se borra, para recuperar su contenido habría que correr el pipeline de reduccióm de imágenes con todos los directorios que se hayan generado, cosa no siempre posible. Por ello se incluyen comandos de backup de la base de datos.
 
-
 El pipeline de AZOTEA consta de los siguientes pasos en secuencia:
 
-1. Registro de las imágenes en la base de datos
+* Registro de las imágenes en la base de datos
+* Calculo de estadístcas en la región de interés (ROI) (media y varianza)
+* Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
+* Elaboración de un DARK maestro por cada directorio de trabajo si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT.
+* Exportación de los resultados de la sesion de reducción. En la actualidad sólo se soporta un solo formato de tipo CSV
 
-```bash
-azotea image register --help
-```
-
-3. Calculo de estadístcas en la región de interés (ROI) (media y varianza)
-
-
-```bash
-azotea image stats --help
-```
-
-
-2. Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
-
-```bash
-azotea image classify --help
-```
-
-4. Elaboración de un DARK maestro si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT
-
-
-```bash
-azotea image dark --help
-```
-
-5. Exportación de los resultados a un fichero. En la actualidad sólo se soporta un solo formato de tipo CSV
-
-```bash
-azotea image export --help
-```
-
-Todos estos pasos se pueden efectuar por separado o combinadamente con `azotea image reduce`
+Todos estos pasos se efectuan secuencialmente con `azotea image reduce`
+Opcionalmente se puede invocar `azotea image export --all` sin especificar directorio de trabajo para exportar en un sencillo CSV todas las seisones de reducción.
 
 ### Otros comandos
 
@@ -310,7 +294,7 @@ El pipeline de reducción genera dos ficheros CSV:
 
 * Un fichero global CSV donde se van acumulando todos los datos de todos los lotes procesados hasta el momento: `azotea.csv`
 
-* Un fichero CSV con los resultados de la reducción del último lote. Si el lote solo abarca un directorio de trabajo, el nombre será `batch-<directorio de trabajo>.csv`. Si el lote comprende varios directorios de trabajo, el fichero incluye el identificador del lote, no el directorio de trabajo `batch-YYYYMMDDHHMMSS.csv` (Ejemplo: `batch-20200402103223.csv`)
+* Un fichero CSV con los resultados de la reducción del último lote. Si el lote solo abarca un directorio de trabajo, el nombre será `session-<directorio de trabajo>.csv`. Si el lote comprende varios directorios de trabajo, el fichero incluye el identificador del lote, no el directorio de trabajo `session-YYYYMMDDHHMMSS.csv` (Ejemplo: `session-20200402103223.csv`)
 
 
 Ambos ficheros se situan en la el directorio raiz (`$HOME`) de cada usuario.
@@ -320,7 +304,7 @@ El fichero CSV tiene una cabecera con los nombres de las columnas, a saber:
 
 |    Columna      |  Descripcion                                           |
 |:---------------:|:-------------------------------------------------------|
-| batch           | Identificacion del lote de reducción de datos.         |
+| session         | Id. de sesion de reducción de datos (YYYYMMDDHHMMSS).  |
 | observer        | Nombre del observador.                                 |
 | organization    | Organizacion a la que pertenece el observador.         |
 | location        | Localidad desde donde ha sido tomada la imagen.        |
@@ -368,103 +352,11 @@ azotea <comando> --help
 azotea <comando> <subcomando> --help
 ```
 
-
-```bash
-azotea --help
-azotea image --help
-azotea image list --help
-```
-
-
 Ejemplos:
 
 ```bash
 azotea --help
-```
-
-
-```
-usage: azotea [-h] [--version] [-v | -q] [--camera CAMERA] [--config CONFIG]
-              {init,config,image,database,backup,reorganize,batch} ...
-
-AZOTEA analysis tool
-
-positional arguments:
-  {init,config,image,database,backup,reorganize,batch}
-    init                init command
-    config              config commands
-    image               image commands
-    database            database commands (mostly mainteinance)
-    backup              backup management
-    reorganize          reorganize commands
-    batch               batch commands
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -v, --verbose         Verbose output.
-  -q, --quiet           Quiet output.
-  --camera CAMERA       Optional alternate camera configuration file
-  --config CONFIG       Optional alternate global configuration file
-
-```
-
-Según se ver, los comandos disponibles son `config` `image` y `dbase` y 'backup' y las opciones globales son
-`--camera` y `--config`
-
-Para ver las opciones del comando `image` se teclea
-
-```bash
 azotea image --help
-```
-
-```
-usage: azotea image [-h] [--roi <width,height>]
-                    [--global-csv-file GLOBAL_CSV_FILE]
-                    {list,register,classify,dark,stats,export,reduce} ...
-
-positional arguments:
-  {list,register,classify,dark,stats,export,reduce}
-    list                display image data
-    register            register images in the database
-    classify            classify LIGHT/DARK images
-    dark                apply master DARK to LIGHT images
-    stats               compute image statistics
-    export              export to CSV
-    reduce              run register/classify/stats</export pipeline
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --roi <width,height>  Optional region of interest
-  --global-csv-file GLOBAL_CSV_FILE
-                        Global output CSV file
-
-```
-
-Para ver las opciones del subcomando `list` se teclea
-
-```bash
 azotea image list --help
 ```
 
-```
-usage: azotea image list [-h] [-a]
-                         (--exif | --generic | --state | --data | --raw-data | --dark | --dark-data | --master)
-                         [--page-size PAGE_SIZE]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -a, --all             apply to all images in database
-  --exif                display EXIF metadata
-  --generic             display global metadata
-  --state               display processing state
-  --data                dark substracted signal averaged over roi
-  --raw-data            raw signal averaged over roi
-  --dark                raw signal of DARK images
-  --dark-data           dark signal of LIGHT averaged over dark row or master
-                        dark
-  --master              display master dark data
-  --page-size PAGE_SIZE
-                        display page size
-
-```

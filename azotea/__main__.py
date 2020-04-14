@@ -33,7 +33,7 @@ from .database   import database_clear, database_purge, database_backup
 from .backup     import backup_list, backup_delete, backup_restore
 from .image      import image_list, image_export, image_reduce
 from .reorg      import reorganize_images
-from .batch      import batch_current, batch_list
+from .session    import session_current, session_list
 
 # -----------------------
 # Module global variables
@@ -121,7 +121,7 @@ def createParser():
 	parser_database  = subparser.add_parser('database', help='database commands (mostly mainteinance)')
 	parser_back   = subparser.add_parser('backup', help='backup management')
 	parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
-	parser_batch  = subparser.add_parser('batch', help='batch commands')
+	parser_session  = subparser.add_parser('session', help='session commands')
    
 	# -----------------------------------------
 	# 'init' does not have a second level parser
@@ -135,7 +135,7 @@ def createParser():
 
 	dbc = subparser.add_parser('clear',  help="Clears the database (MAINTENANCE ONLY!)")
 	dbcex = dbc.add_mutually_exclusive_group(required=True)
-	dbcex.add_argument('-l', '--last',  action='store_true', help='clear last batch')
+	dbcex.add_argument('-l', '--last',  action='store_true', help='clear last session')
 	dbcex.add_argument('-a', '--all',   action='store_true' , help='clear all data')
 	
 	
@@ -172,19 +172,19 @@ def createParser():
 
 
 	# ----------------------------------------
-	# Create second level parsers for 'batch'
+	# Create second level parsers for 'session'
 	# ----------------------------------------
 
-	subparser = parser_batch.add_subparsers(dest='subcommand')
+	subparser = parser_session.add_subparsers(dest='subcommand')
 
-	bcu = subparser.add_parser('current', help="batch current list")
+	bcu = subparser.add_parser('current', help="session current list")
 	bcu.add_argument('-x', '--extended',  action='store_true', help='Extended info')
 	bcu.add_argument('--page-size',       type=int, default=10,  help="display page size")
    
 	bli = subparser.add_parser('list', help="Batch list")
 	bliex = bli.add_mutually_exclusive_group(required=True)
-	bliex.add_argument('-b', '--batch',  type=str , help='batch identifier')
-	bliex.add_argument('-a', '--all',  action='store_true' , help='all batches')
+	bliex.add_argument('-b', '--session',  type=str , help='session identifier')
+	bliex.add_argument('-a', '--all',  action='store_true' , help='all sessiones')
 	bli.add_argument('-x', '--extended',  action='store_true', help='Extended info')
 	bli.add_argument('--page-size',       type=int, default=10,  help="display page size")
    
@@ -270,15 +270,6 @@ def main():
 		globals()[func](connection, options)
 	except KeyboardInterrupt as e:
 		logging.error("[{0}] Interrupted by user ".format(__name__))
-	except ConfigFileError as e:
-		logging.error("{0}".format(str(e)))
-	except NoWorkDirectoryError as e:
-		logging.error("{0}".format(str(e)))
-	except NoBatchError as e:
-		logging.error("{0}".format(str(e)))
-	except sqlite3.IntegrityError as e:
-		logging.error("Detected duplicated images. Re-run with --slow option to find out which")
-		traceback.print_exc()
 	except Exception as e:
 		logging.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
 		traceback.print_exc()
