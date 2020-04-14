@@ -240,6 +240,7 @@ def createParser():
 	ieeex = iex.add_mutually_exclusive_group(required=True)
 	ieeex.add_argument('-a' ,'--all',      action="store_true", help="apply to all images in database")
 	ieeex.add_argument('-w' ,'--work-dir', type=str, help='Input working directory')
+	iex.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
 	iex.add_argument('--csv-file',         type=str, default=None, help='Optional session CSV file to export')
 
 	return parser

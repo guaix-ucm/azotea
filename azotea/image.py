@@ -1166,7 +1166,7 @@ def image_export(connection, options):
 		do_export_all(connection, options)
 		return
 
-	session = work_dir_to_session(connection, options.work_dir, '*')
+	session = work_dir_to_session(connection, options.work_dir, options.filter)
 	if session:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
