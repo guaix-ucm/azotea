@@ -286,7 +286,7 @@ def register_slow(connection, work_dir, names_list, session):
 		row  = {'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['name'] = name
 		row['hash'] = hash(file_path)
-		counter.tick("registered {0} images in database (slow method)")
+		counter.tick("Registered {0} images in database (slow method)")
 		try:
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
@@ -296,6 +296,7 @@ def register_slow(connection, work_dir, names_list, session):
 			logging.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
 		else:
 			logging.debug("{0} registered in database".format(row['name']))
+	counter.end("Registered {0} images in database")
 
 
 def register_fast(connection, work_dir, names_list, session):
@@ -308,8 +309,8 @@ def register_fast(connection, work_dir, names_list, session):
 		row['hash'] = hash(file_path)
 		rows.append(row)
 		logging.debug("{0} being registered in database".format(row['name']))
-		counter.tick("registered {0} images in database")
-	counter.end("registered {0} images in database")
+		counter.tick("Registered {0} images in database")
+	counter.end("Registered {0} images in database")
 	register_insert_images(connection, rows)
 	
 
@@ -323,8 +324,8 @@ def register_unregister(connection, names_list, session):
 		row['session'] = session
 		rows.append(row)
 		logging.debug("{0} being removed from database".format(row['name']))
-		counter.tick("removed {0} images from database")
-	counter.end("removed {0} images from database")
+		counter.tick("Removed {0} images from database")
+	counter.end("Removed {0} images from database")
 	register_delete_images(connection, rows)
 	
 
@@ -381,11 +382,11 @@ def do_classify(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
 		logging.debug("{0} is type {1}".format(name, row['type']))
-		counter.tick("classified {0} images")
+		counter.tick("Classified {0} images")
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
-		counter.end("classified {0} images")
+		counter.end("Classified {0} images")
 	else:
 		logging.info("No image type classification is needed")
 
@@ -689,7 +690,7 @@ def do_export_work_dir(connection, session, work_dir, options):
 			for row in export_session_iterable(connection, session):
 				row = map(var2std, enumerate(row))
 				writer.writerow(row)
-		logging.info("Saved data to session  CSV file {0}".format(session_csv_file))
+		logging.info("Saved data to session CSV file {0}".format(session_csv_file))
 	else:
 		logging.info("No new CSV file generation")
 	
