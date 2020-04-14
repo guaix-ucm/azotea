@@ -1161,11 +1161,9 @@ def image_list(connection, options):
 
 
 def image_export(connection, options):
-
 	if options.all:
 		do_export_all(connection, options)
 		return
-
 	session = work_dir_to_session(connection, options.work_dir, options.filter)
 	if session:
 		do_export_work_dir(connection, session, options.work_dir, options)
@@ -1174,7 +1172,6 @@ def image_export(connection, options):
 
 
 def image_reduce(connection, options):
-	
 	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
 	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 	session = new_session if old_session is None else old_session
