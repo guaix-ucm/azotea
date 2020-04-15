@@ -11,6 +11,15 @@
 # Exceptions
 # ----------
 
+class NoUserInfoError(Exception):
+    '''Working Directory does not contain user configuration data.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \n".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
 class MixingCandidates(Exception):
     '''Images processed in different directories.'''
     def __str__(self):

@@ -29,11 +29,11 @@ import time
 # local imports
 # -------------
 
-from .           import AZOTEA_CSV_DIR
+from .           import AZOTEA_CSV_DIR, AZOTEA_CFG_DIR
 from .camera     import CameraImage, CameraCache, MetadataError
 from .utils      import merge_two_dicts, paging, LogCounter
-from .exceptions import MixingCandidates
-from .config     import load_config_file, merge_options 
+from .exceptions import MixingCandidates, NoUserInfoError
+from .config     import load_config_file, merge_options
 
 
 # ----------------
@@ -1223,14 +1223,16 @@ def do_image_multidir_reduce(connection, options):
 
 
 def image_reduce(connection, options):
-	# os.scandir() only available from Python 3.6   
-	with os.scandir(options.work_dir) as it:
-		dirs = [ entry.path for entry in it if entry.is_dir() ]
-	if dirs:
-		for item in dirs:
-			options.work_dir = item
-			do_image_reduce(connection, options)
-			time.sleep(1.5)
+	if not options.multiuser:
+		do_image_multidir_reduce(connection, options)
 	else:
-		do_image_reduce(connection, options)
-
+		# os.scandir() only available from Python 3.6   
+		with os.scandir(options.work_dir) as it:
+			dirs = [ (entry.name, entry.path) for entry in it if entry.is_dir() ]
+		if dirs:
+			for name, path in dirs:
+				options.config   = os.path.join(AZOTEA_CFG_DIR, name + '.ini')
+				options.work_dir = path
+				do_image_multidir_reduce(connection, options)
+		else:
+			raise NoUserInfoError(options.work_dir)
