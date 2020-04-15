@@ -52,9 +52,6 @@ G2 = 1
 G3 = 2
 B4 = 3
 
-# -----------------------
-# Module global variables
-# -----------------------
 
 BG_X1 = 400
 BG_Y1 = 200
@@ -63,6 +60,11 @@ BG_Y2 = 350
 
 EXPOSURE_REGEXP = re.compile(r'(\d)/(\d+)')
 
+# -----------------------
+# Module global variables
+# -----------------------
+
+log = logging.getLogger("azotea")
 
 # ----------
 # Exceptions
@@ -165,7 +167,7 @@ class CameraImage(object):
 
     def loadEXIF(self):
         '''Load EXIF metadata'''   
-        #logging.debug("{0}: Loading EXIF metadata".format(self.name))
+        #log.debug("{0}: Loading EXIF metadata".format(self.name))
         with open(self.filepath, "rb") as f:
             logging.disable(logging.INFO)
             self.exif = exifread.process_file(f, details=False)
@@ -195,9 +197,9 @@ class CameraImage(object):
     def read(self):
         '''Read RAW pixels''' 
         self._lookup()
-        #logging.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
+        #log.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
         self.image = rawpy.imread(self.filepath)
-        #logging.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
+        #log.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
         # R1 channel
         self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
         # G2 channel
@@ -269,7 +271,7 @@ class CameraImage(object):
             round(math.sqrt(g3_vari),1), 
             round(math.sqrt(b4_vari),1)
         ]
-        logging.debug("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
+        log.debug("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
         return result
 
     # ============== #

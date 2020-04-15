@@ -23,11 +23,6 @@ except:
     import configparser as ConfigParser
 
 
-# ---------------
-# Twisted imports
-# ---------------
-
-
 #--------------
 # local imports
 # -------------
@@ -41,13 +36,14 @@ from .utils import chop, merge_two_dicts, ROI
 # Module global variables
 # -----------------------
 
-def valueOrNone(string, typ):
-    return None if not len(string) else typ(string)
+log = logging.getLogger("azotea")
 
 # ------------------------
 # Module Utility Functions
 # ------------------------
 
+def valueOrNone(string, typ):
+    return None if not len(string) else typ(string)
 
 def load_config_file(filepath):
     '''
@@ -62,7 +58,7 @@ def load_config_file(filepath):
     # str is for case sensitive options
     parser.optionxform = str
     parser.read(filepath)
-    logging.info("Opening configuration file {0}".format(filepath))
+    log.info("Opening configuration file {0}".format(filepath))
 
     options = {}
     options['observer']      = parser.get("observer","observer")

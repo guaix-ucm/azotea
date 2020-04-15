@@ -41,6 +41,7 @@ N_FILES = 50
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
 
 # -----------------------
 # Module global functions
@@ -80,14 +81,14 @@ def scan_images(options):
 
 
 def create_dest_directories(output_dir_set):
-	logging.info("creating {0} output directories".format(len(output_dir_set)))
+	log.info("creating {0} output directories".format(len(output_dir_set)))
 	for directory in output_dir_set:
 		if not os.path.isdir(directory):
 			os.makedirs(directory)
 
 
 def copy_files(image_list):
-	logging.info("copying images to output directories")
+	log.info("copying images to output directories")
 	count = 0
 	for item in image_list:
 		if sys.platform == 'win32':
@@ -96,8 +97,8 @@ def copy_files(image_list):
 			shutil.copy2(item[0], item[1])
 		count += 1
 		if (count % N_FILES) == 0:
-			logging.info("copied {0} images".format(count))
-	logging.info("copied {0} images".format(count))
+			log.info("copied {0} images".format(count))
+	log.info("copied {0} images".format(count))
 
 
 

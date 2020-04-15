@@ -34,6 +34,7 @@ from . import  *
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
 
 # -----------------------
 # Module global functions
@@ -54,7 +55,7 @@ def dbase_do_backup(comment):
     filename = os.path.basename(DEF_DBASE) + tstamp
     dest_file = os.path.join(AZOTEA_BAK_DIR, filename)
     shutil.copy2(DEF_DBASE, dest_file)
-    logging.info("database backup to {0}".format(dest_file))
+    log.info("database backup to {0}".format(dest_file))
 
 
 def dbase_delete_selected_images(connection, session):
@@ -83,12 +84,12 @@ def database_clear(connection, options):
     if options.all:
         cursor.execute("DELETE FROM image_t")
         cursor.execute("DELETE FROM master_dark_t")
-        logging.info("Cleared all data from database {0}".format(os.path.basename(DEF_DBASE)))
+        log.info("Cleared all data from database {0}".format(os.path.basename(DEF_DBASE)))
     else:
         session = latest_session(connection)
         dbase_delete_selected_master_dark(connection, session)
         dbase_delete_selected_images(connection, session)
-        logging.info("Cleared data from session {1} in database {0}, ".format(os.path.basename(DEF_DBASE), session))
+        log.info("Cleared data from session {1} in database {0}, ".format(os.path.basename(DEF_DBASE), session))
     connection.commit()
 
 
@@ -100,7 +101,7 @@ def database_purge(connection, options):
     script = ''.join(lines)
     connection.executescript(script)
     connection.commit()    
-    logging.info("Erased schema in database {0}".format(os.path.basename(DEF_DBASE)))
+    log.info("Erased schema in database {0}".format(os.path.basename(DEF_DBASE)))
 
 
 

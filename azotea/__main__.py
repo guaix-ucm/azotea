@@ -39,6 +39,8 @@ from .session    import session_current, session_list
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
+
 # -----------------------
 # Module global functions
 # -----------------------
@@ -50,39 +52,49 @@ def configureLogging(options):
 		level = logging.WARN
 	else:
 		level = logging.INFO
-	logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
+
+	# Log formatter
+	#fmt = logging.Formatter('%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+	fmt = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+
+	# create console handler and set level to debug
+	ch = logging.StreamHandler()
+	ch.setFormatter(fmt)
+	ch.setLevel(level)
+	log.addHandler(ch)
+	log.setLevel(level)
 
 
 
 def python2_warning():
 	if sys.version_info[0] < 3:
-		logging.warning("This software des not run under Python 2 !")
+		log.warning("This software des not run under Python 2 !")
 
 
 def setup(options):
 	configureLogging(options)
 	python2_warning()
 	if not os.path.exists(AZOTEA_BASE_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_BASE_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_BASE_DIR))
 		os.mkdir(AZOTEA_BASE_DIR)
 	if not os.path.exists(AZOTEA_CFG_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_CFG_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_CFG_DIR))
 		os.mkdir(AZOTEA_CFG_DIR)
 	if not os.path.exists(AZOTEA_CSV_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_CSV_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_CSV_DIR))
 		os.mkdir(AZOTEA_CSV_DIR)
 	if not os.path.exists(AZOTEA_DB_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_DB_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_DB_DIR))
 		os.mkdir(AZOTEA_DB_DIR)
 	if not os.path.exists(AZOTEA_BAK_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_BAK_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_BAK_DIR))
 		os.mkdir(AZOTEA_BAK_DIR)
 	if not os.path.exists(AZOTEA_LOG_DIR):
-		logging.info("Creating {0} directory".format(AZOTEA_LOG_DIR))
+		log.info("Creating {0} directory".format(AZOTEA_LOG_DIR))
 		os.mkdir(AZOTEA_LOG_DIR)
 	if not os.path.exists(DEF_CONFIG):
 		shutil.copy2(DEF_CONFIG_TPL, DEF_CONFIG)
-		logging.info("Created {0} file, please review it".format(DEF_CONFIG))
+		log.info("Created {0} file, please review it".format(DEF_CONFIG))
 
 
 
@@ -270,9 +282,9 @@ def main():
 		func = command + '_' + subcommand
 		globals()[func](connection, options)
 	except KeyboardInterrupt as e:
-		logging.error("[{0}] Interrupted by user ".format(__name__))
+		log.error("[{0}] Interrupted by user ".format(__name__))
 	except Exception as e:
-		logging.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
+		log.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
 		traceback.print_exc()
 	finally:
 		pass

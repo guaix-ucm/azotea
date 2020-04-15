@@ -54,6 +54,7 @@ N_COUNT = 50
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
 
 
 if sys.version_info[0] == 2:
@@ -147,7 +148,7 @@ def image_session_state_reset(connection, session):
 def work_dir_to_session(connection, work_dir, filt):
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
-	logging.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
+	log.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
 	cursor = connection.cursor()
 	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
 	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name) VALUES (:name)", names_list)
@@ -291,9 +292,9 @@ def register_slow(connection, work_dir, names_list, session):
 			connection.rollback()
 			name2, = find_by_hash(connection, row['hash'])
 			duplicated_file_paths.append({'original': name2, 'duplicated': file_path})
-			logging.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
+			log.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
 		else:
-			logging.debug("{0} registered in database".format(row['name']))
+			log.debug("{0} registered in database".format(row['name']))
 	counter.end("Registered {0} images in database (slow method)")
 
 
@@ -305,7 +306,7 @@ def register_fast(connection, work_dir, names_list, session):
 		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hash(file_path)
 		rows.append(row)
-		logging.debug("{0} being registered in database".format(row['name']))
+		log.debug("{0} being registered in database".format(row['name']))
 		counter.tick("Registered {0} images in database")
 	counter.end("Registered {0} images in database")
 	register_insert_images(connection, rows)
@@ -314,10 +315,10 @@ def register_fast(connection, work_dir, names_list, session):
 def register_unregister(connection, names_list, session):
 	rows = []
 	counter = LogCounter(N_COUNT)
-	logging.info("Unregistering images from database")
+	log.info("Unregistering images from database")
 	for name in names_list:
 		rows.append({'session': session, 'name': name, 'session': session})
-		logging.debug("{0} being removed from database".format(name))
+		log.debug("{0} being removed from database".format(name))
 		counter.tick("Removed {0} images from database")
 	counter.end("Removed {0} images from database")
 	register_delete_images(connection, rows)
@@ -333,8 +334,8 @@ def do_register(connection, work_dir, filt, session):
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
 			register_slow(connection, work_dir, names_to_add, session)
-	logging.info("{0} new images registered in database".format(len(names_to_add)))
-	logging.info("{0} images deleted from database".format(len(names_to_del)))
+	log.info("{0} new images registered in database".format(len(names_to_add)))
+	log.info("{0} images deleted from database".format(len(names_to_del)))
 
 
 
@@ -371,18 +372,18 @@ def classify_session_iterable(connection, session):
 def do_classify(connection, session, work_dir, options):
 	rows = []
 	counter = LogCounter(N_COUNT)
-	logging.info("Classifying images")
+	log.info("Classifying images")
 	for name, in classify_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
-		logging.debug("{0} is type {1}".format(name, row['type']))
+		log.debug("{0} is type {1}".format(name, row['type']))
 		counter.tick("Classified {0} images")
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
 		counter.end("Classified {0} images")
 	else:
-		logging.info("No image type classification is needed")
+		log.info("No image type classification is needed")
 
 
 # -----------
@@ -446,7 +447,7 @@ def do_stats(connection, session, work_dir, options):
 	rows = []
 	rows_to_delete = []
 	counter = LogCounter(N_COUNT)
-	logging.info("Computing image statistics")
+	log.info("Computing image statistics")
 	for name, in stats_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
@@ -455,7 +456,7 @@ def do_stats(connection, session, work_dir, options):
 		try:
 			metadata = image.loadEXIF()
 		except MetadataError as e:
-			logging.warning(e)    # we need to find out the camera model before reading
+			log.warning(e)    # we need to find out the camera model before reading
 			rows_to_delete().append({'session': session, 'name': name})
 		else:
 			image.read()
@@ -474,12 +475,12 @@ def do_stats(connection, session, work_dir, options):
 			rows.append(row)
 	if rows_to_delete:
 		stats_delete_db(connection, rows_to_delete)
-		logging.info("Unregistered {0} data base entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
+		log.info("Unregistered {0} data base entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
 	if rows:
 		counter.end("Statistics for {0} images done")
 		stats_update_db(connection, rows)
 	else:
-		logging.info("No image statistics to be computed")
+		log.info("No image statistics to be computed")
 
 # -----------------------------
 # Image Apply Dark Substraction
@@ -596,10 +597,10 @@ def dark_update_columns(connection, session):
 def do_apply_dark(connection, session, options):
 	master_dark_db_update_session(connection, session)
 	if master_dark_for(connection, session):
-		logging.info("Applying dark substraction to current working directory")
+		log.info("Applying dark substraction to current working directory")
 		dark_update_columns(connection, session)
 	else:
-		logging.info("No dark frame found for current working directory")
+		log.info("No dark frame found for current working directory")
 
 # -----------
 # Image Export
@@ -715,7 +716,7 @@ def do_export_all(connection,  options):
 		for row in export_all_iterable(connection):
 			row = map(var2std, enumerate(row))
 			writer.writerow(row)
-	logging.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+	log.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 	
 
 def do_export_work_dir(connection, session, work_dir, options):
@@ -730,9 +731,9 @@ def do_export_work_dir(connection, session, work_dir, options):
 			for row in export_session_iterable(connection, session):
 				row = map(var2std, enumerate(row))
 				writer.writerow(row)
-		logging.info("Saved data to session CSV file {0}".format(session_csv_file))
+		log.info("Saved data to session CSV file {0}".format(session_csv_file))
 	else:
-		logging.info("No new CSV file generation")
+		log.info("No new CSV file generation")
 	
 
 # ==================================
@@ -1168,7 +1169,7 @@ def image_export(connection, options):
 	if session:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
-		logging.warn("No data to export in {0}".format(options.work_dir))		
+		log.warn("No data to export in {0}".format(options.work_dir))		
 
 
 def image_reduce(connection, options):

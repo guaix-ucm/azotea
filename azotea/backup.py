@@ -43,6 +43,7 @@ BACKUP_DIR = os.path.join(AZOTEA_BASE_DIR, "backup")
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
 
 # -----------------------
 # Module global functions
@@ -66,7 +67,7 @@ def backup_delete(connection, options):
 	connection.close()
 	file_path = os.path.join(BACKUP_DIR, options.bak_file)
 	os.remove(file_path)
-	logging.info("Done.")
+	log.info("Done.")
 
 
 def backup_restore(connection, options):
@@ -75,5 +76,5 @@ def backup_restore(connection, options):
 	if not options.non_interactive:
 		raw_input("Are you sure ???? <Enter> to continue or [Ctrl-C] to abort")
 	shutil.copy2(backup_file, DEF_DBASE)
-	logging.info("Done.")
+	log.info("Done.")
 	

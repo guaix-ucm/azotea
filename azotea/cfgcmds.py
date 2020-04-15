@@ -35,6 +35,8 @@ from . import DEF_CAMERA_TPL, DEF_CONFIG_TPL, AZOTEA_CFG_DIR
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
+
 # -----------------------
 # Module global functions
 # -----------------------
@@ -48,7 +50,7 @@ def config_list(filename):
 def config_create(filename):
 	dest = os.path.join(AZOTEA_CFG_DIR, os.path.basename(filename))
 	shutil.copy2(filename, dest)
-	logging.info("Created {0} file".format(dest))
+	log.info("Created {0} file".format(dest))
 
 
 def config_diff(template_file, input_file):

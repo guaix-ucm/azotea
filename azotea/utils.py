@@ -45,6 +45,8 @@ import tabulate
 # Module global variables
 # -----------------------
 
+log = logging.getLogger("azotea")
+
 # ----------------------
 # Module utility classes
 # ----------------------
@@ -112,10 +114,10 @@ class LogCounter(object):
     def tick(self, *args):
         self.i += 1
         if (self.i % self.N) == 0:
-            logging.info(args[0].format(self.i))
+            log.info(args[0].format(self.i))
 
     def end(self, *args):
-        logging.info(args[0].format(self.i))
+        log.info(args[0].format(self.i))
        
 
 
@@ -127,7 +129,7 @@ def open_database(dbase_path):
     if not os.path.exists(dbase_path):
         with open(dbase_path, 'w') as f:
             pass
-        logging.info("Created database file {0}".format(dbase_path))
+        log.info("Created database file {0}".format(dbase_path))
     return sqlite3.connect(dbase_path)
 
 
@@ -143,10 +145,10 @@ def create_database(connection, schema_path, data_dir_path, query):
             lines = f.readlines() 
         script = ''.join(lines)
         connection.executescript(script)
-        logging.info("Created data model from {0}".format(os.path.basename(schema_path)))
+        log.info("Created data model from {0}".format(os.path.basename(schema_path)))
         file_list = glob.glob(os.path.join(data_dir_path, '*.sql'))
         for sql_file in file_list:
-            logging.info("Populating data model from {0}".format(os.path.basename(sql_file)))
+            log.info("Populating data model from {0}".format(os.path.basename(sql_file)))
             with open(sql_file) as f: 
                 lines = f.readlines() 
             script = ''.join(lines)

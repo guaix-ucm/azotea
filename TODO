@@ -6,6 +6,11 @@ TO DO
 
 - ejecutar los caso de prueba listados
 
+- REDUCCION AUTOMATICA
+ -- Rotating File Handler
+ -- Rediccion multidirectorio de un observador (1 nivel)
+ -- Reduccion autoimatica multiusuario
+
  
   
   - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
@@ -33,9 +38,3 @@ CASOS DE PRUEBA:
  3) caso de prueba, el programa no contempla la cámara
  
 
-
-
-CASO DE USO: MULTIREDUCCION
-- crear un fichero config por cda observador
-- hacer un register de cada directorio abriendo sesion nueva y especificando el config del observador
-- reducir por fases o global con --all en todos los casos
