@@ -172,6 +172,11 @@ def work_dir_to_session(connection, work_dir, filt):
 
 	return session
 
+def work_dir_cleanup(connection):
+	cursor = connection.cursor()
+	cursor.execute("DROP TABLE IF EXISTS candidate_t")
+	connection.commit()
+
 
 def master_dark_for(connection, session):
 	row = {'session': session}
@@ -1195,3 +1200,6 @@ def image_reduce(connection, options):
 	#iterable = export_all_iterable if options.all else export_session_iterable
 	#do_export(connection, session, iterable, options)
 	do_export_work_dir(connection, session, options.work_dir, options)
+
+	# Cleanup session stuff
+	work_dir_cleanup(connection)
