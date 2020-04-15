@@ -290,9 +290,9 @@ def main():
 		func = command + '_' + subcommand
 		globals()[func](connection, options)
 	except KeyboardInterrupt as e:
-		log.error("[{0}] Interrupted by user ".format(__name__))
+		log.critical("[%s] Interrupted by user ", __name__)
 	except Exception as e:
-		log.error("[{0}] Fatal error => {1}".format(__name__, str(e) ))
+		log.critical("[%s] Fatal error => %s", __name__, str(e) )
 		traceback.print_exc()
 	finally:
 		pass

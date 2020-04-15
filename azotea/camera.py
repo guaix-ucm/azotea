@@ -167,7 +167,7 @@ class CameraImage(object):
 
     def loadEXIF(self):
         '''Load EXIF metadata'''   
-        #log.debug("{0}: Loading EXIF metadata".format(self.name))
+        #log.debug("%s: Loading EXIF metadata",self.name)
         with open(self.filepath, "rb") as f:
             logging.disable(logging.INFO)
             self.exif = exifread.process_file(f, details=False)
@@ -197,9 +197,9 @@ class CameraImage(object):
     def read(self):
         '''Read RAW pixels''' 
         self._lookup()
-        #log.debug("{0}: Loading RAW data from {1}".format(self.name, self.model))
+        #log.debug("%s: Loading RAW data from %s", self.name, self.model)
         self.image = rawpy.imread(self.filepath)
-        #log.debug("{0}: Color description is {1}".format(self.name, self.image.color_desc))
+        #log.debug("%s: Color description is %s", self.name, self.image.color_desc)
         # R1 channel
         self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
         # G2 channel
@@ -271,7 +271,7 @@ class CameraImage(object):
             round(math.sqrt(g3_vari),1), 
             round(math.sqrt(b4_vari),1)
         ]
-        log.debug("{0}: ROI = {1}, \u03BC = {2}, \u03C3 = {3} ".format(self.name, self.roi, mean, stdev))
+        log.debug("%s: ROI = %s, \u03BC = %s, \u03C3 = %s ", self.name, self.roi, mean, stdev)
         return result
 
     # ============== #

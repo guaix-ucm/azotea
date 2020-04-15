@@ -292,9 +292,9 @@ def register_slow(connection, work_dir, names_list, session):
 			connection.rollback()
 			name2, = find_by_hash(connection, row['hash'])
 			duplicated_file_paths.append({'original': name2, 'duplicated': file_path})
-			log.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
+			log.warning("Duplicate => %s EQUALS %s", file_path, name2)
 		else:
-			log.debug("{0} registered in database".format(row['name']))
+			log.debug("%s registered in database", row['name'])
 	counter.end("Registered %d images in database (slow method)")
 
 
@@ -306,7 +306,7 @@ def register_fast(connection, work_dir, names_list, session):
 		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hash(file_path)
 		rows.append(row)
-		log.debug("{0} being registered in database".format(row['name']))
+		log.debug("%s being registered in database", row['name'])
 		counter.tick("Registered %d images in database")
 	counter.end("Registered %d images in database")
 	register_insert_images(connection, rows)
@@ -318,7 +318,7 @@ def register_unregister(connection, names_list, session):
 	log.info("Unregistering images from database")
 	for name in names_list:
 		rows.append({'session': session, 'name': name, 'session': session})
-		log.debug("{0} being removed from database".format(name))
+		log.debug("%s being removed from database", name)
 		counter.tick("Removed %d images from database")
 	counter.end("Removed %d images from database")
 	register_delete_images(connection, rows)
@@ -376,7 +376,7 @@ def do_classify(connection, session, work_dir, options):
 	for name, in classify_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
-		log.debug("{0} is type {1}".format(name, row['type']))
+		log.debug("%s is type %s", name, row['type'])
 		counter.tick("Classified %d images")
 		rows.append(row)
 	if rows:
@@ -1169,7 +1169,7 @@ def image_export(connection, options):
 	if session:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
-		log.warn("No data to export in {0}".format(options.work_dir))		
+		log.warn("No data to export in %s", options.work_dir)	
 
 
 def image_reduce(connection, options):
