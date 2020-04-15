@@ -16,6 +16,7 @@ import sqlite3
 import os
 import os.path
 import logging
+import logging.handlers
 import traceback
 import shutil
 
@@ -122,10 +123,10 @@ def createParser():
 	# Global options
 	parser.add_argument('--version', action='version', version='{0} {1}'.format(name, __version__))
 	group1 = parser.add_mutually_exclusive_group()
-	group1.add_argument('--no-console', action='store_true', help='Do not log to console.')
-	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
 	group1.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
 	group1.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
+	parser.add_argument('--no-console', action='store_true', help='Do not log to console.')
+	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
 	parser.add_argument('--camera', type=str, default=DEF_CAMERA, help='Optional alternate camera configuration file')
 	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate global configuration file')
 
