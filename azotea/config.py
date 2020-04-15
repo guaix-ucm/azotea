@@ -50,7 +50,6 @@ def load_config_file(filepath):
     Load options from configuration file whose path is given
     Returns a dictionary
     '''
-
     if filepath is None or not (os.path.exists(filepath)):
         raise IOError(errno.ENOENT,"No such file or directory", filepath)
 
@@ -58,7 +57,7 @@ def load_config_file(filepath):
     # str is for case sensitive options
     parser.optionxform = str
     parser.read(filepath)
-    log.info("Opening configuration file {0}".format(filepath))
+    log.info("Opening configuration file %s", filepath)
 
     options = {}
     options['observer']      = parser.get("observer","observer")
@@ -80,8 +79,6 @@ def load_config_file(filepath):
     options['dark_roi']      = valueOrNone(options['dark_roi'], str)
 
     return options
-
-
 
 
 def merge_options(cmdline_opts, file_opts):

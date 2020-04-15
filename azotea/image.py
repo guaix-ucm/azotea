@@ -19,6 +19,7 @@ import csv
 import datetime
 import math
 import hashlib
+import time
 
 # ---------------------
 # Third party libraries
@@ -32,6 +33,7 @@ from .           import AZOTEA_CSV_DIR
 from .camera     import CameraImage, CameraCache, MetadataError
 from .utils      import merge_two_dicts, paging, LogCounter
 from .exceptions import MixingCandidates
+from .config     import load_config_file, merge_options 
 
 
 # ----------------
@@ -110,15 +112,15 @@ def myopen(name, *args):
 
 
 def hash(filepath):
-    '''Compute a hash from the image'''
-    BLOCK_SIZE = 65536*65536 # The size of each read from the file
-    file_hash = hashlib.sha256()
-    with open(filepath, 'rb') as f:
-        block = f.read(BLOCK_SIZE) 
-        while len(block) > 0:
-            file_hash.update(block)
-            block = f.read(BLOCK_SIZE)
-    return file_hash.digest()
+	'''Compute a hash from the image'''
+	BLOCK_SIZE = 65536*65536 # The size of each read from the file
+	file_hash = hashlib.sha256()
+	with open(filepath, 'rb') as f:
+		block = f.read(BLOCK_SIZE) 
+		while len(block) > 0:
+			file_hash.update(block)
+			block = f.read(BLOCK_SIZE)
+	return file_hash.digest()
 
 
 def find_by_hash(connection, hash):
@@ -169,7 +171,6 @@ def work_dir_to_session(connection, work_dir, filt):
 		session = sessiones[0]
 	else:
 		session = None
-
 	return session
 
 def work_dir_cleanup(connection):
@@ -332,7 +333,7 @@ def register_unregister(connection, names_list, session):
 def do_register(connection, work_dir, filt, session):
 	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
 	if names_to_del:
-		register_unregister(connection, names_to_del, session)	
+		register_unregister(connection, names_to_del, session)  
 	if names_to_add:
 		try:
 			register_fast(connection, work_dir, names_to_add, session)
@@ -401,14 +402,14 @@ def stats_update_db(connection, rows):
 		'''
 		UPDATE image_t
 		SET 
-		    state               = :state,
-		    roi                 = :roi, 
-            model               = :model,	-- EXIF
-            iso                 = :iso,     -- EXIF
-            tstamp              = :tstamp,  -- EXIF
-            exptime             = :exptime, -- EXIF
-            focal_length        = :focal_length, -- EXIF
-            f_number            = :f_number,     -- EXIF
+			state               = :state,
+			roi                 = :roi, 
+			model               = :model,   -- EXIF
+			iso                 = :iso,     -- EXIF
+			tstamp              = :tstamp,  -- EXIF
+			exptime             = :exptime, -- EXIF
+			focal_length        = :focal_length, -- EXIF
+			f_number            = :f_number,     -- EXIF
 			aver_raw_signal_R1  = :aver_raw_signal_R1, 
 			aver_raw_signal_G2  = :aver_raw_signal_G2, 
 			aver_raw_signal_G3  = :aver_raw_signal_G3,
@@ -1174,14 +1175,18 @@ def image_export(connection, options):
 	if session:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
-		log.warn("No data to export in %s", options.work_dir)	
+		log.warn("No data to export in %s", options.work_dir)   
 
 
-def image_reduce(connection, options):
+def do_image_reduce(connection, options):
+
+	file_options = load_config_file(options.config)
+	options      = merge_options(options, file_options)
+
 	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
 	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 	session = new_session if old_session is None else old_session
-
+	log.info("==> Start reduction session, id = %d", session)
 	# Step 1: registering
 	do_register(connection, options.work_dir, options.filter, session)
 	
@@ -1203,3 +1208,29 @@ def image_reduce(connection, options):
 
 	# Cleanup session stuff
 	work_dir_cleanup(connection)
+
+
+def do_image_multidir_reduce(connection, options):
+	with os.scandir(options.work_dir) as it:
+		dirs = [ entry.path for entry in it if entry.is_dir() ]
+	if dirs:
+		for item in dirs:
+			options.work_dir = item
+			do_image_reduce(connection, options)
+			time.sleep(1.5)
+	else:
+		do_image_reduce(connection, options)
+
+
+def image_reduce(connection, options):
+	# os.scandir() only available from Python 3.6   
+	with os.scandir(options.work_dir) as it:
+		dirs = [ entry.path for entry in it if entry.is_dir() ]
+	if dirs:
+		for item in dirs:
+			options.work_dir = item
+			do_image_reduce(connection, options)
+			time.sleep(1.5)
+	else:
+		do_image_reduce(connection, options)
+
