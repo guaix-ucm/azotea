@@ -52,18 +52,24 @@ def configureLogging(options):
 		level = logging.WARN
 	else:
 		level = logging.INFO
-
+	
+	log.setLevel(level)
 	# Log formatter
 	#fmt = logging.Formatter('%(asctime)s - %(name)s [%(levelname)s] %(message)s')
 	fmt = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-
 	# create console handler and set level to debug
-	ch = logging.StreamHandler()
-	ch.setFormatter(fmt)
-	ch.setLevel(level)
-	log.addHandler(ch)
-	log.setLevel(level)
-
+	if not options.no_console:
+		ch = logging.StreamHandler()
+		ch.setFormatter(fmt)
+		ch.setLevel(level)
+		log.addHandler(ch)
+	# Create a file handler Suitable for logrotate usage
+	if options.log_file:
+		#fh = logging.handlers.WatchedFileHandler(options.log_file)
+		fh = logging.handlers.TimedRotatingFileHandler(options.log_file, when='midnight', interval=1, backupCount=365)
+		fh.setFormatter(fmt)
+		fh.setLevel(level)
+		log.addHandler(fh)
 
 
 def python2_warning():
@@ -116,6 +122,8 @@ def createParser():
 	# Global options
 	parser.add_argument('--version', action='version', version='{0} {1}'.format(name, __version__))
 	group1 = parser.add_mutually_exclusive_group()
+	group1.add_argument('--no-console', action='store_true', help='Do not log to console.')
+	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
 	group1.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
 	group1.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
 	parser.add_argument('--camera', type=str, default=DEF_CAMERA, help='Optional alternate camera configuration file')

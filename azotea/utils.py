@@ -106,18 +106,19 @@ class ROI(object):
 
 class LogCounter(object):
     """ Point class represents and manipulates x,y coords. """
-    def __init__(self, N):
+    def __init__(self, N, level=logging.INFO):
         """ Create a new point at the origin """
-        self.N = N
-        self.i = 0
+        self.N   = N
+        self.lvl = level
+        self.i   = 0
 
     def tick(self, *args):
         self.i += 1
         if (self.i % self.N) == 0:
-            log.info(args[0].format(self.i))
+            log.log(self.lvl, *args, self.i)
 
     def end(self, *args):
-        log.info(args[0].format(self.i))
+        log.log(self.lvl, *args, self.i)
        
 
 

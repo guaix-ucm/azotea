@@ -285,7 +285,7 @@ def register_slow(connection, work_dir, names_list, session):
 		file_path = os.path.join(work_dir, name)
 		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hash(file_path)
-		counter.tick("Registered {0} images in database (slow method)")
+		counter.tick("Registered %d images in database (slow method)")
 		try:
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
@@ -295,7 +295,7 @@ def register_slow(connection, work_dir, names_list, session):
 			log.warning("Duplicate => {0} EQUALS {1}".format(file_path, name2))
 		else:
 			log.debug("{0} registered in database".format(row['name']))
-	counter.end("Registered {0} images in database (slow method)")
+	counter.end("Registered %d images in database (slow method)")
 
 
 def register_fast(connection, work_dir, names_list, session):
@@ -307,8 +307,8 @@ def register_fast(connection, work_dir, names_list, session):
 		row['hash'] = hash(file_path)
 		rows.append(row)
 		log.debug("{0} being registered in database".format(row['name']))
-		counter.tick("Registered {0} images in database")
-	counter.end("Registered {0} images in database")
+		counter.tick("Registered %d images in database")
+	counter.end("Registered %d images in database")
 	register_insert_images(connection, rows)
 	
 
@@ -319,8 +319,8 @@ def register_unregister(connection, names_list, session):
 	for name in names_list:
 		rows.append({'session': session, 'name': name, 'session': session})
 		log.debug("{0} being removed from database".format(name))
-		counter.tick("Removed {0} images from database")
-	counter.end("Removed {0} images from database")
+		counter.tick("Removed %d images from database")
+	counter.end("Removed %d images from database")
 	register_delete_images(connection, rows)
 	
 
@@ -377,11 +377,11 @@ def do_classify(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm1(name, file_path, options)
 		log.debug("{0} is type {1}".format(name, row['type']))
-		counter.tick("Classified {0} images")
+		counter.tick("Classified %d images")
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
-		counter.end("Classified {0} images")
+		counter.end("Classified %d images")
 	else:
 		log.info("No image type classification is needed")
 
@@ -452,7 +452,7 @@ def do_stats(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
-		counter.tick("Statistics for {0} images done")
+		counter.tick("Statistics for %d images done")
 		try:
 			metadata = image.loadEXIF()
 		except MetadataError as e:
@@ -477,7 +477,7 @@ def do_stats(connection, session, work_dir, options):
 		stats_delete_db(connection, rows_to_delete)
 		log.info("Unregistered {0} data base entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
 	if rows:
-		counter.end("Statistics for {0} images done")
+		counter.end("Statistics for %d images done")
 		stats_update_db(connection, rows)
 	else:
 		log.info("No image statistics to be computed")

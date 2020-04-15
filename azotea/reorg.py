@@ -75,8 +75,8 @@ def scan_images(options):
 		output_dir_path = os.path.join(options.output_dir, date_string)
 		output_dir_set.add(output_dir_path)
 		image_list.append((input_file_path, output_dir_path))
-		counter.tick("read {0} images")
-	counter.end("read {0} images")
+		counter.tick("read %d images")
+	counter.end("read %d images")
 	return output_dir_set, image_list
 
 
