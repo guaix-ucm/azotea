@@ -75,8 +75,8 @@ def scan_images(options):
 		output_dir_path = os.path.join(options.output_dir, date_string)
 		output_dir_set.add(output_dir_path)
 		image_list.append((input_file_path, output_dir_path))
-		counter.tick("read %d images")
-	counter.end("read %d images")
+		counter.tick("Read %d images")
+	counter.end("Read %d images")
 	return output_dir_set, image_list
 
 
@@ -89,17 +89,14 @@ def create_dest_directories(output_dir_set):
 
 def copy_files(image_list):
 	log.info("copying images to output directories")
-	count = 0
+	counter = LogCounter(N_FILES)
 	for item in image_list:
 		if sys.platform == 'win32':
 			subprocess.call("xcopy",item[0], item[1])
 		else:
 			shutil.copy2(item[0], item[1])
-		count += 1
-		if (count % N_FILES) == 0:
-			log.info("copied {0} images".format(count))
-	log.info("copied {0} images".format(count))
-
+		counter.tick("Copied %d images")
+	counter.end("Copied %d images")
 
 
 # =====================

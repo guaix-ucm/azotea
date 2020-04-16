@@ -236,7 +236,7 @@ def createParser():
   
 	subparser = parser_image.add_subparsers(dest='subcommand')
 	parser_image.add_argument('--roi', type=mkrect1, metavar="<width,height>", help='Optional region of interest')
-	parser_image.add_argument('--global-csv-file', type=str, default=DEF_GLOBAL_CSV, help='Global output CSV file')
+
 
 	ime = subparser.add_parser('list',    help='display image data')
 	ime.add_argument('-a' ,'--all',       action="store_true", help="apply to all images in database")
@@ -257,14 +257,10 @@ def createParser():
 	ird.add_argument('-r' ,'--reset',     action="store_true",     help="Reprocess from start")
 	ird.add_argument('-m' ,'--multiuser', action="store_true",     help="Multi-user reduction pipeline flag")
 	ird.add_argument('--csv-file',        type=str, default=None,  help='Optional session CSV file to export')
-	
-	iex = subparser.add_parser('export',  help='export to CSV')
-	ieeex = iex.add_mutually_exclusive_group(required=True)
-	ieeex.add_argument('-a' ,'--all',      action="store_true", help="apply to all images in database")
-	ieeex.add_argument('-w' ,'--work-dir', type=str, help='Input working directory')
-	iex.add_argument('-f' ,'--filter',     type=str, default='*.*', help='Optional input glob-style filter')
-	iex.add_argument('--csv-file',         type=str, default=None, help='Optional session CSV file to export')
+	ird.add_argument('--csv-file-prefix', type=str, default='',    help='Optional session CSV file prefix (multi-user only)')
 
+	iex = subparser.add_parser('export',  help='export the whole database to a CSV file')
+	iex.add_argument('--csv-file',        type=str, default=DEF_GLOBAL_CSV,  help='Optional session CSV file to export')
 	return parser
 
 

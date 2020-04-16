@@ -695,38 +695,27 @@ def export_all_iterable(connection):
 	return cursor
 
 
-
-def get_file_path(connection, session, work_dir, options):
-	# respct user's wishes
-	if options.csv_file:
-		return options.csv_file
-	middle = os.path.basename(work_dir)
-	if middle == '':
-		middle = os.path.basename(work_dir[:-1])
-	name = "session-" + middle + '.csv'
-	return os.path.join(AZOTEA_CSV_DIR, name)
-
-
 def var2std(item):
 	'''From Variance to StdDev in seevral columns'''
 	index, value = item
 	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
 
 
-def do_export_all(connection,  options):
-	fieldnames = ["session","observer","organization","location", "type"]
-	fieldnames.extend(VIEW_HEADERS)
-	with myopen(options.global_csv_file, 'w') as csvfile:
-		writer = csv.writer(csvfile, delimiter=';')
-		writer.writerow(fieldnames)
-		for row in export_all_iterable(connection):
-			row = map(var2std, enumerate(row))
-			writer.writerow(row)
-	log.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+def get_file_path(connection, session, work_dir, options):
+	# respect user's wishes above all
+	if options.csv_file:
+		return options.csv_file
+	# This is for automatic reductions mainly
+	middle = os.path.basename(work_dir)
+	if middle == '':
+		middle = os.path.basename(work_dir[:-1])
+	name = "-".join([options.csv_file_prefix, "session", middle + '.csv'])
+	return os.path.join(AZOTEA_CSV_DIR, name)
 	
 
 def do_export_work_dir(connection, session, work_dir, options):
-	fieldnames = ["session","observer","organization","location", "type"]
+	'''Export a working directory of image redictions to a single file'''
+	fieldnames = ["session","observer","organization","location","type"]
 	fieldnames.extend(VIEW_HEADERS)
 	if session_processed(connection, session):
 		# Write a session CSV file
@@ -741,6 +730,18 @@ def do_export_work_dir(connection, session, work_dir, options):
 	else:
 		log.info("No new CSV file generation")
 	
+
+def do_export_all(connection,  options):
+	'''Exports all the database to a single file'''
+	fieldnames = ["session","observer","organization","location","type"]
+	fieldnames.extend(VIEW_HEADERS)
+	with myopen(options.csv_file, 'w') as csvfile:
+		writer = csv.writer(csvfile, delimiter=';')
+		writer.writerow(fieldnames)
+		for row in export_all_iterable(connection):
+			row = map(var2std, enumerate(row))
+			writer.writerow(row)
+	log.info("Saved data to global CSV file {0}".format(options.global_csv_file))
 
 # ==================================
 # Image List subcommands and options
@@ -1168,15 +1169,8 @@ def image_list(connection, options):
 
 
 def image_export(connection, options):
-	if options.all:
-		do_export_all(connection, options)
-		return
-	session = work_dir_to_session(connection, options.work_dir, options.filter)
-	if session:
-		do_export_work_dir(connection, session, options.work_dir, options)
-	else:
-		log.warn("No data to export in %s", options.work_dir)   
-
+	do_export_all(connection, options)
+	
 
 def do_image_reduce(connection, options):
 
@@ -1212,8 +1206,11 @@ def do_image_reduce(connection, options):
 
 def do_image_multidir_reduce(connection, options):
 	with os.scandir(options.work_dir) as it:
-		dirs = [ entry.path for entry in it if entry.is_dir() ]
+		dirs  = [ entry.path for entry in it if entry.is_dir() ]
+		files = [ entry.path for entry in it if entry.is_file() ]
 	if dirs:
+		if files:
+			log.warning("Ignoring files in %s", options.work_dir)
 		for item in dirs:
 			options.work_dir = item
 			do_image_reduce(connection, options)
@@ -1233,6 +1230,9 @@ def image_reduce(connection, options):
 			for name, path in dirs:
 				options.config   = os.path.join(AZOTEA_CFG_DIR, name + '.ini')
 				options.work_dir = path
-				do_image_multidir_reduce(connection, options)
+				try:
+					do_image_multidir_reduce(connection, options)
+				except IOError as e:
+					log.warning("No %s.ini file, skipping observer", name)
 		else:
 			raise NoUserInfoError(options.work_dir)

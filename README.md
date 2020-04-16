@@ -4,6 +4,24 @@ Pipeline Python de reducción de datos para [AZOTEA](https://guaix.ucm.es/AZOTEA
 
 Esta es una herramienta de línea de comandos.
 
+## Introducción
+
+AZOTEA es un programa que lleva una pequeña base de datos incorporada para recordar los valores medidos y el estado de procesamiento de las imagenes. El usuario nunca trata con la base de datos directamente sino que actua con comandos. Las imagenes nunca se modifican ni se cambian de lugar y tipicamente se genera una sesion de procesado con el lote de imágenes del directorio de trabajo. Lo habitual sería un directorio por día lleno de imagenes.
+
+Los datos de interés se guardan en la base de datos y a partir de ellos se generan ficheros para publicar o compartir. 
+
+Si la base de datos se corrompe o se borra, para recuperar su contenido habría que correr el pipeline de reduccióm de imágenes con todos los directorios que se hayan generado, cosa no siempre posible. Por ello se incluyen comandos de backup de la base de datos.
+
+El pipeline de AZOTEA consta de los siguientes pasos en secuencia:
+
+* Registro de las imágenes en la base de datos
+* Calculo de estadístcas en la región de interés (ROI) (media y varianza)
+* Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
+* Elaboración de un DARK maestro por cada directorio de trabajo si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT.
+* Exportación de los resultados de la sesion de reducción. En la actualidad sólo se soporta un solo formato de tipo CSV
+
+Todos estos pasos se efectuan secuencialmente con `azotea image reduce`
+Opcionalmente se puede invocar `azotea image export ` sin especificar directorio de trabajo para exportar en un sencillo CSV todas las seisones de reducción.
 
 # Instalación y actualización
 
@@ -31,9 +49,11 @@ azotea 0.3.0
 ```
 
 
-## Compatibilidad con Python 2
+## Version de Python
 
+AZOTEA necesita Python 3.6 o superior.
 AZOTEA *No es compatible con Python 2*
+
 
 # Configuracion
 
@@ -47,8 +67,11 @@ La primera vez que se vaya a usar azotea, se puede hacer lo siguiente:
 ```
 
 
-La inicialización creará un fichero `azotea.ini` en el directorio `$HOME/azotea/config` de cada usuario.
-Editar el fichero con un block de notas o similar. Los campos son descriptivos y no debería haber ningin problema al rellenarlos.
+La inicialización creará:
+* Un directorio  `$HOME/azotea/` donde se irán colocando ficheros de configuración, logs, informes CSV, etc.
+* un fichero `azotea.ini` en el directorio `$HOME/azotea/config` de cada usuario.
+
+***IMPORTANTE***: Editar el fichero con un block de notas o similar. Los campos son descriptivos y no debería haber ningin problema al rellenarlos.
 
 
 ## Camaras soportadas
@@ -76,7 +99,7 @@ Para probar la cámara comn este nuevo fichero en todos los comandos `azotea` po
 
 
 ```bash
-azotea --camera mycamera.ini stats compute
+azotea --camera /home/rafa/azotea/config/camera.ini image reduce --work-dir <directorio>
 ```
 
 # Operativa
@@ -112,31 +135,31 @@ azotea --verbose image reduce --work-dir <directorio donde están las imágenes>
 ```
 
 ```
-2020-04-08 10:58:20,949 [INFO] Creating /home/rafa/azotea directory
-2020-04-08 10:58:20,951 [INFO] Creating /home/rafa/azotea/config directory
-2020-04-08 10:58:20,951 [INFO] Creating /home/rafa/azotea/dbase directory
-2020-04-08 10:58:20,951 [INFO] Creating /home/rafa/azotea/backup directory
-2020-04-08 10:58:20,951 [INFO] Creating /home/rafa/azotea/log directory
-2020-04-08 10:58:20,951 [INFO] Created /home/rafa/azotea/config/azotea.ini file, please review it
-2020-04-08 10:58:20,951 [INFO] Created database file /home/rafa/azotea/dbase/azotea.db
-2020-04-08 10:58:21,451 [INFO] Created data model from schema.sql
-2020-04-08 10:58:21,452 [INFO] Populating data model from auxiliar.sql
+2020-04-16 11:02:38,937 [INFO] Creating /home/rafa/azotea directory
+2020-04-16 11:02:38,939 [INFO] Creating /home/rafa/azotea/config directory
+2020-04-16 11:02:38,939 [INFO] Creating /home/rafa/azotea/dbase directory
+2020-04-16 11:02:38,939 [INFO] Creating /home/rafa/azotea/backup directory
+2020-04-16 11:02:38,940 [INFO] Creating /home/rafa/azotea/log directory
+2020-04-16 11:02:38,940 [INFO] Created /home/rafa/azotea/config/azotea.ini file, please review it
+2020-04-16 11:02:38,940 [INFO] Created database file /home/rafa/azotea/dbase/azotea.db
+2020-04-16 11:02:39,375 [INFO] Created data model from schema.sql
+2020-04-16 11:02:39,376 [INFO] Populating data model from auxiliar.sql
 ```
 
 2. Reorganizacion de un lote de observaciones de varias noches
 
 ```bash
- ~$ azotea reorganize images --input-dir mis_observaciones --output-dir zamorano
+ ~$ azotea reorganize images --input-dir todas_mis_observaciones --output-dir zamorano
 ```
 
 ```
-2020-04-08 11:53:43,826 [INFO] read 6 images
-2020-04-08 11:53:43,826 [INFO] creating 2 output directories
-2020-04-08 11:53:43,826 [INFO] copying images to output directories
-2020-04-08 11:53:43,885 [INFO] copied 6 images
+2020-04-08 11:53:43,826 [INFO] Read 6 images
+2020-04-08 11:53:43,826 [INFO] Creating 2 output directories
+2020-04-08 11:53:43,826 [INFO] Copying images to output directories
+2020-04-08 11:53:43,885 [INFO] Copied 6 images
 ```
 
-3. Reducción separada de cada noche
+3. Reducción separada de una noche
 
 ***Noche del 25 al 26 de Marzo de 2020***
 
@@ -145,53 +168,33 @@ azotea --verbose image reduce --work-dir <directorio donde están las imágenes>
 ```
 
 ```
-2020-04-08 11:57:19,807 [INFO] Opening configuration file /home/rafa/azotea/config/azotea.ini
-2020-04-08 11:57:19,807 [INFO] Found 3 candidate images
-2020-04-08 11:57:19,867 [INFO] 2020_03_2523_59_139999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:19,922 [INFO] 2020_03_2522_50_529999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:19,992 [INFO] 2020_03_2519_07_239999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:20,064 [INFO] 3 new images registered in database
-2020-04-08 11:57:20,489 [INFO] 2020_03_2523_59_139999.CR2: ROI = [828:1328,519:919], μ = [1082.4, 1105.8, 1104.8, 1067.0], σ = [41.3, 55.5, 59.4, 27.6] 
-2020-04-08 11:57:20,875 [INFO] 2020_03_2522_50_529999.CR2: ROI = [828:1328,519:919], μ = [1119.1, 1147.3, 1146.4, 1079.2], σ = [42.9, 53.3, 57.5, 22.0] 
-2020-04-08 11:57:21,306 [INFO] 2020_03_2519_07_239999.CR2: ROI = [828:1328,519:919], μ = [3688.1, 10030.8, 10050.6, 13061.8], σ = [496.2, 1303.5, 1298.6, 1311.0] 
-2020-04-08 11:57:21,398 [INFO] 2020_03_2523_59_139999.CR2 is type LIGHT
-2020-04-08 11:57:21,398 [INFO] 2020_03_2522_50_529999.CR2 is type LIGHT
-2020-04-08 11:57:21,398 [INFO] 2020_03_2519_07_239999.CR2 is type LIGHT
-2020-04-08 11:57:21,466 [INFO] Saved data to session  CSV file /home/rafa/azotea/session-2020-03-25.csv
+2020-04-16 11:15:45,112 [INFO] Created data model from schema.sql
+2020-04-16 11:15:45,113 [INFO] Populating data model from auxiliar.sql
+2020-04-16 11:15:45,313 [INFO] Opening configuration file /home/rafa/azotea/config/azotea.ini
+2020-04-16 11:15:45,315 [INFO] Found 3 candidates matching filter *.*
+2020-04-16 11:15:45,316 [INFO] ==> Start reduction session, id = 20200416091545
+2020-04-16 11:15:45,449 [INFO] Registered 3 images in database
+2020-04-16 11:15:45,579 [INFO] 3 new images registered in database
+2020-04-16 11:15:45,579 [INFO] 0 images deleted from database
+2020-04-16 11:15:45,579 [INFO] Computing image statistics
+2020-04-16 11:15:46,757 [INFO] Statistics for 3 images done
+2020-04-16 11:15:46,846 [INFO] Classifying images
+2020-04-16 11:15:46,901 [INFO] Classified 3 images
+2020-04-16 11:15:46,902 [INFO] No dark frame found for current working directory
+2020-04-16 11:15:46,903 [INFO] Saved data to session CSV file /home/rafa/azotea/csv/-session-2020-03-25.csv
 ```
 
-***Noche del 25 al 26 de Marzo de 2020***
+La observacion de la noches se deja bajo la carpeta `$HOME/azotea/csv/` en el fichero CSV `session-2020-03-25.csv`. Se puede especificar en la línea de comandos una ruta distinta para este fichero.
 
-```bash
-~$ azotea image reduce --work-dir zamorano/2020-03-26
-```
-
-```
-2020-04-08 11:57:41,103 [INFO] Opening configuration file /home/rafa/azotea/config/azotea.ini
-2020-04-08 11:57:41,103 [INFO] Found 3 candidate images
-2020-04-08 11:57:41,163 [INFO] 2020_03_2600_00_199999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:41,219 [INFO] 2020_03_2602_45_139999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:41,274 [INFO] 2020_03_2604_31_319999.CR2 from Canon EOS 450D being registered in database
-2020-04-08 11:57:41,343 [INFO] 3 new images registered in database
-2020-04-08 11:57:41,756 [INFO] 2020_03_2600_00_199999.CR2: ROI = [828:1328,519:919], μ = [1082.5, 1106.0, 1105.0, 1067.2], σ = [41.5, 55.3, 59.5, 27.7] 
-2020-04-08 11:57:42,141 [INFO] 2020_03_2602_45_139999.CR2: ROI = [828:1328,519:919], μ = [1085.3, 1110.0, 1109.3, 1068.6], σ = [37.6, 51.8, 55.8, 23.9] 
-2020-04-08 11:57:42,524 [INFO] 2020_03_2604_31_319999.CR2: ROI = [828:1328,519:919], μ = [1087.0, 1117.6, 1116.7, 1077.4], σ = [43.6, 86.3, 88.5, 64.9] 
-2020-04-08 11:57:42,599 [INFO] 2020_03_2600_00_199999.CR2 is type LIGHT
-2020-04-08 11:57:42,599 [INFO] 2020_03_2602_45_139999.CR2 is type LIGHT
-2020-04-08 11:57:42,600 [INFO] 2020_03_2604_31_319999.CR2 is type LIGHT
-2020-04-08 11:57:42,667 [INFO] Saved data to session  CSV file /home/rafa/azotea/session-2020-03-26.csv
-```
-
-La observacion de la noches se deja en los ficheros CSV `$HOME/azotea/session-2020-03-25.csv` y `$HOME/azotea/session-2020-03-26.csv` respectivamente
 
 4. Obtencion de un fichero global CSV con todas las mediciones de todas las sesiones de reduccion de datos
 
 ```bash
-~$ azotea image export --all
+~$ azotea image export
 ```
 
 ```
-2020-04-08 11:58:33,750 [INFO] Saved data to global CSV file /home/rafa/azotea/azotea.csv
+2020-04-08 11:58:33,750 [INFO] Saved data to global CSV file /home/rafa/azotea/csv/azotea.csv
 ```
 
 
@@ -202,33 +205,61 @@ debemos reprocesar los directorios que nos interese, especificando la opcion --r
 
 
 ```bash
-~$ azotea image reduce --reset --work-dir zamorano/2020-03-26
+~$ azotea image reduce --reset --work-dir zamorano/2020-03-25
 ```
 
+# Reducción de varias noches de observación
 
-## Por si todo va mal ...
-
+Si tenemos todas las imagenes de varias noches en un mismo directorio, es *MUY RECOMENDABLE* organizarlas en subdirectorios con las imagenes de una misma noche en cada subdirectorio. Esto puede haberse hecho de origen por el programa de adqusisción de la cámara, pero si no es así, AZOTEA puede hacerlo mirando la fecha de exposición de los datos EXIF de cada imagen.
 
 ```bash
-~$ azotea database clear
+~$ azotea reorganize images --input-dir zamorano/toidas_mis_observaciones --output-dir zamorano/clasificadas
+~$ ls zamorano/clasificadas
 ```
 
+Ahora podemos reducir todas las noches de observación con una orden simple
+
+```bash
+~$ azotea image reduce --work-dir zamorano/clasificadas
 ```
-2020-04-08 11:49:57,045 [INFO] Cleared data from database azotea.db
-```
 
-Y a empezar el proceso desde el punto 3.
+Se generará un fichero CSV por noche de observación
 
-# Procesado para varios observadores
 
-## Fichero de camaras
+# Fichero de camaras
 
-Para ir añadiendo camaras no conocidas hasta la fecha a un fichero:
+AZOTEA viene información de cómo decodificar los canales RGB de cámaras conocidas hasta la fecha. 
+AZOTEA se irá actualizando a medida que se van probando más cámaras.
+Sin embargo, para ir añadiendo camaras no conocidas hasta la fecha a un fichero, se puede crear un fichero.
 
 ```bash
 azotea config camera --create
 emacs ~$/azotea/config/camera.ini
 ```
+
+# Trazas (log)
+
+Por defecto AZOTEA saca unas trazas por consola con breve información de lo que va haciendo. Si se desea más detalle se puede especificar la opción `--verbose` (abreviado `-v`). Por el contrario, se puede tambien omitir las trazas (excepto las de error y aviso) con la opción `--quiet` (abreviado `-q`)
+
+```bash
+azotea --verbose <comando> <subcomando>
+```
+
+Las trazas de consola reducción de datos puede además capturarse a un fichero
+
+```bash
+azotea image reduce --log-file <ruta del fichero de log> [otras opciones del subcomando reduce]
+```
+
+Para la ejecución automatizada bajo un trabajo planificado (ej. cron de Linux), se pueden deshabilitar las trazas de consola y habilitar las de fichero
+
+```bash
+azotea image reduce --multiuser --no-console --log-file <ruta fichero log>  --work-dir <ruta dir>
+```
+
+# Procesado para varios observadores (multiusuario)
+
+Para una reducción automatizada de todas las observaciones de todos los usuarios hay que hacer un trabajo organizativo previo por cada observador.
 
 ## Por cada observador:
 
@@ -241,54 +272,38 @@ emacs $HOME/azotea/config/jizquierdo.ini
 
 2. Recolectar las imágenes de los observadores cada una en un direcorio distinto
 
+
 ```bash
 mkdir contribuciones/jizquierdo
 ```
 
-3. Reorganizar las imagenes por noche de observacion
+Es ***requisito*** que el nombre del directorio sea ***igual*** al del fichero de configuracion, sin el sufijo `.ini`
+
+
+3. Reorganizar las imagenes de cada observacion por noche de observacion
+
+Puede que ya las tengamos separadas en directporios de observacion de origen, peor si no es así, se puede ejecutar lo siguiente:
 
 ```bash
 azotea reorganize images --input-dir contribuciones/jizquierdo --output-dir clasificadas/jizquierdo
 ls clasificadas/jizquierdo
 ```
 
-4. Reducir las imágenes usuando su fichero de configuración
+Una vez finalizados estos pasos, ya se puede proceder a la reduccipn automatizada.
+
+## Reduccion 
+
+Reducir las imágenes de todos los observadores
 
 ```
-azotea --config ~/azotea/config/jizquierdo.ini --camera ~/azotea/config/camera.ini image reduce --work-dir clasificadas/jizquierdo/<directorio de fecha>
-
-## Cuando hemos terminado
-
-1. Exportar el fichero global que incluye las contribuciones de todos los observadores
-
-
-```bash
-~$ azotea image export --all
+azotea image reduce --multiuser --work-dir clasificadas
 ```
 
+Con el indicador `--multiuser` AZOTEA ira navegando por los subdirectorios de directorio de trabajo especificado (`clasificadas`) y tomara dischos nombres de subdirectorio como nombres de fichero .ini a cargar
+Y efectuará uan reducción de varias noches de observación por cada usuario
 
-## La version larga
 
-### Pîpeline de reducción de datos
-
-AZOTEA es un programa que lleva una pequeña base de datos incorporada para recordar los valores medidos y el estado de procesamiento de las imagenes. El usuario nunca trata con la base de datos directamente sino que actua con comandos. Las imagenes nunca se modifican ni se cambian de lugar y tipicamente se genera una sesion de procesado con el lote de imágenes del directorio de trabajo. Lo habitual sería un directorio por día lleno de imagenes.
-
-Los datos de interés se guardan en la base de datos y a partir de ellos se generan ficheros para publicar o compartir. 
-
-Si la base de datos se corrompe o se borra, para recuperar su contenido habría que correr el pipeline de reduccióm de imágenes con todos los directorios que se hayan generado, cosa no siempre posible. Por ello se incluyen comandos de backup de la base de datos.
-
-El pipeline de AZOTEA consta de los siguientes pasos en secuencia:
-
-* Registro de las imágenes en la base de datos
-* Calculo de estadístcas en la región de interés (ROI) (media y varianza)
-* Clasificacion de las imagenes den LIGHT y DARK para la sustracción de cuadro oscuro
-* Elaboración de un DARK maestro por cada directorio de trabajo si es que hay imágenes de tipo DARK y sustracción del nivel de oscuro a las tomas de tipo LIGHT.
-* Exportación de los resultados de la sesion de reducción. En la actualidad sólo se soporta un solo formato de tipo CSV
-
-Todos estos pasos se efectuan secuencialmente con `azotea image reduce`
-Opcionalmente se puede invocar `azotea image export --all` sin especificar directorio de trabajo para exportar en un sencillo CSV todas las seisones de reducción.
-
-### Otros comandos
+# Otros comandos
 
 AZOTEA tiene otros comandos para
 1. efectuar y listar backups de la base de datos
