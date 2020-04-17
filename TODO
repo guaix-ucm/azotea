@@ -1,17 +1,20 @@
 TO DO
+ - BIAS
+  - unica linea en cada fichero de configuracion con valor 0
+  - una sola columna en cada imagen
+  - ¿como recomputar las estadisticas si el nivel de BIAS cambia en el fichero de configuracion ?
+  - ¿ Donde poner esto?
+      row['observer']     = options.observer
+      row['organization'] = options.organization
+      row['email']        = options.email
+      row['location']     = options.location
+      row['bias']         = options.bias
  
  - integrar exiftool con subrpcess
    - solo leer una imagen => tabla separada de session_t
 - update time de procesado?
 
 - ejecutar los caso de prueba listados
-
-- REDUCCION AUTOMATICA
-
- -- Rediccion multidirectorio de un observador (1 nivel)
- -- Reduccion autoimatica multiusuario
-
- 
   
   - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
   - emplear el filter(), map() reduce() para mapear los atributos de interes y ver que ha cambiado

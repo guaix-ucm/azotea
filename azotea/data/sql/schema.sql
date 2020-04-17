@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS image_t
     exptime             REAL,             -- exposure time in seconds from EXIF      
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]
     dark_roi            TEXT,             -- dark region of interest: [x1:x2,y1:y2], NULL if not used
+    bias                INTEGER DEFAULT 0, -- Common BIAS level for all channels
     scale               REAL,             -- image scale in arcsec/pixel
 
     -- Image Measurements
@@ -85,27 +86,28 @@ SELECT
     exptime             ,                 -- exposure time in seconds       
     roi                 ,                 -- region of interest: [x1:x2,y1:y2]
     dark_roi            ,                 -- dark region of interest: [x1:x2,y1:y2], NULL if not used
+    bias                ,                 -- common bias for all channels 
     scale               ,                 -- image scale in arcsec/pixel
     -- Image Measurements
-    (aver_raw_signal_R1 - aver_dark_R1) AS aver_signal_R1, -- R1 dark substracted signal
+    (aver_raw_signal_R1 - aver_dark_R1 - 2*bias) AS aver_signal_R1, -- R1 dark substracted signal
     (vari_raw_signal_R1 + vari_dark_R1) AS vari_signal_R1, -- R1 dark substracted signal variance
-    aver_dark_R1        ,                 -- R1 dark level R1 either from master dark or dark_roi
+    (aver_dark_R1 - bias) AS aver_dark_R1, -- R1 dark level R1 either from master dark or dark_roi
     vari_dark_R1        ,                 -- R1 dark variance either from master dark or dark_roi
 
-    (aver_raw_signal_G2 - aver_dark_G2) AS aver_signal_G2, -- G2 dark substracted signal
+    (aver_raw_signal_G2 - aver_dark_G2 - 2*bias) AS aver_signal_G2, -- G2 dark substracted signal
     (vari_raw_signal_G2 + vari_dark_G2) AS vari_signal_G2, -- G2 dark substracted signal variance
-    aver_dark_G2        ,                 -- G2 dark level either from master dark or dark_roi
-    vari_dark_G2        ,                 -- G2 dark variance either from master dark or dark_roi
+    (aver_dark_G2 - bias) AS aver_dark_G2, -- G2 dark level either from master dark or dark_roi
+    vari_dark_G2        ,                  -- G2 dark variance either from master dark or dark_roi
 
-    (aver_raw_signal_G3 - aver_dark_G3) AS aver_signal_G3, -- G3 dark substracted signal
+    (aver_raw_signal_G3 - aver_dark_G3 - 2*bias) AS aver_signal_G3, -- G3 dark substracted signal
     (vari_raw_signal_G3 + vari_dark_G3) AS vari_signal_G3, -- G3 dark substracted signal variance
-    aver_dark_G3        ,                 -- G3 dark level either from master dark or dark_roi
+    (aver_dark_G3 - bias) AS aver_dark_G3,                 -- G3 dark level either from master dark or dark_roi
     vari_dark_G3        ,                 -- G3 dark variance either from master dark or dark_roi
 
-    (aver_raw_signal_B4 - aver_dark_B4) AS aver_signal_B4, -- B4 dark substracted signal
+    (aver_raw_signal_B4 - aver_dark_B4 - 2* bias) AS aver_signal_B4, -- B4 dark substracted signal
     (vari_raw_signal_B4 + vari_dark_B4) AS vari_signal_B4, -- B4 dark substracted signal variance
-    aver_dark_B4        ,                                  -- B4 dark level either master dark or dark_roi
-    vari_dark_B4        ,                                  -- B4 dark variance either master dark or dark_roi
+    (aver_dark_B4 - bias) AS aver_dark_B4,                 -- B4 dark level either master dark or dark_roi
+    vari_dark_B4        ,                  -- B4 dark variance either master dark or dark_roi
     -- Processing state columns
     session             ,                -- session identifier
     type                ,                -- LIGHT or DARK

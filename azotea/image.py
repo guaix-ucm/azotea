@@ -506,7 +506,6 @@ def do_stats(connection, session, work_dir, options):
 	stats_computed_flag = False
 	camera_cache = CameraCache(options.camera)
 	rows = []
-	bias_list = []
 	counter = LogCounter(N_COUNT)
 	log.info("Computing image statistics")
 	for name, hsh in stats_session_iterable(connection, session):
@@ -530,9 +529,6 @@ def do_stats(connection, session, work_dir, options):
 		row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
 		row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
 		rows.append(row)
-		if metadata['type'] == BIAS_FRAME:
-			bias_list.append({'hash': hsh, 'type': BIAS_FRAME})
-
 	if rows:
 		counter.end("Statistics for %03d images done")
 		stats_update_db(connection, rows)
@@ -541,9 +537,53 @@ def do_stats(connection, session, work_dir, options):
 		log.info("No image statistics to be computed")
 	return stats_computed_flag
 
+
+# ----------
+# Bias Check
+# ----------
+
+def bias_check_update(connection, observer, bias):
+	row = {'observer': observer, 'new_bias': bias}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		WHERE model == (SELECT DISTINCT model FROM image_t WHERE observer == :observer)
+		AND observer == :observer
+		AND bias  != :new_bias
+		''', row)
+	return cursor.fetchone()[0]
+
+
+def bias_update_db(connection, observer, bias):
+	row = {'observer': observer, 'new_bias': bias}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		UPDATE image_t
+		SET bias = :new_bias
+		WHERE model == (SELECT DISTINCT model FROM image_t WHERE observer = :observer)
+		AND observer == :observer
+		AND bias != :new_bias
+		''', row)
+	return cursor.fetchone()[0]
+
+
+def do_bias(connection, options):
+	bias_changed = bias_check_update(connection, options.observer, options.bias)
+	if bias_changed:
+		log.warning("Camera bias changed to %d for observer %s", option.bias, options.observer)
+		bias_update_db(connection, options.observer, options.bias)
+	else:
+		log.info("No Camera bias change for observer %s", options.observer)
+	return bias_changed
+
+
 # -----------------------------
 # Image Apply Dark Substraction
 # -----------------------------
+
 
 def master_dark_db_update_all(connection, session):
 	row = {'type': DARK_FRAME, 'state': RAW_STATS}
@@ -569,10 +609,10 @@ def master_dark_db_update_all(connection, session):
 			session, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(aver_raw_signal_R1), 
-			AVG(aver_raw_signal_G2), 
-			AVG(aver_raw_signal_G3), 
-			AVG(aver_raw_signal_B4),
+			AVG(aver_raw_signal_R1 - bias), 
+			AVG(aver_raw_signal_G2 - bias), 
+			AVG(aver_raw_signal_G3 - bias), 
+			AVG(aver_raw_signal_B4 - bias),
 			SUM(vari_raw_signal_R1)/COUNT(*),
 			SUM(vari_raw_signal_G2)/COUNT(*),
 			SUM(vari_raw_signal_G3)/COUNT(*),
@@ -833,7 +873,7 @@ STATE_HEADERS = [
 ]
 
 DATA_HEADERS = [
-	"Name", "Session",
+	"Name", "ROI", "Bias",
 	"\u03BC R1", "\u03C3^2 R1", 
 	"\u03BC G2", "\u03C3^2 G2", 
 	"\u03BC G3", "\u03C3^2 G3",
@@ -841,7 +881,7 @@ DATA_HEADERS = [
 ]
 
 RAW_DATA_HEADERS = [
-	"Name", "Session" ,
+	"Name", "ROI" , "Bias",
 	"Raw \u03BC R1", "Raw \u03C3^2 R1", 
 	"Raw \u03BC G2", "Raw \u03C3^2 G2", 
 	"Raw \u03BC G3", "Raw \u03C3^2 G3",
@@ -849,7 +889,7 @@ RAW_DATA_HEADERS = [
 ]
 
 DARK_DATA_HEADERS = [
-	"Name", "Session" ,
+	"Name", "ROI" , "Bias",
 	"Dark \u03BC R1", "Dark \u03C3^2 R1", 
 	"Dark \u03BC G2", "Dark \u03C3^2 G2", 
 	"Dark \u03BC G3", "Dark \u03C3^2 G3",
@@ -978,7 +1018,7 @@ def view_data_session_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session, 
+			name, roi, bias,
 			aver_signal_R1, vari_signal_R1,
 			aver_signal_G2, vari_signal_G2,
 			aver_signal_G3, vari_signal_G3,
@@ -996,7 +1036,7 @@ def view_data_all_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session,
+			name, roi, bias,
 			aver_signal_R1, vari_signal_R1,
 			aver_signal_G2, vari_signal_G2,
 			aver_signal_G3, vari_signal_G3,
@@ -1017,7 +1057,7 @@ def view_raw_data_session_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session, 
+			name, roi, bias,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
@@ -1037,7 +1077,7 @@ def view_raw_data_all_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session,
+			name, roi, bias,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
@@ -1060,7 +1100,7 @@ def view_dark_data_session_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session, 
+			name, roi, bias
 			aver_dark_R1, vari_dark_R1,
 			aver_dark_G2, vari_dark_G2,
 			aver_dark_G3, vari_dark_G3,
@@ -1078,7 +1118,7 @@ def view_dark_data_all_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session, 
+			name, roi, bias
 			aver_dark_R1, vari_dark_R1,
 			aver_dark_G2, vari_dark_G2,
 			aver_dark_G3, vari_dark_G3,
@@ -1266,10 +1306,13 @@ def do_image_reduce(connection, options):
 	do_classify(connection, session, options.work_dir, options)
 
 	# Step 4
-	do_apply_dark(connection, session, options)
+	bias_changed = do_bias(connection, options)
 
 	# Step 5
-	if register_deleted or stats_computed:
+	do_apply_dark(connection, session, options)
+
+	# Step 6
+	if register_deleted or stats_computed or bias_changed:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
 		log.info("NO CSV file generation is needed for session %d", session)

@@ -65,6 +65,7 @@ def load_config_file(filepath):
     options['email']         = parser.get("observer","email")
     options['focal_length']  = parser.get("camera","focal_length")
     options['f_number']      = parser.get("camera","f_number")
+    options['bias']          = parser.getint("camera","bias")
     options['location']      = parser.get("location","location")
     options['roi']           = ROI(0, parser.getint("image","width"), 0, parser.getint("image","height"))
     options['scale']         = parser.get("image","scale")
