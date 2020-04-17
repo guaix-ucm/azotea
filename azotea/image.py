@@ -1093,32 +1093,34 @@ def view_dark_data_all_iterable(connection, session):
 # -----------------
 
 def view_master_dark_all_iterable(connection, session):
+	row = {'tolerance': 0.2}
 	cursor = connection.cursor()
 	cursor.execute("SELECT COUNT(*) FROM master_dark_t")
 	count = cursor.fetchone()[0]
 	cursor.execute(
 		'''
 		SELECT 
-			session, N, roi            
+			session, N, roi,
+			(max_exptime - min_exptime) <= :tolerance as good_flag,            
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
 			aver_B4, vari_B4             
 		FROM master_dark_t
 		ORDER BY session DESC
-		''')
+		''', row)
 	return cursor, count
 
 def view_master_dark_session_iterable(connection, session):
+	row = {'tolerance': 0.2, 'session': session}
 	cursor = connection.cursor()
-	row = {'session': session}
 	cursor.execute("SELECT COUNT(*) FROM master_dark_t WHERE session = :session", row)
 	count = cursor.fetchone()[0]
 	cursor.execute(
 		'''
 		SELECT 
-			session, N, roi,           
-			(min_exptime == max_exptime) as good_flag,
+			session, N, roi,         
+			(max_exptime - min_exptime) <= :tolerence as good_flag,
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
