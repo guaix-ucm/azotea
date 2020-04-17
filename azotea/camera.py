@@ -58,7 +58,7 @@ BG_Y1 = 200
 BG_X2 = 550
 BG_Y2 = 350
 
-EXPOSURE_REGEXP = re.compile(r'(\d)/(\d+)')
+FRACTION_REGEXP = re.compile(r'(\d+)/(\d+)')
 
 # -----------------------
 # Module global variables
@@ -177,27 +177,49 @@ class CameraImage(object):
         self.metadata['name']         = self.name
         self.model                    = str(self.exif.get('Image Model'))
         self.metadata['model']        = self.model
-        self.metadata['tstamp']       = self._iso8601(str(self.exif.get('Image DateTime')))
-        self.metadata['iso']          = str(self.exif.get('EXIF ISOSpeedRatings'))
-        try:
-            temp = str(self.exif.get('EXIF ExposureTime'))
-            temp = int(temp)
-        except ValueError:
-            matchobj = EXPOSURE_REGEXP.search(temp)
-            if matchobj:
-                temp = float(matchobj.group(1))/matchobj.group(2)
-        self.metadata['exptime']      =  temp
-        temp = self.exif.get('EXIF FocalLength', None)
-        self.metadata['focal_length'] = int(str(temp)) if temp is not None and str(temp) != '0' else None
-        temp = self.exif.get('EXIF FNumber', None)
-        self.metadata['f_number']     = float(str(temp)) if temp is not None and str(temp) != '0' else None
+        self.metadata['tstamp']       = self._iso8601(str(self.exif.get('Image DateTime', None)))
+        self.metadata['iso']          = str(self.exif.get('EXIF ISOSpeedRatings', None))
+        self.metadata['focal_length'] = self.getFocalLength()
+        self.metadata['exptime']      = self.getExposureTime()
+        self.metadata['f_number']     = self.getFNumber()
         return self.metadata
+
+
+    def getExposureTime(self):
+        temp = str(self.exif.get('EXIF ExposureTime', None))
+        try:
+            temp = int(temp)
+        except TypeError:
+            pass
+        except ValueError:
+            matchobj = FRACTION_REGEXP.search(temp)
+            if matchobj:
+                temp = float(matchobj.group(1))/float(matchobj.group(2))
+        return temp
+
+
+    def getFNumber(self):
+        temp = str(self.exif.get('EXIF FNumber', None))
+        try:
+            temp = float(temp)
+        except TypeError:
+            pass
+        except ValueError:
+            matchobj = FRACTION_REGEXP.search(temp)
+            if matchobj:
+                temp = float(matchobj.group(1))/float(matchobj.group(2))
+        return temp
+
+
+    def getFocalLength(self):
+        temp = self.exif.get('EXIF FocalLength', None)
+        return int(str(temp)) if temp is not None and str(temp) != '0' else None
 
 
     def read(self):
         '''Read RAW pixels''' 
         self._lookup()
-        #log.debug("%s: Loading RAW data from %s", self.name, self.model)
+        log.debug("%s: Loading RAW data from %s", self.name, self.model)
         self.image = rawpy.imread(self.filepath)
         #log.debug("%s: Color description is %s", self.name, self.image.color_desc)
         # R1 channel

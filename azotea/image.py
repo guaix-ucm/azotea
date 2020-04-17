@@ -1191,12 +1191,14 @@ def image_export(connection, options):
 
 def do_image_reduce(connection, options):
 
+	log.info("#"*80)
 	file_options = load_config_file(options.config)
 	options      = merge_options(options, file_options)
 
 	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
 	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 	session = new_session if old_session is None else old_session
+	
 	log.info("Start reduction session %d", session)
 	# Step 1: registering
 	register_deleted = do_register(connection, options.work_dir, options.filter, session)
