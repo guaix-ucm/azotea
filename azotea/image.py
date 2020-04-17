@@ -20,6 +20,7 @@ import datetime
 import math
 import hashlib
 import time
+import re
 
 # ---------------------
 # Third party libraries
@@ -73,9 +74,17 @@ if sys.version_info[0] == 2:
 # Utility functions
 # -----------------
 
-
 def classification_algorithm1(name,  file_path, options):
 	if name.upper().startswith(DARK_FRAME):
+		result = {'name': name, 'type': DARK_FRAME}
+	else:
+		result = {'name': name, 'type': LIGHT_FRAME}
+	return result
+
+
+RE_DARK = re.compile(r'.*DARK.*\..{3}')
+def classification_algorithm2(name,  file_path, options):
+	if RE_DARK.search(name.upper()):
 		result = {'name': name, 'type': DARK_FRAME}
 	else:
 		result = {'name': name, 'type': LIGHT_FRAME}
@@ -364,7 +373,6 @@ def classify_update_db(connection, rows):
 	connection.commit()
 
 
-
 def classify_session_iterable(connection, session):
 	row = {'session': session, 'type': UNKNOWN}
 	cursor = connection.cursor()
@@ -384,7 +392,7 @@ def do_classify(connection, session, work_dir, options):
 	log.info("Classifying images")
 	for name, in classify_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
-		row = classification_algorithm1(name, file_path, options)
+		row = classification_algorithm2(name, file_path, options)
 		log.debug("%s is type %s", name, row['type'])
 		counter.tick("Classified %d images")
 		rows.append(row)
@@ -715,7 +723,10 @@ def get_file_path(connection, session, work_dir, options):
 	middle = os.path.basename(work_dir)
 	if middle == '':
 		middle = os.path.basename(work_dir[:-1])
-	name = "-".join([options.csv_file_prefix, "session", middle + '.csv'])
+	if options.csv_file_prefix:
+		name = "-".join([options.csv_file_prefix, "session", middle + '.csv'])
+	else:
+		name = "-".join(["session", middle + '.csv'])
 	return os.path.join(AZOTEA_CSV_DIR, name)
 	
 
@@ -1237,6 +1248,7 @@ def image_reduce(connection, options):
 			for name, path in dirs:
 				options.config   = os.path.join(AZOTEA_CFG_DIR, name + '.ini')
 				options.work_dir = path
+				options.csv_file_prefix = name
 				try:
 					do_image_multidir_reduce(connection, options)
 				except IOError as e:

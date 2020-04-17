@@ -256,7 +256,7 @@ def createParser():
 	ird.add_argument('-r' ,'--reset',     action="store_true",     help="Reprocess from start")
 	ird.add_argument('-m' ,'--multiuser', action="store_true",     help="Multi-user reduction pipeline flag")
 	ird.add_argument('--csv-file',        type=str, default=None,  help='Optional session CSV file to export')
-	ird.add_argument('--csv-file-prefix', type=str, default='',    help='Optional session CSV file prefix (multi-user only)')
+	ird.add_argument('--csv-file-prefix', type=str, default=None,  help='Optional session CSV file prefix (multi-user only)')
 
 	iex = subparser.add_parser('export',  help='export the whole database to a CSV file')
 	iex.add_argument('--csv-file',        type=str, default=DEF_GLOBAL_CSV,  help='Optional session CSV file to export')

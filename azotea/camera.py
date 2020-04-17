@@ -183,7 +183,7 @@ class CameraImage(object):
             temp = str(self.exif.get('EXIF ExposureTime'))
             temp = int(temp)
         except ValueError:
-            matchobj = regexp.search(temp)
+            matchobj = EXPOSURE_REGEXP.search(temp)
             if matchobj:
                 temp = float(matchobj.group(1))/matchobj.group(2)
         self.metadata['exptime']      =  temp
