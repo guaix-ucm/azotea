@@ -180,12 +180,13 @@ class CameraImage(object):
         self.metadata['tstamp']       = self._iso8601(str(self.exif.get('Image DateTime', None)))
         self.metadata['iso']          = str(self.exif.get('EXIF ISOSpeedRatings', None))
         self.metadata['focal_length'] = self.getFocalLength()
-        self.metadata['exptime']      = self.getExposureTime()
         self.metadata['f_number']     = self.getFNumber()
+        self.metadata['exptime'], self.metadata['type'] = self.getExposureTime()
         return self.metadata
 
 
     def getExposureTime(self):
+        imagetyp = None
         exptime = str(self.exif.get('EXIF ExposureTime', None))
         try:
             exptime = float(exptime)
@@ -197,7 +198,8 @@ class CameraImage(object):
                 exptime = float(matchobj.group(1))/float(matchobj.group(2))
         if exptime < 1.0:
             log.warn("Image %s (t=%f) could serve as a BIAS image", self.name, exptime)
-        return exptime
+            imagetyp = "BIAS"
+        return exptime, imagetyp
 
 
     def getFNumber(self):

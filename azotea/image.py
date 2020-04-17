@@ -31,7 +31,7 @@ import re
 # -------------
 
 from .           import AZOTEA_CSV_DIR, AZOTEA_CFG_DIR
-from .camera     import CameraImage, CameraCache, MetadataError
+from .camera     import CameraImage, CameraCache, MetadataError, ConfigError
 from .utils      import merge_two_dicts, paging, LogCounter
 from .exceptions import MixingCandidates, NoUserInfoError
 from .config     import load_config_file, merge_options
@@ -47,7 +47,9 @@ REGISTERED       = 0
 RAW_STATS        = 1
 DARK_SUBSTRACTED = 2
 
+# Values for the 'tyoe' column
 LIGHT_FRAME = "LIGHT"
+BIAS_FRAME  = "BIAS"
 DARK_FRAME  = "DARK"
 UNKNOWN     = "UNKNOWN"
 
@@ -305,6 +307,7 @@ def register_delete_images(connection, rows):
 	connection.commit()
 
 
+
 def register_slow(connection, work_dir, names_list, session):
 	counter = LogCounter(N_COUNT)
 	for name, hsh in names_list:
@@ -421,6 +424,19 @@ def classify_session_iterable(connection, session):
 		''', row)
 	return cursor
 
+def classify_log_type(connection, session):
+	row = {'session': session}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT type, COUNT(*)
+		FROM image_t
+		WHERE session = :session
+		GROUP BY type
+		''', row)
+	for imagetyp, n in cursor:
+		log.info("% -5s frames: % 3d", imagetyp, n)
+
 
 def do_classify(connection, session, work_dir, options):
 	rows = []
@@ -435,6 +451,9 @@ def do_classify(connection, session, work_dir, options):
 	if rows:
 		classify_update_db(connection, rows)
 		counter.end("Classified %03d images")
+		classify_log_type(connection, session)
+
+
 	else:
 		log.info("No image type classification is needed")
 
@@ -451,10 +470,10 @@ def stats_update_db(connection, rows):
 		SET 
 			state               = :state,
 			roi                 = :roi, 
-			model               = :model,   -- EXIF
-			iso                 = :iso,     -- EXIF
-			tstamp              = :tstamp,  -- EXIF
-			exptime             = :exptime, -- EXIF
+			model               = :model,        -- EXIF
+			iso                 = :iso,          -- EXIF
+			tstamp              = :tstamp,       -- EXIF
+			exptime             = :exptime,      -- EXIF
 			focal_length        = :focal_length, -- EXIF
 			f_number            = :f_number,     -- EXIF
 			aver_raw_signal_R1  = :aver_raw_signal_R1, 
@@ -465,19 +484,7 @@ def stats_update_db(connection, rows):
 			vari_raw_signal_G2  = :vari_raw_signal_G2,
 			vari_raw_signal_G3  = :vari_raw_signal_G3,
 			vari_raw_signal_B4  = :vari_raw_signal_B4 
-		WHERE name = :name
-		''', rows)
-	connection.commit()
-
-
-def stats_delete_db(connection, rows):
-	row = {'state': RAW_STATS}
-	cursor = connection.cursor()
-	cursor.executemany(
-		'''
-		DELETE FROM image_t
-		WHERE name  = :name
-		AND session = :session
+		WHERE hash = :hash
 		''', rows)
 	connection.commit()
 
@@ -487,7 +494,7 @@ def stats_session_iterable(connection, session):
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
-		SELECT name
+		SELECT name, hash
 		FROM image_t
 		WHERE state < :state
 		AND session = :session
@@ -499,37 +506,33 @@ def do_stats(connection, session, work_dir, options):
 	stats_computed_flag = False
 	camera_cache = CameraCache(options.camera)
 	rows = []
-	rows_to_delete = []
+	bias_list = []
 	counter = LogCounter(N_COUNT)
 	log.info("Computing image statistics")
-	for name, in stats_session_iterable(connection, session):
+	for name, hsh in stats_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
 		counter.tick("Statistics for %03d images done")
-		try:
-			metadata = image.loadEXIF()
-		except MetadataError as e:
-			log.warning(e)    # we need to find out the camera model before reading
-			rows_to_delete.append({'session': session, 'name': name})
-		else:
-			image.read()
-			row = image.stats()
-			row['state']        = RAW_STATS
-			row['observer']     = options.observer
-			row['organization'] = options.organization
-			row['email']        = options.email
-			row['location']     = options.location
-			row['model']        = metadata['model']
-			row['iso']          = metadata['iso']
-			row['tstamp']       = metadata['tstamp']
-			row['exptime']      = metadata['exptime']
-			row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
-			row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
-			rows.append(row)
-	if rows_to_delete:
-		stats_delete_db(connection, rows_to_delete)
-		log.info("Unregistered {0} database entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
+		metadata = image.loadEXIF()
+		image.read()
+		row = image.stats()
+		row['hash']         = hsh
+		row['state']        = RAW_STATS
+		row['observer']     = options.observer
+		row['organization'] = options.organization
+		row['email']        = options.email
+		row['location']     = options.location
+		row['model']        = metadata['model']
+		row['iso']          = metadata['iso']
+		row['tstamp']       = metadata['tstamp']
+		row['exptime']      = metadata['exptime']
+		row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
+		row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
+		rows.append(row)
+		if metadata['type'] == BIAS_FRAME:
+			bias_list.append({'hash': hsh, 'type': BIAS_FRAME})
+
 	if rows:
 		counter.end("Statistics for %03d images done")
 		stats_update_db(connection, rows)
@@ -1226,7 +1229,6 @@ def image_export(connection, options):
 	
 
 def do_image_reduce(connection, options):
-
 	log.info("#"*48)
 	log.info("Working Directory: %s", options.work_dir)
 	file_options = load_config_file(options.config)
@@ -1245,7 +1247,16 @@ def do_image_reduce(connection, options):
 	if options.reset:
 		image_session_state_reset(connection, session)
 	# Step 2
-	stats_computed = do_stats(connection, session, options.work_dir, options)
+	try:
+		stats_computed = do_stats(connection, session, options.work_dir, options)
+	except MetadataError as e:
+		log.error(e)
+		work_dir_cleanup(connection)
+		raise
+	except ConfigError as e:
+		log.error(e)
+		work_dir_cleanup(connection)
+		raise
 
 	# Step 3
 	do_classify(connection, session, options.work_dir, options)
@@ -1272,7 +1283,10 @@ def do_image_multidir_reduce(connection, options):
 			log.warning("Ignoring files in %s", options.work_dir)
 		for item in dirs:
 			options.work_dir = item
-			do_image_reduce(connection, options)
+			try:
+				do_image_reduce(connection, options)
+			except ConfigError as e:
+				pass
 			time.sleep(1.5)
 	else:
 		do_image_reduce(connection, options)
