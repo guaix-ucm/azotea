@@ -158,18 +158,19 @@ def image_session_state_reset(connection, session):
 
 def work_dir_to_session(connection, work_dir, filt):
 	file_list  = glob.glob(os.path.join(work_dir, filt))
-	names_list = [ {'name': os.path.basename(p)} for p in file_list ]
-	log.info("Found {0} candidates matching filter {1}".format(len(names_list), filt))
+	log.info("Found {0} candidates matching filter {1}.".format(len(file_list), filt))
+	log.info("Computing hashes. This may take a while")
+	names_list = [ {'name': os.path.basename(p), 'hash': hash(p)} for p in file_list ]
 	cursor = connection.cursor()
-	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT PRIMARY KEY)")
-	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name) VALUES (:name)", names_list)
+	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT, hash BLOB, PRIMARY KEY(hash))")
+	cursor.executemany("INSERT INTO candidate_t (name,hash) VALUES (:name,:hash)", names_list)
 	connection.commit()
 	# Common images to database and work-dir
 	cursor.execute(
 		'''
 		SELECT MAX(session), MAX(session) == MIN(session)
 		FROM image_t
-		WHERE name IN (SELECT name FROM candidate_t)
+		WHERE hash IN (SELECT hash FROM candidate_t)
 		'''
 		)
 	result = cursor.fetchall()
@@ -181,6 +182,7 @@ def work_dir_to_session(connection, work_dir, filt):
 	else:
 		session = None
 	return session
+
 
 def work_dir_cleanup(connection):
 	cursor = connection.cursor()
@@ -209,7 +211,7 @@ def register_insert_image(connection, row):
 	cursor = connection.cursor()
 	cursor.execute(
 			'''
-			INSERT INTO image_t (
+			INSERT OR IGNORE INTO image_t (
 				name, 
 				hash,
 				session, 
@@ -252,30 +254,40 @@ def candidates(connection, work_dir, filt, session):
 	'''candidate list of images to be inserted/removed to/from the database'''
 	# New Images in the work dir that should be added to database
 	cursor = connection.cursor()
+	# This commented query may take long to execute if the database is large
+	# better we leave it fail in the insertion, where the hash duplication is detected
+	# cursor.execute(
+	# 	'''
+	# 	SELECT name, hash
+	# 	FROM candidate_t
+	# 	WHERE hash NOT IN (SELECT hash FROM image_t)
+	# 	'''
+	# 	)
 	cursor.execute(
 		'''
-		SELECT name
+		SELECT name, hash
 		FROM candidate_t
-		WHERE name NOT IN (SELECT name FROM image_t)
 		'''
 		)
 	result = cursor.fetchall()
 	if result:
-		names_to_add, = zip(*result)
+		#names_to_add, = zip(*result)
+		names_to_add = result
 	else:
 		names_to_add = []
 	# Images no longer in the work dir, they should be deleted from database
 	row = {'session': session}
 	cursor.execute(
 		'''
-		SELECT name
+		SELECT name, hash
 		FROM image_t
-		WHERE name NOT IN (SELECT name FROM candidate_t)
-		AND session = :session
+		WHERE session = :session
+		AND hash NOT IN (SELECT hash FROM candidate_t)
 		''', row)
 	result = cursor.fetchall()
 	if result:
-		names_to_del, = zip(*result)
+		#names_to_del, = zip(*result)
+		names_to_del = result
 	else:
 		names_to_del = []
 	return names_to_add, names_to_del
@@ -287,58 +299,59 @@ def register_delete_images(connection, rows):
 	cursor.executemany(
 			'''
 			DELETE FROM image_t 
-			WHERE name  == :name
-			AND   session == :session
+			WHERE hash  == :hash
 			''', rows)
 	connection.commit()
 
 
 def register_slow(connection, work_dir, names_list, session):
-	duplicated_file_paths = []
 	counter = LogCounter(N_COUNT)
-	for name in names_list:
+	for name, hsh in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
-		row['hash'] = hash(file_path)
-		counter.tick("Registered %d images in database (slow method)")
+		row  = {'name': name, 'hash': hsh, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		try:
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
 			connection.rollback()
 			name2, = find_by_hash(connection, row['hash'])
-			duplicated_file_paths.append({'original': name2, 'duplicated': file_path})
 			log.warning("Duplicate => %s EQUALS %s", file_path, name2)
 		else:
+			counter.tick("Registered %03d images in database (slow method)")
 			log.debug("%s registered in database", row['name'])
-	counter.end("Registered %d images in database (slow method)")
+	counter.end("Registered %03d images in database (slow method)")
 
 
 def register_fast(connection, work_dir, names_list, session):
 	rows = []
 	counter = LogCounter(N_COUNT)
-	for name in names_list:
+	for name, hsh in names_list:
 		file_path = os.path.join(work_dir, name)
 		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
-		row['hash'] = hash(file_path)
+		row['hash'] = hsh
 		rows.append(row)
 		log.debug("%s being registered in database", row['name'])
-		counter.tick("Registered %d images in database")
-	counter.end("Registered %d images in database")
+		counter.tick("Registered %03d images in database")
 	register_insert_images(connection, rows)
+	counter.end("Registered %03d images in database")
 	
 
 def register_unregister(connection, names_list, session):
 	rows = []
 	counter = LogCounter(N_COUNT)
 	log.info("Unregistering images from database")
-	for name in names_list:
-		rows.append({'session': session, 'name': name, 'session': session})
+	for name, hsh in names_list:
+		rows.append({'session': session, 'name': name, 'hash': hsh})
 		log.debug("%s being removed from database", name)
-		counter.tick("Removed %d images from database")
-	counter.end("Removed %d images from database")
+		counter.tick("Removed %02d images from database from previous session")
+	counter.end("Removed %02d images from database from previous session")
 	register_delete_images(connection, rows)
 	
 
+# Tal como esta monatdo ahora candidates(), es imposible introducir una imagen
+# duplicada porque se cumprueba primero que su hash no esta ya en la BD
+# Y por tanbto register_low() es inneecsario.
+# Sin embargo candidates() podría enlentecerse al aumentar el número de imagenes de la BD
+# Por lo que al final register_slow() sería mejor opcion
 def do_register(connection, work_dir, filt, session):
 	register_deleted = False
 	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
@@ -346,13 +359,7 @@ def do_register(connection, work_dir, filt, session):
 		register_unregister(connection, names_to_del, session)  
 		register_deleted = True
 	if names_to_add:
-		try:
-			register_fast(connection, work_dir, names_to_add, session)
-		except sqlite3.IntegrityError as e:
-			connection.rollback()
-			register_slow(connection, work_dir, names_to_add, session)
-	log.info("{0} new images registered in database".format(len(names_to_add)))
-	log.info("{0} images deleted from database".format(len(names_to_del)))
+		register_slow(connection, work_dir, names_to_add, session)
 	return register_deleted
 
 
@@ -394,11 +401,11 @@ def do_classify(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm2(name, file_path, options)
 		log.debug("%s is type %s", name, row['type'])
-		counter.tick("Classified %d images")
+		counter.tick("Classified %03d images")
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
-		counter.end("Classified %d images")
+		counter.end("Classified %03d images")
 	else:
 		log.info("No image type classification is needed")
 
@@ -470,7 +477,7 @@ def do_stats(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
 		image.setROI(options.roi)
-		counter.tick("Statistics for %d images done")
+		counter.tick("Statistics for %03d images done")
 		try:
 			metadata = image.loadEXIF()
 		except MetadataError as e:
@@ -495,7 +502,7 @@ def do_stats(connection, session, work_dir, options):
 		stats_delete_db(connection, rows_to_delete)
 		log.info("Unregistered {0} database entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
 	if rows:
-		counter.end("Statistics for %d images done")
+		counter.end("Statistics for %03d images done")
 		stats_update_db(connection, rows)
 		stats_computed_flag = True
 	else:
@@ -1192,6 +1199,7 @@ def image_export(connection, options):
 def do_image_reduce(connection, options):
 
 	log.info("#"*80)
+	log.info("Working Directory: %s", options.work_dir)
 	file_options = load_config_file(options.config)
 	options      = merge_options(options, file_options)
 
