@@ -1111,6 +1111,7 @@ def view_master_dark_all_iterable(connection, session):
 		''', row)
 	return cursor, count
 
+
 def view_master_dark_session_iterable(connection, session):
 	row = {'tolerance': 0.2, 'session': session}
 	cursor = connection.cursor()
@@ -1129,6 +1130,7 @@ def view_master_dark_session_iterable(connection, session):
 		WHERE session = :session
 		''', row)
 	return cursor, count
+
 
 MASTER_DARK_HEADERS = [
 	"Session", 
