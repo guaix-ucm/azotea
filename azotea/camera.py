@@ -186,16 +186,18 @@ class CameraImage(object):
 
 
     def getExposureTime(self):
-        temp = str(self.exif.get('EXIF ExposureTime', None))
+        exptime = str(self.exif.get('EXIF ExposureTime', None))
         try:
-            temp = int(temp)
+            exptime = float(exptime)
         except TypeError:
             pass
         except ValueError:
-            matchobj = FRACTION_REGEXP.search(temp)
+            matchobj = FRACTION_REGEXP.search(exptime)
             if matchobj:
-                temp = float(matchobj.group(1))/float(matchobj.group(2))
-        return temp
+                exptime = float(matchobj.group(1))/float(matchobj.group(2))
+        if exptime < 1.0:
+            log.warn("Image %s (t=%f) could serve as a BIAS image", self.name, exptime)
+        return exptime
 
 
     def getFNumber(self):

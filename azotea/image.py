@@ -330,7 +330,7 @@ def register_fast(connection, work_dir, names_list, session):
 		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
 		row['hash'] = hsh
 		rows.append(row)
-		log.debug("%s being registered in database", row['name'])
+		log.debug("Image %s being registered in database", row['name'])
 		counter.tick("Registered %03d images in database")
 	register_insert_images(connection, rows)
 	counter.end("Registered %03d images in database")
@@ -342,9 +342,9 @@ def register_unregister(connection, names_list, session):
 	log.info("Unregistering images from database")
 	for name, hsh in names_list:
 		rows.append({'session': session, 'name': name, 'hash': hsh})
-		log.info("image %s being removed from database", name)
-		counter.tick("Removed %02d images from database from previous session")
-	counter.end("Removed %02d images from database from previous session")
+		log.info("Image %s being removed from database", name)
+		counter.tick("Removed %02d images from database (previous session)")
+	counter.end("Removed %02d images from database (previous session)")
 	register_delete_images(connection, rows)
 	
 
@@ -369,9 +369,9 @@ def register_log_kept(connection, session):
 			LIMIT :count
 			''', row)
 		for name, in cursor:
-			log.info("image %s being kept in database", name)
+			log.info("Image %s being kept in database", name)
 		if count > ARBITRARY_NUMBER:
-			log.info("and %d more iamges being kept in database", count - ARBITRARY_NUMBER)
+			log.info("And %d more images being kept in database", count - ARBITRARY_NUMBER)
 
 
 
