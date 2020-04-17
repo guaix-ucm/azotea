@@ -424,7 +424,7 @@ def stats_update_db(connection, rows):
 
 
 def stats_delete_db(connection, rows):
-	row = {'session': session, 'state': RAW_STATS}
+	row = {'state': RAW_STATS}
 	cursor = connection.cursor()
 	cursor.executemany(
 		'''
@@ -463,7 +463,7 @@ def do_stats(connection, session, work_dir, options):
 			metadata = image.loadEXIF()
 		except MetadataError as e:
 			log.warning(e)    # we need to find out the camera model before reading
-			rows_to_delete().append({'session': session, 'name': name})
+			rows_to_delete.append({'session': session, 'name': name})
 		else:
 			image.read()
 			row = image.stats()
@@ -481,7 +481,7 @@ def do_stats(connection, session, work_dir, options):
 			rows.append(row)
 	if rows_to_delete:
 		stats_delete_db(connection, rows_to_delete)
-		log.info("Unregistered {0} data base entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
+		log.info("Unregistered {0} database entries whose EXIF metadata could not be read".format(len(rows_to_delete)))
 	if rows:
 		counter.end("Statistics for %d images done")
 		stats_update_db(connection, rows)

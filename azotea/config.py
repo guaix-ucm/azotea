@@ -69,6 +69,7 @@ def load_config_file(filepath):
     options['roi']           = ROI(0, parser.getint("image","width"), 0, parser.getint("image","height"))
     options['scale']         = parser.get("image","scale")
     options['dark_roi']      = parser.get("image","dark_roi")
+    options['filter']        = parser.get("file","filter")
 
     # Handle empty keyword cases and transform them to None's
     options['focal_length']  = valueOrNone(options['focal_length'], int)

@@ -253,7 +253,6 @@ def createParser():
 
 	ird = subparser.add_parser('reduce',  help='run register/classify/stats</export pipeline')
 	ird.add_argument('-w' ,'--work-dir',  type=str, required=True, help='Input working directory')
-	ird.add_argument('-f' ,'--filter',    type=str, default='*.*', help='Optional input glob-style filter')
 	ird.add_argument('-r' ,'--reset',     action="store_true",     help="Reprocess from start")
 	ird.add_argument('-m' ,'--multiuser', action="store_true",     help="Multi-user reduction pipeline flag")
 	ird.add_argument('--csv-file',        type=str, default=None,  help='Optional session CSV file to export')
