@@ -233,7 +233,7 @@ def register_insert_images(connection, rows):
 	cursor = connection.cursor()
 	cursor.executemany(
 			'''
-			INSERT INTO image_t (
+			INSERT OR IGNORE INTO image_t (
 				name, 
 				hash,
 				session,
@@ -275,6 +275,7 @@ def candidates(connection, work_dir, filt, session):
 		names_to_add = result
 	else:
 		names_to_add = []
+	
 	# Images no longer in the work dir, they should be deleted from database
 	row = {'session': session}
 	cursor.execute(
@@ -341,11 +342,38 @@ def register_unregister(connection, names_list, session):
 	log.info("Unregistering images from database")
 	for name, hsh in names_list:
 		rows.append({'session': session, 'name': name, 'hash': hsh})
-		log.debug("%s being removed from database", name)
+		log.info("image %s being removed from database", name)
 		counter.tick("Removed %02d images from database from previous session")
 	counter.end("Removed %02d images from database from previous session")
 	register_delete_images(connection, rows)
 	
+
+def register_log_kept(connection, session):
+	# Images  in the work dir already existing in the database
+	ARBITRARY_NUMBER = 10
+	cursor = connection.cursor()
+	row = {'session': session, 'count': ARBITRARY_NUMBER}
+	cursor.execute(
+		'''
+		SELECT COUNT(*)
+		FROM image_t
+		WHERE hash IN (SELECT hash FROM candidate_t)
+		''', row)
+	count = cursor.fetchone()[0]
+	if count:
+		cursor.execute(
+			'''
+			SELECT name
+			FROM image_t
+			WHERE hash IN (SELECT hash FROM candidate_t)
+			LIMIT :count
+			''', row)
+		for name, in cursor:
+			log.info("image %s being kept in database", name)
+		if count > ARBITRARY_NUMBER:
+			log.info("and %d more iamges being kept in database", count - ARBITRARY_NUMBER)
+
+
 
 # Tal como esta monatdo ahora candidates(), es imposible introducir una imagen
 # duplicada porque se cumprueba primero que su hash no esta ya en la BD
@@ -357,9 +385,10 @@ def do_register(connection, work_dir, filt, session):
 	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
 	if names_to_del:
 		register_unregister(connection, names_to_del, session)  
+		register_log_kept(connection, session)
 		register_deleted = True
 	if names_to_add:
-		register_slow(connection, work_dir, names_to_add, session)
+		register_fast(connection, work_dir, names_to_add, session)
 	return register_deleted
 
 
@@ -1198,16 +1227,18 @@ def image_export(connection, options):
 
 def do_image_reduce(connection, options):
 
-	log.info("#"*80)
+	log.info("#"*48)
 	log.info("Working Directory: %s", options.work_dir)
 	file_options = load_config_file(options.config)
 	options      = merge_options(options, file_options)
 
-	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
-	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
-	session = new_session if old_session is None else old_session
-	
-	log.info("Start reduction session %d", session)
+	session = work_dir_to_session(connection, options.work_dir, options.filter)
+	if session is None:
+		session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
+		log.info("Start with new reduction session %d", session)
+	else:
+		log.info("Start with existing reduction session %d", session)
+
 	# Step 1: registering
 	register_deleted = do_register(connection, options.work_dir, options.filter, session)
 	
