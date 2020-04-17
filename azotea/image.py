@@ -331,9 +331,11 @@ def register_unregister(connection, names_list, session):
 	
 
 def do_register(connection, work_dir, filt, session):
+	register_deleted = False
 	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
 	if names_to_del:
 		register_unregister(connection, names_to_del, session)  
+		register_deleted = True
 	if names_to_add:
 		try:
 			register_fast(connection, work_dir, names_to_add, session)
@@ -342,6 +344,7 @@ def do_register(connection, work_dir, filt, session):
 			register_slow(connection, work_dir, names_to_add, session)
 	log.info("{0} new images registered in database".format(len(names_to_add)))
 	log.info("{0} images deleted from database".format(len(names_to_del)))
+	return register_deleted
 
 
 
@@ -449,6 +452,7 @@ def stats_session_iterable(connection, session):
 
 
 def do_stats(connection, session, work_dir, options):
+	stats_computed_flag = False
 	camera_cache = CameraCache(options.camera)
 	rows = []
 	rows_to_delete = []
@@ -485,8 +489,10 @@ def do_stats(connection, session, work_dir, options):
 	if rows:
 		counter.end("Statistics for %d images done")
 		stats_update_db(connection, rows)
+		stats_computed_flag = True
 	else:
 		log.info("No image statistics to be computed")
+	return stats_computed_flag
 
 # -----------------------------
 # Image Apply Dark Substraction
@@ -1180,25 +1186,26 @@ def do_image_reduce(connection, options):
 	old_session = work_dir_to_session(connection, options.work_dir, options.filter)
 	new_session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
 	session = new_session if old_session is None else old_session
-	log.info("==> Start reduction session, id = %d", session)
+	log.info("Start reduction session %d", session)
 	# Step 1: registering
-	do_register(connection, options.work_dir, options.filter, session)
+	register_deleted = do_register(connection, options.work_dir, options.filter, session)
 	
 	if options.reset:
 		image_session_state_reset(connection, session)
 	# Step 2
-	do_stats(connection, session, options.work_dir, options)
+	stats_computed = do_stats(connection, session, options.work_dir, options)
 
 	# Step 3
-	#iterable = classify_all_iterable if options.all else classify_session_iterable
 	do_classify(connection, session, options.work_dir, options)
 
 	# Step 4
 	do_apply_dark(connection, session, options)
+
 	# Step 5
-	#iterable = export_all_iterable if options.all else export_session_iterable
-	#do_export(connection, session, iterable, options)
-	do_export_work_dir(connection, session, options.work_dir, options)
+	if register_deleted or stats_computed:
+		do_export_work_dir(connection, session, options.work_dir, options)
+	else:
+		log.info("NO CSV file generation is needed for session %d", session)
 
 	# Cleanup session stuff
 	work_dir_cleanup(connection)
