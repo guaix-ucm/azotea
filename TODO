@@ -1,14 +1,20 @@
 TO DO
- - BIAS
-  - unica linea en cada fichero de configuracion con valor 0
-  - una sola columna en cada imagen
-  - ¿como recomputar las estadisticas si el nivel de BIAS cambia en el fichero de configuracion ?
-  - ¿ Donde poner esto?
-      row['observer']     = options.observer
+ - ANXIBLE
+  - fragments: camera, observer, location, image
+  - notify parametrizado con el nombre del onservador (el nombre del .ini)
+ - AZOTEA
+   Estados en orden REGISTERED, STATS COMPUTED, METADATA UPDATED, DARK SUBSTRACTED
+   azotea --config <fichero ini> changed [location|observer|camera|image]
+   Actualizar estoi en el paso metadata
+     row['observer']     = options.observer
       row['organization'] = options.organization
       row['email']        = options.email
       row['location']     = options.location
       row['bias']         = options.bias
+
+    Actualizacion inteligente de los datos compartidos con EXIF, solo actualiza si not None.
+    La actualizacion de metadatos no necesita workdir, spolo ver cambios de etsado
+ 
  
  - integrar exiftool con subrpcess
    - solo leer una imagen => tabla separada de session_t

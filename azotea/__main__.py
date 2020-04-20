@@ -35,6 +35,7 @@ from .backup     import backup_list, backup_delete, backup_restore
 from .image      import image_list, image_export, image_reduce
 from .reorg      import reorganize_images
 from .session    import session_current, session_list
+from .changed    import changed_observer, changed_location, changed_camera, changed_image
 
 # -----------------------
 # Module global variables
@@ -136,17 +137,37 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 
-	parser_init = subparser.add_parser('init', help='init command')
-	parser_config = subparser.add_parser('config', help='config commands')
-	parser_image  = subparser.add_parser('image', help='image commands')
-	parser_database  = subparser.add_parser('database', help='database commands (mostly mainteinance)')
-	parser_back   = subparser.add_parser('backup', help='backup management')
-	parser_reorg  = subparser.add_parser('reorganize', help='reorganize commands')
+	parser_init     = subparser.add_parser('init', help='init command')
+	parser_config   = subparser.add_parser('config', help='config commands')
+	parser_image    = subparser.add_parser('image', help='image commands')
+	parser_database = subparser.add_parser('database', help='database commands (mostly mainteinance)')
+	parser_back     = subparser.add_parser('backup', help='backup management')
+	parser_reorg    = subparser.add_parser('reorganize', help='reorganize commands')
 	parser_session  = subparser.add_parser('session', help='session commands')
+	parser_changed  = subparser.add_parser('changed', help='notify change commands (only for automatized use)')
    
-	# -----------------------------------------
+	# ------------------------------------------
 	# 'init' does not have a second level parser
+	# ------------------------------------------
+
 	# -----------------------------------------
+	# Create second level parsers for 'changed'
+	# -----------------------------------------
+
+	subparser = parser_changed.add_subparsers(dest='subcommand')
+
+	cho = subparser.add_parser('observer', help="Notify changes of observer metadata")
+	cho.add_argument('-k', '--key',  type=str, required=True, help='who changed')
+	
+	chl = subparser.add_parser('location', help="Notify changes of location metadata")
+	chl.add_argument('-k', '--key',  type=str, required=True, help='who changed')
+
+	chc = subparser.add_parser('camera',   help="Notify changes of camera metadata")
+	chc.add_argument('-k', '--key',  type=str, required=True, help='who changed')
+
+	chi = subparser.add_parser('image',    help="Notify changes of image metadata")
+	chi.add_argument('-k', '--key',  type=str, required=True, help='who changed')
+	
 
 	# -----------------------------------------
 	# Create second level parsers for 'database'
