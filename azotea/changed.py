@@ -53,7 +53,7 @@ log = logging.getLogger("azotea")
 
 def changed_observer(connection, options):
 	log.info("Changed observer metadata in %s", options.key)
-    config_path = os.path.join(AZOTEA_CFG_DIR, options.key + '.ini')
+	config_path = os.path.join(AZOTEA_CFG_DIR, options.key + '.ini')
 
 def changed_location(connection, options):
 	log.info("Changed location metadata in %s", options.key)
