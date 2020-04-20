@@ -65,7 +65,7 @@ def load_config_file(filepath):
     options['email']         = parser.get("observer","email")
     options['focal_length']  = parser.get("camera","focal_length")
     options['f_number']      = parser.get("camera","f_number")
-    options['bias']          = parser.getint("camera","bias")
+    options['bias']          = parser.get("camera","bias")
     options['location']      = parser.get("location","location")
     options['roi']           = ROI(0, parser.getint("image","width"), 0, parser.getint("image","height"))
     options['scale']         = parser.get("image","scale")
@@ -73,6 +73,7 @@ def load_config_file(filepath):
     options['filter']        = parser.get("file","filter")
 
     # Handle empty keyword cases and transform them to None's
+    options['bias']          = valueOrNone(options['bias'], int)
     options['focal_length']  = valueOrNone(options['focal_length'], int)
     options['f_number']      = valueOrNone(options['f_number'], float)
     options['scale']         = valueOrNone(options['scale'], float)

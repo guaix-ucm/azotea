@@ -44,8 +44,9 @@ from .config     import load_config_file, merge_options
 # values for the 'state' column in table
 
 REGISTERED       = 0
-RAW_STATS        = 1
-DARK_SUBSTRACTED = 2
+STATS_COMPUTED   = 1
+METADATA_UPDATED = 3
+DARK_SUBSTRACTED = 3
 
 # Values for the 'tyoe' column
 LIGHT_FRAME = "LIGHT"
@@ -94,7 +95,7 @@ def classification_algorithm2(name,  file_path, options):
 
 
 def session_processed(connection, session):
-	row = {'session': session, 'state': RAW_STATS}
+	row = {'session': session, 'state': STATS_COMPUTED}
 	cursor = connection.cursor()
 	cursor.execute('''
 		SELECT COUNT(*) 
@@ -146,7 +147,7 @@ def find_by_hash(connection, hash):
 
 
 def image_session_state_reset(connection, session):
-	row = {'session': session, 'state': RAW_STATS, 'new_state': REGISTERED, 'type': UNKNOWN}
+	row = {'session': session, 'state': STATS_COMPUTED, 'new_state': REGISTERED, 'type': UNKNOWN}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -476,6 +477,7 @@ def stats_update_db(connection, rows):
 			exptime             = :exptime,      -- EXIF
 			focal_length        = :focal_length, -- EXIF
 			f_number            = :f_number,     -- EXIF
+			bias                = :bias,         -- EXIF
 			aver_raw_signal_R1  = :aver_raw_signal_R1, 
 			aver_raw_signal_G2  = :aver_raw_signal_G2, 
 			aver_raw_signal_G3  = :aver_raw_signal_G3,
@@ -490,7 +492,7 @@ def stats_update_db(connection, rows):
 
 
 def stats_session_iterable(connection, session):
-	row = {'session': session, 'state': RAW_STATS}
+	row = {'session': session, 'state': STATS_COMPUTED}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -517,15 +519,12 @@ def do_stats(connection, session, work_dir, options):
 		image.read()
 		row = image.stats()
 		row['hash']         = hsh
-		row['state']        = RAW_STATS
-		row['observer']     = options.observer
-		row['organization'] = options.organization
-		row['email']        = options.email
-		row['location']     = options.location
+		row['state']        = STATS_COMPUTED
 		row['model']        = metadata['model']
 		row['iso']          = metadata['iso']
 		row['tstamp']       = metadata['tstamp']
 		row['exptime']      = metadata['exptime']
+		row['bias']         = metadata['bias']
 		row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
 		row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
 		rows.append(row)
@@ -538,46 +537,45 @@ def do_stats(connection, session, work_dir, options):
 	return stats_computed_flag
 
 
-# ----------
-# Bias Check
-# ----------
+# ---------------
+# Metadata Update
+# ---------------
 
-def bias_check_update(connection, observer, bias):
-	row = {'observer': observer, 'new_bias': bias}
+
+def do_metadata(connection, session, options):
+	log.info("Updating Global Metadata")
 	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		SELECT COUNT(*)
-		FROM image_t
-		WHERE model == (SELECT DISTINCT model FROM image_t WHERE observer == :observer)
-		AND observer == :observer
-		AND bias  != :new_bias
-		''', row)
-	return cursor.fetchone()[0]
-
-
-def bias_update_db(connection, observer, bias):
-	row = {'observer': observer, 'new_bias': bias}
-	cursor = connection.cursor()
-	cursor.execute(
-		'''
-		UPDATE image_t
-		SET bias = :new_bias
-		WHERE model == (SELECT DISTINCT model FROM image_t WHERE observer = :observer)
-		AND observer == :observer
-		AND bias != :new_bias
-		''', row)
-	return cursor.fetchone()[0]
-
-
-def do_bias(connection, options):
-	bias_changed = bias_check_update(connection, options.observer, options.bias)
-	if bias_changed:
-		log.warning("Camera bias changed to %d for observer %s", option.bias, options.observer)
-		bias_update_db(connection, options.observer, options.bias)
+	row = vars(options)
+	row['state'] = METADATA_UPDATED
+	row['session'] = session
+	if options.bias is not None:
+		cursor.execute('''
+			UPDATE image_t SET bias = :bias
+			WHERE session = :session
+			AND   state   < :state
+			AND   bias IS NULL
+			''', row)
+	cursor.execute('''
+		UPDATE image_t 
+		SET 
+			observer     = :observer,
+			organization = :organization
+			email        = :email
+			location     = :location
+			state        = :state
+		WHERE session = :session
+		AND   state   < :state
+			''', row)
+	connection.commit()
+	
+	if cursor.rowcount > 0:
+		log.info("Updated for %03d images with metadata".cursor.rowcount)
+		stats_update_db(connection, rows)
+		metadata_updated_flag = True
 	else:
-		log.info("No Camera bias change for observer %s", options.observer)
-	return bias_changed
+		log.info("No image metadata was updated")
+		metadata_updated_flag = False
+	return metadata_updated_flag
 
 
 # -----------------------------
@@ -586,7 +584,7 @@ def do_bias(connection, options):
 
 
 def master_dark_db_update_all(connection, session):
-	row = {'type': DARK_FRAME, 'state': RAW_STATS}
+	row = {'type': DARK_FRAME, 'state': STATS_COMPUTED}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -628,7 +626,7 @@ def master_dark_db_update_all(connection, session):
 
 
 def master_dark_db_update_session(connection, session):
-	row = {'type': DARK_FRAME, 'state': RAW_STATS, 'session': session}
+	row = {'type': DARK_FRAME, 'state': STATS_COMPUTED, 'session': session}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -671,7 +669,7 @@ def master_dark_db_update_session(connection, session):
 
 
 def dark_update_columns(connection, session):
-	row = {'type': LIGHT_FRAME, 'session': session, 'state': RAW_STATS, 'new_state': DARK_SUBSTRACTED}
+	row = {'type': LIGHT_FRAME, 'session': session, 'state': STATS_COMPUTED, 'new_state': DARK_SUBSTRACTED}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -725,7 +723,7 @@ VIEW_HEADERS = [
 		]
 
 def export_session_iterable(connection, session):
-	row = {'session': session, 'state': RAW_STATS, 'type': LIGHT_FRAME}
+	row = {'session': session, 'state': STATS_COMPUTED, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -757,7 +755,7 @@ def export_session_iterable(connection, session):
 	return cursor
 
 def export_all_iterable(connection):
-	row = {'state': RAW_STATS, 'type': LIGHT_FRAME}
+	row = {'state': STATS_COMPUTED, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -1290,6 +1288,7 @@ def do_image_reduce(connection, options):
 	
 	if options.reset:
 		image_session_state_reset(connection, session)
+	
 	# Step 2
 	try:
 		stats_computed = do_stats(connection, session, options.work_dir, options)
@@ -1303,16 +1302,16 @@ def do_image_reduce(connection, options):
 		raise
 
 	# Step 3
-	do_classify(connection, session, options.work_dir, options)
+	metadata_updated = do_metadata(connection, session, options)
 
 	# Step 4
-	bias_changed = do_bias(connection, options)
+	do_classify(connection, session, options.work_dir, options)
 
 	# Step 5
 	do_apply_dark(connection, session, options)
 
 	# Step 6
-	if register_deleted or stats_computed or bias_changed:
+	if register_deleted or stats_computed or metadata_updated:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
 		log.info("NO CSV file generation is needed for session %d", session)

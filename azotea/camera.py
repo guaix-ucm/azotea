@@ -133,6 +133,8 @@ class CameraImage(object):
             'exptime'        ,
             'focal_length'   ,
             'f_number'       ,
+            'bias'           ,
+            'type'           ,
             'aver_raw_signal_R1',
             'vari_raw_signal_R1',
             'aver_raw_signal_G2',
@@ -182,6 +184,7 @@ class CameraImage(object):
         self.metadata['focal_length'] = self.getFocalLength()
         self.metadata['f_number']     = self.getFNumber()
         self.metadata['exptime'], self.metadata['type'] = self.getExposureTime()
+        self.metadata['bias']         = None
         return self.metadata
 
 
