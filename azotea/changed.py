@@ -58,7 +58,7 @@ def do_change(connection, key, state):
 		''', row)
 	connection.commit()
 	if cursor.rowcount > 0:
-		log.info("Updated for %03d images with metadata".cursor.rowcount)
+		log.info("Updated processing state of %03d images for %s", cursor.rowcount, key)
 	
 
 # =====================

@@ -525,8 +525,8 @@ def do_stats(connection, session, work_dir, options):
 		row['tstamp']       = metadata['tstamp']
 		row['exptime']      = metadata['exptime']
 		row['bias']         = metadata['bias']
-		row['focal_length'] = options.focal_length if metadata['focal_length'] is None else metadata['focal_length']
-		row['f_number']     = options.f_number if metadata['f_number'] is None else metadata['f_number']
+		row['focal_length'] = metadata['focal_length']
+		row['f_number']     = metadata['f_number']
 		rows.append(row)
 	if rows:
 		counter.end("Statistics for %03d images done")
@@ -553,15 +553,15 @@ def do_metadata(connection, session, options):
 			UPDATE image_t SET bias = :bias
 			WHERE session = :session
 			AND   state   < :state
-			AND   bias IS NULL
+			AND   bias != 0
 			''', row)
 	cursor.execute('''
 		UPDATE image_t 
 		SET 
 			observer     = :observer,
-			organization = :organization
-			email        = :email
-			location     = :location
+			organization = :organization,
+			email        = :email,
+			location     = :location,
 			state        = :state
 		WHERE session = :session
 		AND   state   < :state
@@ -569,8 +569,7 @@ def do_metadata(connection, session, options):
 	connection.commit()
 	
 	if cursor.rowcount > 0:
-		log.info("Updated for %03d images with metadata".cursor.rowcount)
-		stats_update_db(connection, rows)
+		log.info("Updated Global Metadata for %03d images", cursor.rowcount)
 		metadata_updated_flag = True
 	else:
 		log.info("No image metadata was updated")

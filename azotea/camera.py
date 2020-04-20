@@ -184,7 +184,7 @@ class CameraImage(object):
         self.metadata['focal_length'] = self.getFocalLength()
         self.metadata['f_number']     = self.getFNumber()
         self.metadata['exptime'], self.metadata['type'] = self.getExposureTime()
-        self.metadata['bias']         = None
+        self.metadata['bias']         = 0   # Maybe one day we could extract is from EXIF
         return self.metadata
 
 
