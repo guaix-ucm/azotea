@@ -580,8 +580,7 @@ def do_metadata(connection, session, options):
 			observer     = :observer,
 			organization = :organization,
 			email        = :email,
-			location     = :location,
-			state        = :state
+			location     = :location
 		WHERE session = :session
 		AND   state   < :state
 			''', row)
@@ -598,7 +597,7 @@ def do_metadata(connection, session, options):
 
 	# Conditionally changes focal lengthn if given by an event
 	if flags & CAMERA_CHANGES and options.f_number is not None:
-		log.warning("Updating f/ number metadata")
+		log.info("Updating f/ number metadata")
 		cursor.execute('''
 			UPDATE image_t 
 			SET focal_length = :focal_length
@@ -607,13 +606,12 @@ def do_metadata(connection, session, options):
 			''', row)
 
 	# Conditionally chhanges observer and location if given by an event
-	if flags & OBSERVER_CHANGES and options.bias is not None:
-		log.warning("Updating bias metadata")
+	if flags & CAMERA_CHANGES and options.bias is not None:
+		log.info("Updating bias metadata")
 		cursor.execute('''
 			UPDATE image_t SET bias = :bias
 			WHERE session = :session
 			AND   state   < :state
-			AND   bias != 0
 			''', row)
 	
 	# Update state and clerar change flags
@@ -1222,7 +1220,7 @@ def view_master_dark_session_iterable(connection, session):
 		'''
 		SELECT 
 			session, N, roi,         
-			(max_exptime - min_exptime) <= :tolerence as good_flag,
+			(max_exptime - min_exptime) <= :tolerance as good_flag,
 			aver_R1, vari_R1,             
 			aver_G2, vari_G2,         
 			aver_G3, vari_G3,             
