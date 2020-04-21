@@ -809,6 +809,7 @@ def export_session_iterable(connection, session):
 		WHERE state >= :state
 		AND   type = :type
 		AND   session = :session
+		ORDER BY tstamp ASC
 		''', row)
 	return cursor
 
@@ -840,14 +841,18 @@ def export_all_iterable(connection):
 		FROM image_v
 		WHERE state >= :state
 		AND   type = :type
+		ORDER BY observer ASC, tstamp ASC
 		''', row)
 	return cursor
 
 
 def var2std(item):
-	'''From Variance to StdDev in seevral columns'''
+	'''From Variance to StdDev in several columns'''
 	index, value = item
-	return round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
+	value = round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
+	# Round the aver_signal channels too
+	value = round(value,1) if index in [12, 14, 16, 18] else value
+	return value
 
 
 def get_file_path(connection, session, work_dir, options):
@@ -893,7 +898,7 @@ def do_export_all(connection,  options):
 		for row in export_all_iterable(connection):
 			row = map(var2std, enumerate(row))
 			writer.writerow(row)
-	log.info("Saved data to global CSV file {0}".format(options.global_csv_file))
+	log.info("Saved data to global CSV file {0}".format(options.csv_file))
 
 # ==================================
 # Image List subcommands and options
