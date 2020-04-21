@@ -573,7 +573,7 @@ def do_metadata(connection, session, options):
 	flags = flags[0]
 	# Conditionally changes observer and location if given by an event
 	if flags & OBSERVER_CHANGES:
-		log.info("Updating metadata observer")
+		log.info("Updating metadata observer: %s, %s, %s", options.observer, options.organization, options.location)
 		cursor.execute('''
 		UPDATE image_t 
 		SET 
@@ -587,7 +587,7 @@ def do_metadata(connection, session, options):
 
 	# Conditionally changes focal lengthn if given by an event
 	if flags & CAMERA_CHANGES and options.focal_length is not None:
-		log.info("Updating focal length metadata")
+		log.info("Updating focal length metadata to %d", options.focal_length)
 		cursor.execute('''
 			UPDATE image_t 
 			SET focal_length = :focal_length
@@ -597,17 +597,17 @@ def do_metadata(connection, session, options):
 
 	# Conditionally changes focal lengthn if given by an event
 	if flags & CAMERA_CHANGES and options.f_number is not None:
-		log.info("Updating f/ number metadata")
+		log.info("Updating f/ number metadata to %d", options.f_number )
 		cursor.execute('''
 			UPDATE image_t 
-			SET focal_length = :focal_length
+			SET   f_number  = :f_number
 			WHERE session = :session
 			AND   state   < :state
 			''', row)
 
 	# Conditionally chhanges observer and location if given by an event
 	if flags & CAMERA_CHANGES and options.bias is not None:
-		log.info("Updating bias metadata")
+		log.info("Updating bias metadata to %d", options.bias)
 		cursor.execute('''
 			UPDATE image_t SET bias = :bias
 			WHERE session = :session
@@ -1254,7 +1254,7 @@ def view_dark_session_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, roi, bias 
+			name, roi, bias,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
@@ -1274,7 +1274,7 @@ def view_dark_all_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, roi, bias
+			name, roi, bias,
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
