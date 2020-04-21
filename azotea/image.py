@@ -1254,7 +1254,7 @@ def view_dark_session_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session, 
+			name, roi, bias 
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,
@@ -1274,7 +1274,7 @@ def view_dark_all_iterable(connection, session):
 	cursor.execute(
 		'''
 		SELECT 
-			name, session,
+			name, roi, bias
 			aver_raw_signal_R1, vari_raw_signal_R1,
 			aver_raw_signal_G2, vari_raw_signal_G2,
 			aver_raw_signal_G3, vari_raw_signal_G3,

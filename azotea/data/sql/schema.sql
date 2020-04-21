@@ -126,13 +126,13 @@ FROM image_t;
 CREATE TABLE IF NOT EXISTS master_dark_t
 (
     session             INTEGER,             -- session id
-    aver_R1             REAL    NOT NULL,    -- Red mean dark level in Red
+    aver_R1             REAL    NOT NULL,    -- Red mean dark level
     vari_R1             REAL    NOT NULL,    -- Red dark vari
     aver_G2             REAL    NOT NULL,    -- Green 1 mean dark level
     vari_G2             REAL    NOT NULL,    -- Green 1 dark variance
     aver_G3             REAL    NOT NULL,    -- Green 2 mean dark level
     vari_G3             REAL    NOT NULL,    -- Green 2 dark variance
-    aver_B4             REAL    NOT NULL,    -- Blue mean dark level in Blue
+    aver_B4             REAL    NOT NULL,    -- Blue mean dark level
     vari_B4             REAL    NOT NULL,    -- Blue dark variance
     min_exptime         REAL    NOT NULL,    -- Minimun session exposure time
     max_exptime         REAL    NOT NULL,    -- Maximun session exposure time
