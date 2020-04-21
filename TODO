@@ -1,20 +1,11 @@
 TO DO
- - ANXIBLE
-  - fragments: camera, observer, location, image
-  - notify parametrizado con el nombre del onservador (el nombre del .ini)
- - AZOTEA
-   Estados en orden REGISTERED, STATS COMPUTED, METADATA UPDATED, DARK SUBSTRACTED
-   azotea --config <fichero ini> changed [location|observer|camera|image]
-   Actualizar estoi en el paso metadata
-     row['observer']     = options.observer
-      row['organization'] = options.organization
-      row['email']        = options.email
-      row['location']     = options.location
-      row['bias']         = options.bias
-
-    Actualizacion inteligente de los datos compartidos con EXIF, solo actualiza si not None.
-    La actualizacion de metadatos no necesita workdir, spolo ver cambios de etsado
- 
+  - bias en el repor CSV
+  - gestion de cambio atrasado, con un nuevo campo en la BD
+  - service en el ansible de despliegue
+  - crear virtualenv en el ansible de despliegue
+  - port forwarding
+ - probar el image view (salian discordancias en el numer doe imagenes, nbo me acuerdo bien como)
+   y el cambio de bias
  
  - integrar exiftool con subrpcess
    - solo leer una imagen => tabla separada de session_t
@@ -33,10 +24,7 @@ TO DO
 - Completar modelos de canaras
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
-- fichero de log?,
-- patch management (list, apply)
-- Perparar todo para pasar a un modelo de estrella
-
+- patch management (list, apply) ?
 
 CASOS DE PRUEBA:
 2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
