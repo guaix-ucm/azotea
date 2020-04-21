@@ -295,6 +295,7 @@ def main():
 	try:
 		options = createParser().parse_args(sys.argv[1:])
 		setup(options)
+		log.info("======= AZOTEA {0} =======".format(__version__))
 		connection = open_database(DEF_DBASE)
 		create_database(connection, SQL_SCHEMA, SQL_DATA_DIR, SQL_TEST_STRING)
 		command      = options.command

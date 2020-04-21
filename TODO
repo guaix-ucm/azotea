@@ -1,8 +1,5 @@
 TO DO
-  - bias en el repor CSV
-  - gestion de cambio atrasado, con un nuevo campo en la BD
   - service en el ansible de despliegue
-  - crear virtualenv en el ansible de despliegue
   - port forwarding
  - probar el image view (salian discordancias en el numer doe imagenes, nbo me acuerdo bien como)
    y el cambio de bias

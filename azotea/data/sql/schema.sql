@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS image_t
     -- Processing state columns
     session             INTEGER NOT NULL, -- session identifier
     type                TEXT    NOT NULL, -- LIGHT or DARK
-    state               INTEGER NOT NULL REFERENCES state_t(state),            
+    state               INTEGER NOT NULL REFERENCES state_t(state),
+    meta_changes        INTEGER NOT NULL REFERENCES changes_t(flags),         
     PRIMARY KEY(hash)
 );
 
@@ -60,6 +61,11 @@ CREATE TABLE IF NOT EXISTS state_t (
     PRIMARY KEY(state)
 );
 
+CREATE TABLE IF NOT EXISTS changes_t (
+    flags              INTEGER,
+    label              TEXT,
+    PRIMARY KEY(flags)
+);
 
 ------------------------------------------------------------------------------------------------
 -- This View exists to automatically substract the dark levels and calculate resulting variances

@@ -42,11 +42,15 @@ from .config     import load_config_file, merge_options
 # ----------------
 
 # values for the 'state' column in table
-
 REGISTERED       = 0
 STATS_COMPUTED   = 1
 METADATA_UPDATED = 3
 DARK_SUBSTRACTED = 3
+
+# (bit) flags for the 'meta_changes' column in table
+NO_CHANGES       = 0
+CAMERA_CHANGES   = 1
+OBSERVER_CHANGES = 2
 
 # Values for the 'tyoe' column
 LIGHT_FRAME = "LIGHT"
@@ -219,13 +223,15 @@ def register_insert_image(connection, row):
 				hash,
 				session, 
 				type,
-				state
+				state,
+				meta_changes
 			) VALUES (
 				:name, 
 				:hash,
 				:session,
 				:type,
-				:state
+				:state,
+				:changes
 			)
 			''', row)
 	connection.commit()
@@ -241,13 +247,15 @@ def register_insert_images(connection, rows):
 				hash,
 				session,
 				type,
-				state
+				state,
+				meta_changes
 			) VALUES (
 				:name, 
 				:hash,
 				:session, 
 				:type,
-				:state
+				:state,
+				:changes
 			)
 			''', rows)
 	connection.commit()
@@ -313,7 +321,8 @@ def register_slow(connection, work_dir, names_list, session):
 	counter = LogCounter(N_COUNT)
 	for name, hsh in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'name': name, 'hash': hsh, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
+		row  = {'name': name, 'hash': hsh, 'session': session, 
+		'state': REGISTERED, 'type': UNKNOWN, 'changes': CAMERA_CHANGES + OBSERVER_CHANGES}
 		try:
 			register_insert_image(connection, row)
 		except sqlite3.IntegrityError as e:
@@ -331,7 +340,8 @@ def register_fast(connection, work_dir, names_list, session):
 	counter = LogCounter(N_COUNT)
 	for name, hsh in names_list:
 		file_path = os.path.join(work_dir, name)
-		row  = {'name': name, 'session': session, 'state': REGISTERED, 'type': UNKNOWN,}
+		row  = {'name': name, 'session': session, 
+		'state': REGISTERED, 'type': UNKNOWN, 'changes': CAMERA_CHANGES + OBSERVER_CHANGES}
 		row['hash'] = hsh
 		rows.append(row)
 		log.debug("Image %s being registered in database", row['name'])
@@ -541,21 +551,30 @@ def do_stats(connection, session, work_dir, options):
 # Metadata Update
 # ---------------
 
-
 def do_metadata(connection, session, options):
 	log.info("Updating Global Metadata")
-	cursor = connection.cursor()
 	row = vars(options)
-	row['state'] = METADATA_UPDATED
+	row['state']   = METADATA_UPDATED
 	row['session'] = session
-	if options.bias is not None:
-		cursor.execute('''
-			UPDATE image_t SET bias = :bias
-			WHERE session = :session
-			AND   state   < :state
-			AND   bias != 0
-			''', row)
+	row['changes'] = NO_CHANGES
+	cursor = connection.cursor()
 	cursor.execute('''
+			SELECT meta_changes
+			FROM image_t
+			WHERE session = :session
+			LIMIT 1
+			''', row)
+	flags = cursor.fetchone()
+	if flags is None:
+		log.info("No image metadata was updated")
+		metadata_updated_flag = False
+		return metadata_updated_flag
+	
+	flags = flags[0]
+	# Conditionally changes observer and location if given by an event
+	if flags & OBSERVER_CHANGES:
+		log.info("Updating metadata observer")
+		cursor.execute('''
 		UPDATE image_t 
 		SET 
 			observer     = :observer,
@@ -563,6 +582,46 @@ def do_metadata(connection, session, options):
 			email        = :email,
 			location     = :location,
 			state        = :state
+		WHERE session = :session
+		AND   state   < :state
+			''', row)
+
+	# Conditionally changes focal lengthn if given by an event
+	if flags & CAMERA_CHANGES and options.focal_length is not None:
+		log.info("Updating focal length metadata")
+		cursor.execute('''
+			UPDATE image_t 
+			SET focal_length = :focal_length
+			WHERE session = :session
+			AND   state   < :state
+			''', row)
+
+	# Conditionally changes focal lengthn if given by an event
+	if flags & CAMERA_CHANGES and options.f_number is not None:
+		log.warning("Updating f/ number metadata")
+		cursor.execute('''
+			UPDATE image_t 
+			SET focal_length = :focal_length
+			WHERE session = :session
+			AND   state   < :state
+			''', row)
+
+	# Conditionally chhanges observer and location if given by an event
+	if flags & OBSERVER_CHANGES and options.bias is not None:
+		log.warning("Updating bias metadata")
+		cursor.execute('''
+			UPDATE image_t SET bias = :bias
+			WHERE session = :session
+			AND   state   < :state
+			AND   bias != 0
+			''', row)
+	
+	# Update state and clerar change flags
+	cursor.execute('''
+		UPDATE image_t 
+		SET 
+			state        = :state,
+			meta_changes = :changes
 		WHERE session = :session
 		AND   state   < :state
 			''', row)
