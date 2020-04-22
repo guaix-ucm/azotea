@@ -129,7 +129,7 @@ def myopen(name, *args):
 
 def hash(filepath):
 	'''Compute a hash from the image'''
-	BLOCK_SIZE = 65536*65536 # The size of each read from the file
+	BLOCK_SIZE = 1024*1024 # The size of each read from the file
 	file_hash = hashlib.sha256()
 	with open(filepath, 'rb') as f:
 		block = f.read(BLOCK_SIZE) 
