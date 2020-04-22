@@ -45,6 +45,9 @@ log = logging.getLogger("azotea")
 def valueOrNone(string, typ):
     return None if not len(string) else typ(string)
 
+def valueOrDefault(string, typ, default):
+    return default if not len(string) else typ(string)
+
 def load_config_file(filepath):
     '''
     Load options from configuration file whose path is given
@@ -67,7 +70,13 @@ def load_config_file(filepath):
     options['f_number']      = parser.get("camera","f_number")
     options['bias']          = parser.get("camera","bias")
     options['location']      = parser.get("location","location")
-    options['roi']           = ROI(0, parser.getint("image","width"), 0, parser.getint("image","height"))
+    
+    x0 = parser.get("image","x0"); x0 = valueOrDefault(x0, int, 0)
+    y0 = parser.get("image","y0"); y0 = valueOrDefault(y0, int, 0)
+    width  = parser.getint("image","width")
+    height = parser.getint("image","height")
+    options['roi']           = ROI(x0, x0 + width, y0, y0 + height)
+
     options['scale']         = parser.get("image","scale")
     options['dark_roi']      = parser.get("image","dark_roi")
     options['filter']        = parser.get("file","filter")

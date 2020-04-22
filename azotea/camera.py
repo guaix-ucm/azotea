@@ -240,13 +240,6 @@ class CameraImage(object):
         self._center_roi()
 
 
-    def center_roi(self):
-        '''image needs to be read beforehand'''
-        if self.roi.x1 == 0 and self.roi.y1 == 0:
-            self._center_roi()
-        return self.roi
-
-
     def setROI(self, roi):
         if type(roi) == str:
             self.roi = ROI.strproi(roi_str)
@@ -336,11 +329,12 @@ class CameraImage(object):
 
 
     def _center_roi(self):
-        '''Sets the Region of interest around the image center'''
-        width, height = self.roi.dimensions()
-        x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
-        y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
-        self.roi += Point(x,y)  # Shift ROI using this point
+        '''Conditionally sets the Region of interest around the image center'''
+        if self.roi.x1 == 0 and self.roi.y1 == 0:
+            width, height = self.roi.dimensions()
+            x = np.int(self.signal[G2].shape[1] / 2 - width//2)   # atento: eje X  shape[1]
+            y = np.int(self.signal[G2].shape[0] / 2 - height//2)  # atento: eje Y  shape[0]
+            self.roi += Point(x,y)  # Shift ROI using this point
         
 
     def _extract_dark(self):
