@@ -94,4 +94,4 @@ def changed_camera(connection, options):
 
 def changed_image(connection, options):
 	log.info("Changed image metadata in %s", options.key)
-	do_change(connection, options.key, REGISTERED. NO_CHANGES)
+	do_change(connection, options.key, REGISTERED, NO_CHANGES)
