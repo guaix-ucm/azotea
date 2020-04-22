@@ -235,7 +235,7 @@ def register_insert_image(connection, row):
 			)
 			''', row)
 	connection.commit()
-
+	
 
 def register_insert_images(connection, rows):
 	'''fast version'''
@@ -259,6 +259,7 @@ def register_insert_images(connection, rows):
 			)
 			''', rows)
 	connection.commit()
+	log.info("Registered %d / %d images in database", cursor.rowcount, len(rows))
 
 
 def candidates(connection, work_dir, filt, session):
@@ -274,12 +275,11 @@ def candidates(connection, work_dir, filt, session):
 	# 	WHERE hash NOT IN (SELECT hash FROM image_t)
 	# 	'''
 	# 	)
-	cursor.execute(
-		'''
-		SELECT name, hash
-		FROM candidate_t
-		'''
-		)
+
+	# This query will have far less elements to fetch
+	# This will introduce duplicates which will be rejected by the INSERT or IGNORE
+	# when inserting new images
+	cursor.execute("SELECT name, hash FROM candidate_t")
 	result = cursor.fetchall()
 	if result:
 		#names_to_add, = zip(*result)
@@ -314,7 +314,7 @@ def register_delete_images(connection, rows):
 			WHERE hash  == :hash
 			''', rows)
 	connection.commit()
-
+	log.info("Deleted %d / %d images from database", cursor.rowcount, len(rows))
 
 
 def register_slow(connection, work_dir, names_list, session):
@@ -330,14 +330,13 @@ def register_slow(connection, work_dir, names_list, session):
 			name2, = find_by_hash(connection, row['hash'])
 			log.warning("Duplicate => %s EQUALS %s", file_path, name2)
 		else:
-			counter.tick("Registered %03d images in database (slow method)")
+			counter.tick("Registered %03d images in database (slow method)",level=logging.DEBUG)
 			log.debug("%s registered in database", row['name'])
 	counter.end("Registered %03d images in database (slow method)")
 
 
 def register_fast(connection, work_dir, names_list, session):
 	rows = []
-	counter = LogCounter(N_COUNT)
 	for name, hsh in names_list:
 		file_path = os.path.join(work_dir, name)
 		row  = {'name': name, 'session': session, 
@@ -345,20 +344,15 @@ def register_fast(connection, work_dir, names_list, session):
 		row['hash'] = hsh
 		rows.append(row)
 		log.debug("Image %s being registered in database", row['name'])
-		counter.tick("Registered %03d images in database")
 	register_insert_images(connection, rows)
-	counter.end("Registered %03d images in database")
 	
 
 def register_unregister(connection, names_list, session):
 	rows = []
-	counter = LogCounter(N_COUNT)
 	log.info("Unregistering images from database")
 	for name, hsh in names_list:
 		rows.append({'session': session, 'name': name, 'hash': hsh})
 		log.info("Image %s being removed from database", name)
-		counter.tick("Removed %02d images from database (previous session)")
-	counter.end("Removed %02d images from database (previous session)")
 	register_delete_images(connection, rows)
 	
 
@@ -388,12 +382,11 @@ def register_log_kept(connection, session):
 			log.info("And %d more images being kept in database", count - ARBITRARY_NUMBER)
 
 
-
-# Tal como esta monatdo ahora candidates(), es imposible introducir una imagen
+# Tal como esta montado ahora candidates(), es imposible introducir una imagen
 # duplicada porque se cumprueba primero que su hash no esta ya en la BD
-# Y por tanbto register_low() es inneecsario.
+# Y por tanbo register_low() es innecesario.
 # Sin embargo candidates() podría enlentecerse al aumentar el número de imagenes de la BD
-# Por lo que al final register_slow() sería mejor opcion
+# Por lo que al final register_slow() podría ser una opcion
 def do_register(connection, work_dir, filt, session):
 	register_deleted = False
 	names_to_add, names_to_del = candidates(connection, work_dir, filt, session)
@@ -457,14 +450,12 @@ def do_classify(connection, session, work_dir, options):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm2(name, file_path, options)
 		log.debug("%s is type %s", name, row['type'])
-		counter.tick("Classified %03d images")
+		counter.tick("Classified %03d images",level=logging.DEBUG)
 		rows.append(row)
 	if rows:
 		classify_update_db(connection, rows)
 		counter.end("Classified %03d images")
 		classify_log_type(connection, session)
-
-
 	else:
 		log.info("No image type classification is needed")
 
@@ -861,10 +852,9 @@ def get_file_path(connection, session, work_dir, options):
 	middle = os.path.basename(work_dir)
 	if middle == '':
 		middle = os.path.basename(work_dir[:-1])
-	if options.csv_file_prefix:
-		name = "-".join([options.csv_file_prefix, "session", middle + '.csv'])
-	else:
-		name = "-".join(["session", middle + '.csv'])
+	prefix, ext = os.path.splitext(options.config)
+	prefix = os.path.basename(prefix)
+	name = "-".join([prefix, "session", middle + '.csv'])
 	return os.path.join(AZOTEA_CSV_DIR, name)
 	
 
@@ -1410,7 +1400,6 @@ def image_reduce(connection, options):
 			for name, path in dirs:
 				options.config   = os.path.join(AZOTEA_CFG_DIR, name + '.ini')
 				options.work_dir = path
-				options.csv_file_prefix = name
 				try:
 					do_image_multidir_reduce(connection, options)
 				except IOError as e:

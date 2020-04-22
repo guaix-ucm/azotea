@@ -112,10 +112,11 @@ class LogCounter(object):
         self.lvl = level
         self.i   = 0
 
-    def tick(self, *args):
+    def tick(self, *args, **kargs):
+        lvl = kargs.get('level', self.lvl)
         self.i += 1
         if (self.i % self.N) == 0:
-            log.log(self.lvl, *args, self.i)
+            log.log(lvl, *args, self.i)
 
     def end(self, *args):
         log.log(self.lvl, *args, self.i)
