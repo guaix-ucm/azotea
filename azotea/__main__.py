@@ -126,7 +126,7 @@ def createParser():
 	group1 = parser.add_mutually_exclusive_group()
 	group1.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
 	group1.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
-	parser.add_argument('--no-console', action='store_true', help='Do not log to console.')
+	parser.add_argument('-nk','--no-console', action='store_true', help='Do not log to console.')
 	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
 	parser.add_argument('--camera', type=str, default=DEF_CAMERA, help='Optional alternate camera configuration file')
 	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate global configuration file')
@@ -276,7 +276,7 @@ def createParser():
 	ird.add_argument('-w' ,'--work-dir',  type=str, required=True, help='Input working directory')
 	ird.add_argument('-r' ,'--reset',     action="store_true",     help="Reprocess from start")
 	ird.add_argument('-m' ,'--multiuser', action="store_true",     help="Multi-user reduction pipeline flag")
-	ird.add_argument('--csv-file',        type=str, default=None,  help='Optional session CSV file to export')
+	ird.add_argument('--csv-dir',         type=str, default=AZOTEA_CSV_DIR,  help='Optional directory where the CSV is placed')
 
 	iex = subparser.add_parser('export',  help='export the whole database to a CSV file')
 	iex.add_argument('--csv-file',        type=str, default=DEF_GLOBAL_CSV,  help='Optional session CSV file to export')

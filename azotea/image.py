@@ -845,9 +845,6 @@ def var2std(item):
 
 
 def get_file_path(connection, session, work_dir, options):
-	# respect user's wishes above all
-	if options.csv_file:
-		return options.csv_file
 	# This is for automatic reductions mainly
 	middle = os.path.basename(work_dir)
 	if middle == '':
@@ -855,7 +852,7 @@ def get_file_path(connection, session, work_dir, options):
 	prefix, ext = os.path.splitext(options.config)
 	prefix = os.path.basename(prefix)
 	name = "-".join([prefix, "session", middle + '.csv'])
-	return os.path.join(AZOTEA_CSV_DIR, name)
+	return os.path.join(options.csv_dir, name)
 	
 
 def do_export_work_dir(connection, session, work_dir, options):
