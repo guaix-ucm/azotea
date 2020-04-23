@@ -371,7 +371,8 @@ class CameraImage(object):
         result = subprocess.run(["exiftool", self.filepath],
                                 stdout=subprocess.PIPE, check=True)
         lines = result.stdout.decode('utf-8').split('\n')
-        self.exif = {}
+        # Parse lines using colon as delimiter
+        # and updates the self.exif dictionary
         exif_re = re.compile(r'^([^:]+):(.+)')
         for line in lines:
             matchobj = exif_re.search(line)
@@ -379,6 +380,8 @@ class CameraImage(object):
                 key   = matchobj.group(1).strip()
                 value = matchobj.group(2).strip()
                 self.exif[key] = value
+
+        # Emulates the expected EXIF keywords used in the main EXIF library
         self.exif["Image Model"]          = self.exif["Camera Model Name"]
         self.exif["EXIF ISOSpeedRatings"] = self.exif["ISO"]
         self.exif["Image DateTime"]       = self.exif["Date/Time Original"]
