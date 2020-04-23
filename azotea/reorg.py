@@ -81,7 +81,7 @@ def scan_images(options):
 
 
 def create_dest_directories(output_dir_set):
-	log.info("creating {0} output directories".format(len(output_dir_set)))
+	log.info("creating %d output directories", len(output_dir_set))
 	for directory in output_dir_set:
 		if not os.path.isdir(directory):
 			os.makedirs(directory)
@@ -108,5 +108,8 @@ def copy_files(image_list):
 def reorganize_images(connection, options):
 	connection.close()
 	output_dir_set, image_list = scan_images(options)
-	create_dest_directories(output_dir_set)
-	copy_files(image_list)
+	if not options.dry_run:
+		create_dest_directories(output_dir_set)
+		copy_files(image_list)
+	else:
+		log.info("Would create %d directories", len(output_dir_set))

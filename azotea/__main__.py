@@ -211,6 +211,7 @@ def createParser():
 	rgi = subparser.add_parser('images',  help="Reorganize images into observation nights")
 	rgi.add_argument('-i', '--input-dir',  type=str, required=True , help='Images input directory')
 	rgi.add_argument('-o','--output-dir', type=str, required=True , help='Images output base diretory')
+	rgi.add_argument('-d', '--dry-run',   action='store_true', help='Show how many directories, do not copy.')
 
 
 	# ----------------------------------------
