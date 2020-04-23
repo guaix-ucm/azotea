@@ -17,6 +17,7 @@ import datetime
 import hashlib
 import math
 import re
+import subprocess
 
 try:
     # Python 2
@@ -59,6 +60,7 @@ BG_X2 = 550
 BG_Y2 = 350
 
 FRACTION_REGEXP = re.compile(r'(\d+)/(\d+)')
+
 
 # -----------------------
 # Module global variables
@@ -175,7 +177,9 @@ class CameraImage(object):
             self.exif = exifread.process_file(f, details=False)
             logging.disable(logging.NOTSET)
         if not self.exif:
-            raise MetadataError(self.filepath)
+            self._exiftool()
+            #raise MetadataError(self.filepath)
+
         self.metadata['name']         = self.name
         self.model                    = str(self.exif.get('Image Model'))
         self.metadata['model']        = self.model
@@ -361,3 +365,28 @@ class CameraImage(object):
         mydict['vari_dark_G3'] = g3_vari_dark
         mydict['aver_dark_B4'] = b4_aver_dark
         mydict['vari_dark_B4'] = b4_vari_dark
+
+    def _exiftool(self):
+        '''Load EXIF Data using exiftool subprocess'''
+        result = subprocess.run(["exiftool", self.filepath],
+                                stdout=subprocess.PIPE, check=True)
+        lines = result.stdout.decode('utf-8').split('\n')
+        self.exif = {}
+        exif_re = re.compile(r'^([^:]+):(.+)')
+        for line in lines:
+            matchobj = exif_re.search(line)
+            if matchobj:
+                key   = matchobj.group(1).strip()
+                value = matchobj.group(2).strip()
+                self.exif[key] = value
+        self.exif["Image Model"]          = self.exif["Camera Model Name"]
+        self.exif["EXIF ISOSpeedRatings"] = self.exif["ISO"]
+        self.exif["Image DateTime"]       = self.exif["Date/Time Original"]
+        # Focal length requires additional parsing
+        focal_re = re.compile(r'^([^ ]+)')
+        matchobj = focal_re.search(self.exif["Focal Length"])
+        focal = int(float(matchobj.group(1)))
+        self.exif["EXIF FocalLength"]     = focal
+        self.exif["EXIF FNumber"]         = self.exif["F Number"]
+        self.exif["EXIF ExposureTime"]    = self.exif["Exposure Time"]
+       
