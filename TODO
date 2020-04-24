@@ -1,14 +1,4 @@
 TO DO
-
-  - port forwarding
- - probar el image view (salian discordancias en el numer doe imagenes, nbo me acuerdo bien como)
-   y el cambio de bias
- 
- - integrar exiftool con subrpcess
-   - solo leer una imagen => tabla separada de session_t
-- update time de procesado?
-
-- ejecutar los caso de prueba listados
   
   - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
   - emplear el filter(), map() reduce() para mapear los atributos de interes y ver que ha cambiado

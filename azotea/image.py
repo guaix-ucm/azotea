@@ -130,7 +130,7 @@ def myopen(name, *args):
 def hash(filepath):
 	'''Compute a hash from the image'''
 	BLOCK_SIZE = 1024*1024 # The size of each read from the file
-	file_hash = hashlib.sha256()
+	file_hash = hashlib.blake2b()
 	with open(filepath, 'rb') as f:
 		block = f.read(BLOCK_SIZE) 
 		while len(block) > 0:
@@ -510,6 +510,7 @@ def do_stats(connection, session, work_dir, options):
 	camera_cache = CameraCache(options.camera)
 	rows = []
 	counter = LogCounter(N_COUNT)
+	CameraImage.ExiftoolFixed = False
 	log.info("Computing image statistics")
 	for name, hsh in stats_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
@@ -535,6 +536,8 @@ def do_stats(connection, session, work_dir, options):
 		stats_computed_flag = True
 	else:
 		log.info("No image statistics to be computed")
+	if CameraImage.ExiftoolFixed:
+		log.warning("exiftool was used to read EXIF metadata")
 	return stats_computed_flag
 
 

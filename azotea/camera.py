@@ -125,6 +125,8 @@ class CameraCache(object):
 
 class CameraImage(object):
 
+    ExiftoolFixed = False
+
     HEADERS = [
             'tstamp'         ,
             'name'           ,
@@ -392,4 +394,6 @@ class CameraImage(object):
         self.exif["EXIF FocalLength"]     = focal
         self.exif["EXIF FNumber"]         = self.exif["F Number"]
         self.exif["EXIF ExposureTime"]    = self.exif["Exposure Time"]
+        CameraImage.ExiftoolFixed = True
+
        
