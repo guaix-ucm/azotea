@@ -129,8 +129,11 @@ def myopen(name, *args):
 
 def hash(filepath):
 	'''Compute a hash from the image'''
-	BLOCK_SIZE = 1024*1024 # The size of each read from the file
-	file_hash = hashlib.blake2b()
+	BLOCK_SIZE = 1048576 # 1MByte, the size of each read from the file
+	# Using the maximun digest size of 64 bytes takes 4 times
+	# So we take a compromise of reducing to 16 bytes, 
+	# with an increasing risk of hash collisions 1/2^128 * 100%
+	file_hash = hashlib.blake2b(digest_size=16)
 	with open(filepath, 'rb') as f:
 		block = f.read(BLOCK_SIZE) 
 		while len(block) > 0:
