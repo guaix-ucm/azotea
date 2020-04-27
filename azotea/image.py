@@ -130,10 +130,14 @@ def myopen(name, *args):
 def hash(filepath):
 	'''Compute a hash from the image'''
 	BLOCK_SIZE = 1048576 # 1MByte, the size of each read from the file
+	
 	# Using the maximun digest size of 64 bytes takes 4 times
 	# So we take a compromise of reducing to 16 bytes, 
 	# with an increasing risk of hash collisions 1/2^128 * 100%
-	file_hash = hashlib.blake2b(digest_size=16)
+	# md5() was the fastest algorithm I've tried
+	
+	#file_hash = hashlib.blake2b(digest_size=16)
+	file_hash = hashlib.md5()
 	with open(filepath, 'rb') as f:
 		block = f.read(BLOCK_SIZE) 
 		while len(block) > 0:
@@ -482,14 +486,14 @@ def stats_update_db(connection, rows):
 			focal_length        = :focal_length, -- EXIF
 			f_number            = :f_number,     -- EXIF
 			bias                = :bias,         -- EXIF
-			aver_raw_signal_R1  = :aver_raw_signal_R1, 
-			aver_raw_signal_G2  = :aver_raw_signal_G2, 
-			aver_raw_signal_G3  = :aver_raw_signal_G3,
-			aver_raw_signal_B4  = :aver_raw_signal_B4,
-			vari_raw_signal_R1  = :vari_raw_signal_R1,
-			vari_raw_signal_G2  = :vari_raw_signal_G2,
-			vari_raw_signal_G3  = :vari_raw_signal_G3,
-			vari_raw_signal_B4  = :vari_raw_signal_B4 
+			aver_signal_R1  = :aver_signal_R1, 
+			aver_signal_G2  = :aver_signal_G2, 
+			aver_signal_G3  = :aver_signal_G3,
+			aver_signal_B4  = :aver_signal_B4,
+			vari_signal_R1  = :vari_signal_R1,
+			vari_signal_G2  = :vari_signal_G2,
+			vari_signal_G3  = :vari_signal_G3,
+			vari_signal_B4  = :vari_signal_B4 
 		WHERE hash = :hash
 		''', rows)
 	connection.commit()
@@ -660,14 +664,14 @@ def master_dark_db_update_all(connection, session):
 			session, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(aver_raw_signal_R1 - bias), 
-			AVG(aver_raw_signal_G2 - bias), 
-			AVG(aver_raw_signal_G3 - bias), 
-			AVG(aver_raw_signal_B4 - bias),
-			SUM(vari_raw_signal_R1)/COUNT(*),
-			SUM(vari_raw_signal_G2)/COUNT(*),
-			SUM(vari_raw_signal_G3)/COUNT(*),
-			SUM(vari_raw_signal_B4)/COUNT(*),
+			AVG(aver_signal_R1 - bias), 
+			AVG(aver_signal_G2 - bias), 
+			AVG(aver_signal_G3 - bias), 
+			AVG(aver_signal_B4 - bias),
+			SUM(vari_signal_R1)/COUNT(*),
+			SUM(vari_signal_G2)/COUNT(*),
+			SUM(vari_signal_G3)/COUNT(*),
+			SUM(vari_signal_B4)/COUNT(*),
 			MIN(exptime),
 			MAX(exptime)
 		FROM image_t
@@ -702,14 +706,14 @@ def master_dark_db_update_session(connection, session):
 			session, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(aver_raw_signal_R1 - bias), 
-			AVG(aver_raw_signal_G2 - bias), 
-			AVG(aver_raw_signal_G3 - bias), 
-			AVG(aver_raw_signal_B4 - bias),
-			SUM(vari_raw_signal_R1)/COUNT(*),
-			SUM(vari_raw_signal_G2)/COUNT(*),
-			SUM(vari_raw_signal_G3)/COUNT(*),
-			SUM(vari_raw_signal_B4)/COUNT(*),
+			AVG(aver_signal_R1 - bias), 
+			AVG(aver_signal_G2 - bias), 
+			AVG(aver_signal_G3 - bias), 
+			AVG(aver_signal_B4 - bias),
+			SUM(vari_signal_R1)/COUNT(*),
+			SUM(vari_signal_G2)/COUNT(*),
+			SUM(vari_signal_G3)/COUNT(*),
+			SUM(vari_signal_B4)/COUNT(*),
 			MIN(exptime),
 			MAX(exptime)
 		FROM image_t
@@ -773,8 +777,11 @@ VIEW_HEADERS = [
 			'std_signal_G3'  ,
 			'aver_signal_B4' ,
 			'std_signal_B4'  ,
+			'bias'           ,
 		]
 
+# we are not using the image_v VIEW for the time being
+# We display the RAW data without dark and bias substraction
 def export_session_iterable(connection, session):
 	row = {'session': session, 'state': STATS_COMPUTED, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
@@ -799,8 +806,9 @@ def export_session_iterable(connection, session):
 				aver_signal_G3, 
 				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
-				vari_signal_B4  -- Array index 19
-		FROM image_v
+				vari_signal_B4,  -- Array index 19
+				bias
+		FROM image_t
 		WHERE state >= :state
 		AND   type = :type
 		AND   session = :session
@@ -808,6 +816,8 @@ def export_session_iterable(connection, session):
 		''', row)
 	return cursor
 
+# we are not using the image_v VIEW for the time being
+# We display the RAW data without dark and bias substraction
 def export_all_iterable(connection):
 	row = {'state': STATS_COMPUTED, 'type': LIGHT_FRAME}
 	cursor = connection.cursor()
@@ -832,8 +842,9 @@ def export_all_iterable(connection):
 				aver_signal_G3, 
 				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
-				vari_signal_B4  -- Array index 19
-		FROM image_v
+				vari_signal_B4, -- Array index 19
+				bias
+		FROM image_t
 		WHERE state >= :state
 		AND   type = :type
 		ORDER BY observer ASC, tstamp ASC
@@ -1110,10 +1121,10 @@ def view_raw_data_session_iterable(connection, session):
 		'''
 		SELECT 
 			name, roi, bias,
-			aver_raw_signal_R1, vari_raw_signal_R1,
-			aver_raw_signal_G2, vari_raw_signal_G2,
-			aver_raw_signal_G3, vari_raw_signal_G3,
-			aver_raw_signal_B4, vari_raw_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_t
 		WHERE session = :session
 		AND ((type = :light) OR (type = :unknown))
@@ -1130,10 +1141,10 @@ def view_raw_data_all_iterable(connection, session):
 		'''
 		SELECT 
 			name, roi, bias,
-			aver_raw_signal_R1, vari_raw_signal_R1,
-			aver_raw_signal_G2, vari_raw_signal_G2,
-			aver_raw_signal_G3, vari_raw_signal_G3,
-			aver_raw_signal_B4, vari_raw_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_t
 		WHERE type = :type
 		AND ((type = :light) OR (type = :unknown))
@@ -1248,10 +1259,10 @@ def view_dark_session_iterable(connection, session):
 		'''
 		SELECT 
 			name, roi, bias,
-			aver_raw_signal_R1, vari_raw_signal_R1,
-			aver_raw_signal_G2, vari_raw_signal_G2,
-			aver_raw_signal_G3, vari_raw_signal_G3,
-			aver_raw_signal_B4, vari_raw_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_t
 		WHERE session = :session
 		AND type = :type
@@ -1268,10 +1279,10 @@ def view_dark_all_iterable(connection, session):
 		'''
 		SELECT 
 			name, roi, bias,
-			aver_raw_signal_R1, vari_raw_signal_R1,
-			aver_raw_signal_G2, vari_raw_signal_G2,
-			aver_raw_signal_G3, vari_raw_signal_G3,
-			aver_raw_signal_B4, vari_raw_signal_B4
+			aver_signal_R1, vari_signal_R1,
+			aver_signal_G2, vari_signal_G2,
+			aver_signal_G3, vari_signal_G3,
+			aver_signal_B4, vari_signal_B4
 		FROM image_t
 		WHERE type = :type
 		ORDER BY session DESC, name ASC

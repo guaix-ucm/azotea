@@ -139,14 +139,14 @@ class CameraImage(object):
             'f_number'       ,
             'bias'           ,
             'type'           ,
-            'aver_raw_signal_R1',
-            'vari_raw_signal_R1',
-            'aver_raw_signal_G2',
-            'vari_raw_signal_G2',
-            'aver_raw_signal_G3',
-            'vari_raw_signal_G3',
-            'aver_raw_signal_B4',
-            'vari_raw_signal_B4',
+            'aver_signal_R1',
+            'vari_signal_R1',
+            'aver_signal_G2',
+            'vari_signal_G2',
+            'aver_signal_G3',
+            'vari_signal_G3',
+            'aver_signal_B4',
+            'vari_signal_B4',
         ]
                 
                
@@ -279,14 +279,14 @@ class CameraImage(object):
         result = {
             'name'            : self.name,
             'roi'             : str(self.roi),
-            'aver_raw_signal_R1'  : r1_mean,
-            'vari_raw_signal_R1'  : r1_vari,
-            'aver_raw_signal_G2'  : g2_mean,
-            'vari_raw_signal_G2'  : g2_vari,
-            'aver_raw_signal_G3'  : g3_mean,
-            'vari_raw_signal_G3'  : g3_vari,
-            'aver_raw_signal_B4'  : b4_mean,
-            'vari_raw_signal_B4'  : b4_vari,
+            'aver_signal_R1'  : r1_mean,
+            'vari_signal_R1'  : r1_vari,
+            'aver_signal_G2'  : g2_mean,
+            'vari_signal_G2'  : g2_vari,
+            'aver_signal_G3'  : g3_mean,
+            'vari_signal_G3'  : g3_vari,
+            'aver_signal_B4'  : b4_mean,
+            'vari_signal_B4'  : b4_vari,
         }
         if self.dkroi:
             self._extract_dark()
