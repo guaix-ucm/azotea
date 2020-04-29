@@ -863,13 +863,18 @@ def var2std(item):
 
 def get_file_path(connection, session, work_dir, options):
 	# This is for automatic reductions mainly
-	middle = os.path.basename(work_dir)
-	if middle == '':
-		middle = os.path.basename(work_dir[:-1])
-	prefix, ext = os.path.splitext(options.config)
-	prefix = os.path.basename(prefix)
-	name = "-".join([prefix, "session", middle + '.csv'])
-	return os.path.join(options.csv_dir, name)
+	key, ext  = os.path.splitext(options.config)
+	key       = os.path.basename(key)
+	parent    = os.path.dirname(work_dir)
+	wdtag     = os.path.basename(work_dir)
+	filename  = "-".join([key, wdtag + '.csv'])
+	if options.multiuser:
+		subdir = os.path.join(parent, options.csv_subdir)
+		os.makedirs(subdir, exist_ok=True)
+		file_path = os.path.join(subdir, filename)
+	else:
+		file_path = os.path.join(options.csv_dir, filename)
+	return file_path
 	
 
 def do_export_work_dir(connection, session, work_dir, options):
@@ -1337,10 +1342,12 @@ def image_export(connection, options):
 
 def do_image_reduce(connection, options):
 	log.info("#"*48)
+	tmp  = os.path.basename(options.work_dir)
+	if tmp == '':
+		options.work_dir = options.work_dir[:-1]
 	log.info("Working Directory: %s", options.work_dir)
 	file_options = load_config_file(options.config)
 	options      = merge_options(options, file_options)
-
 	session = work_dir_to_session(connection, options.work_dir, options.filter)
 	if session is None:
 		session = int(datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S"))
@@ -1411,12 +1418,12 @@ def image_reduce(connection, options):
 		with os.scandir(options.work_dir) as it:
 			dirs = [ (entry.name, entry.path) for entry in it if entry.is_dir() ]
 		if dirs:
-			for name, path in dirs:
-				options.config   = os.path.join(AZOTEA_CFG_DIR, name + '.ini')
+			for key, path in dirs:
+				options.config   = os.path.join(AZOTEA_CFG_DIR, key + '.ini')
 				options.work_dir = path
 				try:
 					do_image_multidir_reduce(connection, options)
 				except IOError as e:
-					log.warning("No %s.ini file, skipping observer", name)
+					log.warning("No %s.ini file, skipping observer", key)
 		else:
 			raise NoUserInfoError(options.work_dir)
