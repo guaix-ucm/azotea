@@ -30,7 +30,7 @@ class MixingCandidates(Exception):
         return s
 
 class ConfigError(ValueError):
-    '''This camera model is not supported by AZOTEA'''
+    '''This camera model is not yet supported by AZOTEA'''
     def __str__(self):
         s = self.__doc__
         if self.args:

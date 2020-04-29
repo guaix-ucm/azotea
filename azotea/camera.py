@@ -212,8 +212,8 @@ class CameraImage(object):
     def getFocalLength(self):
         temp = self.exif.get('EXIF FocalLength', None)
         if temp == '0':
-            return None
-        return return self._fraction_to_float(temp)
+            temp = None
+        return self._fraction_to_float(temp)
 
 
     def read(self):
