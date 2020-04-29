@@ -197,14 +197,7 @@ class CameraImage(object):
     def getExposureTime(self):
         imagetyp = None
         exptime = str(self.exif.get('EXIF ExposureTime', None))
-        try:
-            exptime = float(exptime)
-        except TypeError:
-            pass
-        except ValueError:
-            matchobj = FRACTION_REGEXP.search(exptime)
-            if matchobj:
-                exptime = float(matchobj.group(1))/float(matchobj.group(2))
+        exptime = self._fraction_to_float(exptime)
         if exptime < 1.0:
             log.warn("Image %s (t=%f) could serve as a BIAS image", self.name, exptime)
             imagetyp = "BIAS"
@@ -212,21 +205,15 @@ class CameraImage(object):
 
 
     def getFNumber(self):
-        temp = str(self.exif.get('EXIF FNumber', None))
-        try:
-            temp = float(temp)
-        except TypeError:
-            pass
-        except ValueError:
-            matchobj = FRACTION_REGEXP.search(temp)
-            if matchobj:
-                temp = float(matchobj.group(1))/float(matchobj.group(2))
-        return temp
+        f_number = str(self.exif.get('EXIF FNumber', None))
+        return self._fraction_to_float(f_number)
 
 
     def getFocalLength(self):
         temp = self.exif.get('EXIF FocalLength', None)
-        return int(str(temp)) if temp is not None and str(temp) != '0' else None
+        if temp == '0':
+            return None
+        return return self._fraction_to_float(temp)
 
 
     def read(self):
@@ -305,6 +292,17 @@ class CameraImage(object):
     # ============== #
     # helper methods #
     # ============== #
+
+    def _fraction_to_float(self, value):
+        try:
+            value = float(value)
+        except TypeError:
+            pass    # This handles when value is None
+        except ValueError:
+            matchobj = FRACTION_REGEXP.search(value)
+            if matchobj:
+                value = float(matchobj.group(1))/float(matchobj.group(2))
+        return value
 
 
     def _iso8601(self, tstamp):

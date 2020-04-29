@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS image_t
     location            TEXT,             -- location name
     -- Camera metadata
     model               TEXT,             -- Camera Model from EXIF
-    focal_length        INTEGER,          -- Either from config file or EXIF
+    focal_length        REAL,             -- Either from config file or EXIF
     f_number            REAL,             -- Either from config file or EXIF
     -- Image metadata
     name                TEXT  NOT NULL,   -- Image name without the path
