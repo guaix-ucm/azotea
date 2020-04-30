@@ -452,7 +452,7 @@ def classify_log_type(connection, session):
 def do_classify(connection, session, work_dir, options):
 	rows = []
 	counter = LogCounter(N_COUNT)
-	log.info("Classifying images")
+	log.debug("Classifying images")
 	for name, in classify_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		row = classification_algorithm2(name, file_path, options)
@@ -518,7 +518,7 @@ def do_stats(connection, session, work_dir, options):
 	rows = []
 	counter = LogCounter(N_COUNT)
 	CameraImage.ExiftoolFixed = False
-	log.info("Computing image statistics")
+	log.debug("Computing image statistics")
 	for name, hsh in stats_session_iterable(connection, session):
 		file_path = os.path.join(work_dir, name)
 		image = CameraImage(file_path, camera_cache)
@@ -553,7 +553,7 @@ def do_stats(connection, session, work_dir, options):
 # ---------------
 
 def do_metadata(connection, session, options):
-	log.info("Updating Global Metadata")
+	log.debug("Updating Global Metadata")
 	row = vars(options)
 	row['state']   = METADATA_UPDATED
 	row['session'] = session
@@ -1383,7 +1383,7 @@ def do_image_reduce(connection, options):
 	do_apply_dark(connection, session, options)
 
 	# Step 6
-	if register_deleted or stats_computed or metadata_updated:
+	if register_deleted or stats_computed or metadata_updated or options.force_csv:
 		do_export_work_dir(connection, session, options.work_dir, options)
 	else:
 		log.info("NO CSV file generation is needed for session %d", session)
