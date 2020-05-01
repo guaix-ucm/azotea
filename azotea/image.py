@@ -1384,7 +1384,12 @@ def do_image_reduce(connection, options):
 
 	# Step 6
 	if register_deleted or stats_computed or metadata_updated or options.force_csv:
-		do_export_work_dir(connection, session, options.work_dir, options)
+		try:
+			do_export_work_dir(connection, session, options.work_dir, options)
+		except IOError as e:
+			log.error(e)
+			work_dir_cleanup(connection)
+			raise
 	else:
 		log.info("NO CSV file generation is needed for session %d", session)
 
