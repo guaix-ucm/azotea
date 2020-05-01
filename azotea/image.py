@@ -908,7 +908,7 @@ def get_file_path(connection, session, work_dir, options):
 def do_export_work_dir(connection, session, work_dir, options):
 	'''Export a working directory of image redictions to a single file'''
 	fieldnames = ["session","observer","organization","location","type"]
-	fieldnames.extend(VIEW_HEADERS)
+	fieldnames.extend(EXPORT_HEADERS)
 	if session_processed(connection, session):
 		# Write a session CSV file
 		session_csv_file = get_file_path(connection, session, work_dir, options)
@@ -926,7 +926,7 @@ def do_export_work_dir(connection, session, work_dir, options):
 def do_export_all(connection,  options):
 	'''Exports all the database to a single file'''
 	fieldnames = ["session","observer","organization","location","type"]
-	fieldnames.extend(VIEW_HEADERS)
+	fieldnames.extend(EXPORT_HEADERS)
 	with myopen(options.csv_file, 'w') as csvfile:
 		writer = csv.writer(csvfile, delimiter=';')
 		writer.writerow(fieldnames)
