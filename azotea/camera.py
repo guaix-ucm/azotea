@@ -240,18 +240,6 @@ class CameraImage(object):
             self.roi = roi
 
 
-    def hash(self):
-        '''Compute a hash from the image'''
-        BLOCK_SIZE = 65536*65536 # The size of each read from the file
-        file_hash = hashlib.sha256()
-        with open(self.filepath, 'rb') as f:
-            block = f.read(BLOCK_SIZE) 
-            while len(block) > 0:
-                file_hash.update(block)
-                block = f.read(BLOCK_SIZE)
-        return file_hash.digest()
-
-
     def getJulianDate(self):
         jd2000, mjd = jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)
         fraction = (self._date.hour*3600 + self._date.minute*60 + self._date.second)/86400.0
@@ -329,7 +317,7 @@ class CameraImage(object):
 
     def _region_stats(self, data, region):
         r = data[region.y1:region.y2, region.x1:region.x2]
-        return round(r.mean(),1), round(r.var(),2)
+        return round(r.mean(),1), round(r.var(),3)
 
 
     def _center_roi(self):

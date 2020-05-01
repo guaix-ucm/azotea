@@ -761,7 +761,7 @@ def do_apply_dark(connection, session, options):
 # -----------
 
 
-VIEW_HEADERS = [
+EXPORT_HEADERS = [
 			'tstamp'         ,
 			'name'           ,
 			'model'          ,
@@ -777,6 +777,14 @@ VIEW_HEADERS = [
 			'std_signal_G3'  ,
 			'aver_signal_B4' ,
 			'std_signal_B4'  ,
+			'aver_dark_R1'   ,
+			'std_dark_R1'    ,
+			'aver_dark_G2'   ,
+			'std_dark_G2'    ,
+			'aver_dark_G3'   ,
+			'std_dark_G3'    ,
+			'aver_dark_B4'   ,
+			'std_dark_B4'    ,
 			'bias'           ,
 		]
 
@@ -806,7 +814,15 @@ def export_session_iterable(connection, session):
 				aver_signal_G3, 
 				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
-				vari_signal_B4,  -- Array index 19
+				vari_signal_B4, -- Array index 19
+				aver_dark_R1, 
+				vari_dark_R1,   -- Array index 21
+				aver_dark_G2, 
+				vari_dark_G2,   -- Array index 23
+				aver_dark_G3, 
+				vari_dark_G3,   -- Array index 25
+				aver_dark_B4, 
+				vari_dark_B4,   -- Array index 27
 				bias
 		FROM image_t
 		WHERE state >= :state
@@ -843,6 +859,14 @@ def export_all_iterable(connection):
 				vari_signal_G3, -- Array index 17
 				aver_signal_B4, 
 				vari_signal_B4, -- Array index 19
+				aver_dark_R1, 
+				vari_dark_R1,   -- Array index 21
+				aver_dark_G2, 
+				vari_dark_G2,   -- Array index 23
+				aver_dark_G3, 
+				vari_dark_G3,   -- Array index 25
+				aver_dark_B4, 
+				vari_dark_B4,   -- Array index 27
 				bias
 		FROM image_t
 		WHERE state >= :state
@@ -855,10 +879,14 @@ def export_all_iterable(connection):
 def var2std(item):
 	'''From Variance to StdDev in several columns'''
 	index, value = item
-	value = round(math.sqrt(value),1) if index in [13, 15, 17, 19] else value
+	# Calculate stddev from variance and round to one decimal place
+	if  index in  [13, 15, 17, 19, 21, 23, 25, 27]:
+		value = round(math.sqrt(value),1)
 	# Round the aver_signal channels too
-	value = round(value,1) if index in [12, 14, 16, 18] else value
+	elif index in [12, 14, 16, 18, 20, 22, 24, 26]:
+		value = round(value, 1)
 	return value
+
 
 
 def get_file_path(connection, session, work_dir, options):
