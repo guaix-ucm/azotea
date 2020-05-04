@@ -669,7 +669,7 @@ def master_dark_db_update_all(connection, session):
 			-- AVG(aver_signal_G2 - bias),
 			-- AVG(aver_signal_G3 - bias),
 			-- AVG(aver_signal_B4 - bias),
-			-- Current treatment: Do not substract BIAS from raw signal to perform amster dark
+			-- Current treatment: Do not substract BIAS from raw signal to perform master dark
 			AVG(aver_signal_R1),
 			AVG(aver_signal_G2),
 			AVG(aver_signal_G3),
@@ -712,10 +712,16 @@ def master_dark_db_update_session(connection, session):
 			session, 
 			MIN(roi), 
 			COUNT(*), 
-			AVG(aver_signal_R1 - bias), 
-			AVG(aver_signal_G2 - bias), 
-			AVG(aver_signal_G3 - bias), 
-			AVG(aver_signal_B4 - bias),
+			-- This should be the proper treatment
+			-- AVG(aver_signal_R1 - bias),
+			-- AVG(aver_signal_G2 - bias),
+			-- AVG(aver_signal_G3 - bias),
+			-- AVG(aver_signal_B4 - bias),
+			-- Current treatment: Do not substract BIAS from raw signal to perform master dark
+			AVG(aver_signal_R1),
+			AVG(aver_signal_G2),
+			AVG(aver_signal_G3),
+			AVG(aver_signal_B4),
 			SUM(vari_signal_R1)/COUNT(*),
 			SUM(vari_signal_G2)/COUNT(*),
 			SUM(vari_signal_G3)/COUNT(*),
