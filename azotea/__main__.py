@@ -278,9 +278,7 @@ def createParser():
 	ird.add_argument('-r' ,'--reset',     default=False, action="store_true",     help="Reprocess from start")
 	ird.add_argument('-f' ,'--force-csv', default=False, action="store_true",     help="Force CSV file generration")
 	ird.add_argument('-m' ,'--multiuser', default=False, action="store_true",     help="Multi-user reduction pipeline flag")
-	irdex = ird.add_mutually_exclusive_group()
-	irdex.add_argument('--csv-dir',        type=str, default=AZOTEA_CSV_DIR,  help='Optional directory where the CSV is placed')
-	irdex.add_argument('--csv-subdir',     type=str, default="results",       help='(optional, multiuser), Leave CSV in a subdir for each observer')
+	ird.add_argument('-c', '--csv-dir',   type=str, default=AZOTEA_CSV_DIR,       help='Optional directory where the CSV is placed')
 
 	iex = subparser.add_parser('export',  help='export the whole database to a CSV file')
 	iex.add_argument('--csv-file',        type=str, default=DEF_GLOBAL_CSV,  help='Optional session CSV file to export')

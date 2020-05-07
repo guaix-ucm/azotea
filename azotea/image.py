@@ -905,11 +905,10 @@ def get_file_path(connection, session, work_dir, options):
 	# This is for automatic reductions mainly
 	key, ext  = os.path.splitext(options.config)
 	key       = os.path.basename(key)
-	parent    = os.path.dirname(work_dir)
 	wdtag     = os.path.basename(work_dir)
 	filename  = "-".join([key, wdtag + '.csv'])
 	if options.multiuser:
-		subdir = os.path.join(parent, options.csv_subdir)
+		subdir = os.path.join(options.csv_dir, key)
 		os.makedirs(subdir, exist_ok=True)
 		file_path = os.path.join(subdir, filename)
 	else:
