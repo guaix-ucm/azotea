@@ -279,7 +279,6 @@ def createParser():
 	ird.add_argument('-f' ,'--force-csv', default=False, action="store_true",     help="Force CSV file generration")
 	ird.add_argument('-m' ,'--multiuser', default=False, action="store_true",     help="Multi-user reduction pipeline flag")
 	ird.add_argument('-c', '--csv-dir',   type=str, default=AZOTEA_CSV_DIR,       help='Optional directory where the CSV is placed')
-	ird.add_argument('-n' ,'--nextcloud', default=False, action="store_true",     help="Upload to nextcloud")
 
 	iex = subparser.add_parser('export',  help='export the whole database to a CSV file')
 	iex.add_argument('--csv-file',        type=str, default=DEF_GLOBAL_CSV,  help='Optional session CSV file to export')
