@@ -1,5 +1,5 @@
 TO DO
-  
+ 
   - pensar en un modelo general para atributos versionados con una capa DAO y una columna valid_flags
   - emplear el filter(), map() reduce() para mapear los atributos de interes y ver que ha cambiado
     ['zp', 'filter']
@@ -12,13 +12,3 @@ TO DO
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
 - patch management (list, apply) ?
-
-CASOS DE PRUEBA:
-2) sesion inicial y añadir 2 ficheros LIGHT al directorio. Deberian incorporarse sin problemas
-3) Sesion inicial y añadir 2 DARK más. Se debería rehacer el master DARK y recalcular los LIGHT restantes
-4) Sesion de  multiobservador multireducción
-  - varios observadores
-  - varios directorios por observador
- 3) caso de prueba, el programa no contempla la cámara
- 
-

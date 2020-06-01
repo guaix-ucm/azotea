@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS image_t
     name                TEXT  NOT NULL,   -- Image name without the path
     hash                BLOB,             -- Image hash
     tstamp              TEXT,             -- ISO 8601 timestamp from EXIF
+    night               TEXT,             -- YYYY-MM-DD night where it belongs (as a grouping attribute)
     iso                 TEXT,             -- ISO sensivity from EXIF
     exptime             REAL,             -- exposure time in seconds from EXIF      
     roi                 TEXT,             -- region of interest: [x1:x2,y1:y2]

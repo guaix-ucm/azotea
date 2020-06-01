@@ -482,6 +482,7 @@ def stats_update_db(connection, rows):
 			model               = :model,        -- EXIF
 			iso                 = :iso,          -- EXIF
 			tstamp              = :tstamp,       -- EXIF
+			night               = :night,        -- computed from EXIF
 			exptime             = :exptime,      -- EXIF
 			focal_length        = :focal_length, -- EXIF
 			f_number            = :f_number,     -- EXIF
@@ -532,6 +533,7 @@ def do_stats(connection, session, work_dir, options):
 		row['model']        = metadata['model']
 		row['iso']          = metadata['iso']
 		row['tstamp']       = metadata['tstamp']
+		row['night']        = metadata['night']
 		row['exptime']      = metadata['exptime']
 		row['bias']         = metadata['bias']
 		row['focal_length'] = metadata['focal_length']
@@ -800,10 +802,23 @@ EXPORT_HEADERS = [
 			'bias'           ,
 		]
 
+
+def night_iterable(connection, session):
+	row = {'session': session}
+	cursor = connection.cursor()
+	cursor.execute(
+		'''
+		SELECT  DISTINCT night
+		FROM image_t
+		WHERE session == :session
+		''', row)
+	return cursor
+
+
 # we are not using the image_v VIEW for the time being
 # We display the RAW data without dark and bias substraction
-def export_session_iterable(connection, session):
-	row = {'session': session, 'state': STATS_COMPUTED, 'type': LIGHT_FRAME}
+def export_session_iterable(connection, session, night):
+	row = {'session': session, 'state': STATS_COMPUTED, 'type': LIGHT_FRAME, 'night': night}
 	cursor = connection.cursor()
 	cursor.execute(
 		'''
@@ -837,9 +852,10 @@ def export_session_iterable(connection, session):
 				vari_dark_B4,   -- Array index 27
 				bias
 		FROM image_t
-		WHERE state >= :state
-		AND   type = :type
+		WHERE state  >= :state
+		AND   type    = :type
 		AND   session = :session
+		AND   night   = :night
 		ORDER BY tstamp ASC
 		''', row)
 	return cursor
@@ -901,12 +917,12 @@ def var2std(item):
 
 
 
-def get_file_path(connection, session, work_dir, options):
+def get_file_path(connection, night, work_dir, options):
 	# This is for automatic reductions mainly
 	key, ext  = os.path.splitext(options.config)
 	key       = os.path.basename(key)
-	wdtag     = os.path.basename(work_dir)
-	filename  = "-".join([key, wdtag + '.csv'])
+	#wdtag     = os.path.basename(work_dir)
+	filename  = "-".join([key, night + '.csv'])
 	if options.multiuser:
 		subdir = os.path.join(options.csv_dir, key)
 		os.makedirs(subdir, exist_ok=True)
@@ -920,18 +936,21 @@ def do_export_work_dir(connection, session, work_dir, options):
 	'''Export a working directory of image redictions to a single file'''
 	fieldnames = ["session","observer","organization","location","type"]
 	fieldnames.extend(EXPORT_HEADERS)
-	if session_processed(connection, session):
+	if not session_processed(connection, session):
+		log.info("No new CSV file generation")
+		return
+
+	for (night,) in night_iterable(connection, session):
 		# Write a session CSV file
-		session_csv_file = get_file_path(connection, session, work_dir, options)
+		session_csv_file = get_file_path(connection, night, work_dir, options)
 		with myopen(session_csv_file, 'w') as csvfile:
 			writer = csv.writer(csvfile, delimiter=';')
 			writer.writerow(fieldnames)
-			for row in export_session_iterable(connection, session):
+			for row in export_session_iterable(connection, session, night):
 				row = map(var2std, enumerate(row))
 				writer.writerow(row)
-		log.info("Saved data to session CSV file {0}".format(session_csv_file))
-	else:
-		log.info("No new CSV file generation")
+	log.info("Saved data to session CSV file {0}".format(session_csv_file))
+	
 	
 
 def do_export_all(connection,  options):

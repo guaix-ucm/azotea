@@ -71,7 +71,9 @@ def scan_images(options):
 	for input_file_path in filepath_iterable:
 		image = CameraImage(input_file_path, options)
 		image.loadEXIF()
-		date_string = dir_name(*image.getJulianDate())
+		jd2000, mjd = image.getJulianDate()
+		mjd -= 0.5	# Take it 12 hours before and make sure it is the same YYYY-MM-DD
+		date_string = dir_name(jd2000, mjd)
 		output_dir_path = os.path.join(options.output_dir, date_string)
 		output_dir_set.add(output_dir_path)
 		image_list.append((input_file_path, output_dir_path))

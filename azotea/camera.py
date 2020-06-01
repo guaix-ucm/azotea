@@ -191,6 +191,7 @@ class CameraImage(object):
         self.metadata['f_number']     = self.getFNumber()
         self.metadata['exptime'], self.metadata['type'] = self.getExposureTime()
         self.metadata['bias']         = 0   # Maybe one day we could extract is from EXIF
+        self.metadata['night']        = self.night() 
         return self.metadata
 
 
@@ -243,7 +244,15 @@ class CameraImage(object):
     def getJulianDate(self):
         jd2000, mjd = jdcal.gcal2jd(self._date.year, self._date.month, self._date.day)
         fraction = (self._date.hour*3600 + self._date.minute*60 + self._date.second)/86400.0
-        return jd2000, mjd + fraction - 0.5
+        return jd2000, mjd + fraction
+
+
+    def night(self):
+        '''Observation night as a grouping attribute'''
+        jd2000, mjd = self.getJulianDate()
+        mjd -= 0.5  # Take it 12 hours before and make sure it is the same YYYY-MM-DD
+        year, month, day, fraction = jdcal.jd2gcal(jd2000, mjd)
+        return "{0:04d}-{1:02d}-{2:02d}".format(year, month, day)
 
         
     def stats(self):
@@ -280,6 +289,13 @@ class CameraImage(object):
     # ============== #
     # helper methods #
     # ============== #
+
+    def night(self):
+        '''Observation night as a grouping attribute'''
+        jd2000, mjd = self.getJulianDate()
+        mjd -= 0.5  # Take it 12 hours before and make sure it is the same YYYY-MM-DD
+        year, month, day, fraction = jdcal.jd2gcal(jd2000, mjd)
+        return "{0:04d}-{1:02d}-{2:02d}".format(year, month, day)
 
     def _fraction_to_float(self, value):
         try:
