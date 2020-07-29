@@ -21,6 +21,7 @@ import math
 import hashlib
 import time
 import re
+import collections
 
 # ---------------------
 # Third party libraries
@@ -170,14 +171,31 @@ def image_session_state_reset(connection, session):
 	connection.commit()
 
 
+def detect_dupl_hashes(names_hashes_list):
+	hashes_list = [ item['hash'] for item in names_hashes_list ]
+	c = collections.Counter(hashes_list)
+	most_common = c.most_common(1)[0]
+	hsh = most_common.keys()[0]
+	count = most_common[hsh]
+	if count > 1:
+		last_name = None
+		for item in names_hashes_list:
+			if item['hash'] == hsh:
+				name = item['name']
+				log.error("Image {0} has duplicated hash {0} ".format(name, hsh))
+		log.warn("Ignoring {0} duplicated image in the database entry".format(name))
+
+
+
 def work_dir_to_session(connection, work_dir, filt):
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	log.info("Found {0} candidates matching filter {1}.".format(len(file_list), filt))
 	log.info("Computing hashes. This may take a while")
-	names_list = [ {'name': os.path.basename(p), 'hash': hash(p)} for p in file_list ]
+	names_hashes_list = [ {'name': os.path.basename(p), 'hash': hash(p)} for p in file_list ]
+	detect_dupl_hashes(names_hases_list)
 	cursor = connection.cursor()
 	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT, hash BLOB, PRIMARY KEY(hash))")
-	cursor.executemany("INSERT INTO candidate_t (name,hash) VALUES (:name,:hash)", names_list)
+	cursor.executemany("INSERT OR IGNORE INTO candidate_t (name,hash) VALUES (:name,:hash)", names_hashes_list)
 	connection.commit()
 	# Common images to database and work-dir
 	cursor.execute(
