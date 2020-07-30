@@ -174,9 +174,9 @@ def image_session_state_reset(connection, session):
 def detect_dupl_hashes(names_hashes_list):
 	hashes_list = [ item['hash'] for item in names_hashes_list ]
 	c = collections.Counter(hashes_list)
-	most_common = c.most_common(1)[0]
-	hsh = most_common.keys()[0]
-	count = most_common[hsh]
+	most_common = c.most_common(1)
+	hsh   = most_common[0][0]
+	count = most_common[0][1]
 	if count > 1:
 		last_name = None
 		for item in names_hashes_list:

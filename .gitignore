@@ -7,6 +7,7 @@ dist
 read_CR_v1.py
 read_CR_display.py
 plot_20200325.py
+fixhash.py
 *.csv
 demo/
 test/
