@@ -171,20 +171,16 @@ def image_session_state_reset(connection, session):
 	connection.commit()
 
 
+
 def detect_dupl_hashes(names_hashes_list):
 	hashes_list = [ item['hash'] for item in names_hashes_list ]
 	c = collections.Counter(hashes_list)
-	most_common = c.most_common(1)
-	hsh   = most_common[0][0]
-	count = most_common[0][1]
-	if count > 1:
-		last_name = None
-		for item in names_hashes_list:
-			if item['hash'] == hsh:
-				name = item['name']
-				log.error("Image {0} has duplicated hash {0} ".format(name, hsh))
-		log.warn("Ignoring {0} duplicated image in the database entry".format(name))
-
+	for hsh, count in c.most_common():
+		if count > 1:
+			for item in names_hashes_list:
+				if item['hash'] == hsh:
+					name = item['name']
+					log.error("Image {0} has a clashing hash {1} ".format(name, hsh))
 
 
 def work_dir_to_session(connection, work_dir, filt):
