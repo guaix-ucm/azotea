@@ -1,0 +1,396 @@
+#!/bin/env python3
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------
+# Copyright (c) 2020
+#
+# See the LICENSE file for details
+# see the AUTHORS file for authors
+# ----------------------------------------------------------------------
+
+#--------------------
+# System wide imports
+# -------------------
+
+import sys
+import sqlite3
+import os.path
+import glob
+import logging
+import csv
+import datetime
+import math
+import hashlib
+import time
+import re
+import collections
+import traceback
+import argparse
+
+try:
+    # Python 2
+    import ConfigParser
+except:
+    import configparser as ConfigParser
+
+# ---------------------
+# Third party libraries
+# ---------------------
+
+
+#--------------
+# Constants
+# -------------
+
+AZOTEA_BASE_DIR = os.path.join(os.path.expanduser("~"), "azotea")
+
+DEF_DBASE      = os.path.join(AZOTEA_BASE_DIR, "dbase",  "azotea.db")
+DEF_CONFIG     = os.path.join(AZOTEA_BASE_DIR, "config", "azotea.ini")
+AZOTEA_CFG_DIR = os.path.join(AZOTEA_BASE_DIR, "config")
+
+# -----------------------
+# Module global variables
+# -----------------------
+
+log = logging.getLogger("fixit")
+
+# ----------
+# Exceptions
+# ----------
+
+class NoUserInfoError(Exception):
+    '''Working Directory does not contain user configuration data.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \n".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class MixingCandidates(Exception):
+    '''Images processed in different directories.'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0} \n".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class ConfigError(ValueError):
+    '''This camera model is not yet supported by AZOTEA'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0}: '{1}'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class MetadataError(ValueError):
+    '''Error reading EXIF metadata for image'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0}: '{1}'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class TimestampError(ValueError):
+    '''EXIF timestamp not supported by AZOTEA'''
+    def __str__(self):
+        s = self.__doc__
+        if self.args:
+            s = "{0}: '{1}'".format(s, self.args[0])
+        s = '{0}.'.format(s)
+        return s
+
+class ROI(object):
+    """ Region of interest  """
+
+    PATTERN = r'\[(\d+):(\d+),(\d+):(\d+)\]'
+
+    @classmethod
+    def strproi(cls, roi_str):
+        pattern = re.compile(ROI.PATTERN)
+        matchobj = pattern.search(roi_str)
+        if matchobj:
+            x1 = int(matchobj.group(1))
+            x2 = int(matchobj.group(2))
+            y1 = int(matchobj.group(3))
+            y2 = int(matchobj.group(4))
+            return cls(x1,x2,y1,y2)
+        else:
+            return None
+
+
+    def __init__(self, x1 ,x2, y1, y2):
+        self.x1 = min(x1,x2)
+        self.y1 = min(y1,y2)
+        self.x2 = max(x1,x2)
+        self.y2 = max(y1,y2)
+
+    def dimensions(self):
+        '''returns width and height'''
+        return abs(self.x2 - self.x1), abs(self.y2 - self.y1)
+
+    def __add__(self, point):
+        return ROI(self.x1 + point.x, self.x2 + point.x, self.y1 + point.y, self.y2 + point.y)
+
+    def __radd__(self, point):
+        return self.__add__(point)
+        
+    def __repr__(self):
+        return "[{0}:{1},{2}:{3}]".format(self.x1, self.x2, self.y1, self.y2)
+
+# ------------------
+# Auxiliar functions
+# ------------------
+
+def createParser():
+	# create the top-level parser
+	name = os.path.split(os.path.dirname(sys.argv[0]))[-1]
+	parser = argparse.ArgumentParser(prog=name, description="AZOTEA hash fixing tool")
+	# Global options
+	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate global configuration file')
+	parser.add_argument('-w' ,'--work-dir',  type=str, required=True, help='Input working directory')
+	parser.add_argument('-m' ,'--multiuser', default=False, action="store_true", help="Multi-user reduction pipeline flag")
+	return parser
+
+def merge_two_dicts(d1, d2):
+    '''Valid for Python 2 & Python 3'''
+    merged = d1.copy()   # start with d1 keys and values
+    merged.update(d2)    # modifies merged with d2 keys and values & returns None
+    return merged
+
+
+def chop(string, sep=None):
+    '''Chop a list of strings, separated by sep and 
+    strips individual string items from leading and trailing blanks'''
+    chopped = [ elem.strip() for elem in string.split(sep) ]
+    if len(chopped) == 1 and chopped[0] == '':
+        chopped = []
+    return chopped
+
+# ----------------------------
+# Log file auxiliar functions
+# ---------------------------
+
+def configureLogging():
+	level = logging.INFO
+	log.setLevel(level)
+	# Log formatter
+	#fmt = logging.Formatter('%(asctime)s - %(name)s [%(levelname)s] %(message)s')
+	fmt = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+	# create console handler and set level to debug
+	ch = logging.StreamHandler()
+	ch.setFormatter(fmt)
+	ch.setLevel(level)
+	log.addHandler(ch)
+	
+# ------------------------------
+# Config file auxiliar functions
+# ------------------------------
+
+def valueOrNone(string, typ):
+    return None if not len(string) else typ(string)
+
+def valueOrDefault(string, typ, default):
+    return default if not len(string) else typ(string)
+
+def load_config_file(filepath):
+    '''
+    Load options from configuration file whose path is given
+    Returns a dictionary
+    '''
+    if filepath is None or not (os.path.exists(filepath)):
+        raise IOError(errno.ENOENT,"No such file or directory", filepath)
+
+    parser  = ConfigParser.RawConfigParser()
+    # str is for case sensitive options
+    parser.optionxform = str
+    parser.read(filepath)
+    log.info("Opening configuration file %s", filepath)
+
+    options = {}
+    options['observer']      = parser.get("observer","observer")
+    options['organization']  = parser.get("observer","organization")
+    options['email']         = parser.get("observer","email")
+    options['focal_length']  = parser.get("camera","focal_length")
+    options['f_number']      = parser.get("camera","f_number")
+    options['bias']          = parser.get("camera","bias")
+    options['location']      = parser.get("location","location")
+    
+    x0 = parser.get("image","x0"); x0 = valueOrDefault(x0, int, 0)
+    y0 = parser.get("image","y0"); y0 = valueOrDefault(y0, int, 0)
+    width  = parser.getint("image","width")
+    height = parser.getint("image","height")
+    options['roi']           = ROI(x0, x0 + width, y0, y0 + height)
+
+    options['scale']         = parser.get("image","scale")
+    options['dark_roi']      = parser.get("image","dark_roi")
+    options['filter']        = parser.get("file","filter")
+
+    # Handle empty keyword cases and transform them to None's
+    options['bias']          = valueOrNone(options['bias'], int)
+    options['focal_length']  = valueOrNone(options['focal_length'], int)
+    options['f_number']      = valueOrNone(options['f_number'], float)
+    options['scale']         = valueOrNone(options['scale'], float)
+    options['email']         = valueOrNone(options['email'], str)
+    options['organization']  = valueOrNone(options['organization'], str)
+    options['dark_roi']      = valueOrNone(options['dark_roi'], str)
+
+    return options
+
+
+def merge_options(cmdline_opts, file_opts):
+    # Read the command line arguments and config file options
+    cmdline_opts = vars(cmdline_opts) # command line options as dictionary
+    cmdline_set  = set(cmdline_opts)
+    fileopt_set  = set(file_opts)
+    conflict_keys = fileopt_set.intersection(cmdline_set)
+    options      = merge_two_dicts(file_opts, cmdline_opts)
+    # Solve conflicts due to the fact that command line always sets 'None'
+    # for missing aruments and take precedence over file opts
+    # in the above dictionary merge
+    for key in conflict_keys:
+        if cmdline_opts[key] is None and file_opts[key] is not None:
+            options[key] = file_opts[key]
+    options  = argparse.Namespace(**options)
+    return options
+
+
+# ---------------------------
+# Database auxiliar functions
+# ---------------------------
+
+def open_database(dbase_path):
+    if not os.path.exists(dbase_path):
+        with open(dbase_path, 'w') as f:
+            pass
+        log.info("Created database file {0}".format(dbase_path))
+    else:
+    	log.info("Opened database file {0}".format(dbase_path))
+    return sqlite3.connect(dbase_path)
+
+
+def work_dir_cleanup(connection):
+	cursor = connection.cursor()
+	cursor.execute("DROP TABLE IF EXISTS candidate_t")
+	connection.commit()
+
+
+def md5_hash(filepath):
+	'''Compute a hash from the image'''
+	BLOCK_SIZE = 1048576 # 1MByte, the size of each read from the file
+	file_hash = hashlib.md5()
+	with open(filepath, 'rb') as f:
+		block = f.read(BLOCK_SIZE) 
+		while len(block) > 0:
+			file_hash.update(block)
+			block = f.read(BLOCK_SIZE)
+	return file_hash.digest()
+
+def blake_hash(filepath):
+	'''Compute a hash from the image'''
+	BLOCK_SIZE = 1048576 # 1MByte, the size of each read from the file
+	file_hash = hashlib.blake2b(digest_size=32)
+	with open(filepath, 'rb') as f:
+		block = f.read(BLOCK_SIZE) 
+		while len(block) > 0:
+			file_hash.update(block)
+			block = f.read(BLOCK_SIZE)
+	return file_hash.digest()
+
+
+# ----------------
+# Driver functions
+# ----------------
+
+
+def scan_work_dir(connection, work_dir, filt):
+	file_list  = glob.glob(os.path.join(work_dir, filt))
+	log.info("Found {0} candidates matching filter {1}.".format(len(file_list), filt))
+	log.info("Computing hashes. This may take a while")
+	names_hashes_list = [ {'name': os.path.basename(p), 'old_hash': md5_hash(p), 'new_hash': blake_hash(p)} for p in file_list ]
+	cursor = connection.cursor()
+	cursor.executemany(
+		'''
+		UPDATE image_t
+		SET hash = :new_hash
+		WHERE hash = :old_hash
+		''', names_hashes_list)
+	connection.commit()
+	log.info("Substituted MD5 hash in database with Blake2 hash,")
+
+
+def do_image_reduce(connection, options):
+	log.info("#"*48)
+	tmp  = os.path.basename(options.work_dir)
+	if tmp == '':
+		options.work_dir = options.work_dir[:-1]
+	log.info("Working Directory: %s", options.work_dir)
+	file_options = load_config_file(options.config)
+	options      = merge_options(options, file_options)
+	scan_work_dir(connection, options.work_dir, options.filter)
+
+
+def do_image_multidir_reduce(connection, options):
+	with os.scandir(options.work_dir) as it:
+		dirs  = [ entry.path for entry in it if entry.is_dir() ]
+		files = [ entry.path for entry in it if entry.is_file() ]
+	if dirs:
+		if files:
+			log.warning("Ignoring files in %s", options.work_dir)
+		for item in dirs:
+			options.work_dir = item
+			try:
+				do_image_reduce(connection, options)
+			except ConfigError as e:
+				pass
+			time.sleep(1.5)
+	else:
+		do_image_reduce(connection, options)
+
+
+def image_reduce(connection, options):
+	if not options.multiuser:
+		do_image_multidir_reduce(connection, options)
+	else:
+		# os.scandir() only available from Python 3.6   
+		with os.scandir(options.work_dir) as it:
+			dirs = [ (entry.name, entry.path) for entry in it if entry.is_dir() ]
+		if dirs:
+			for key, path in dirs:
+				options.config   = os.path.join(AZOTEA_CFG_DIR, key + '.ini')
+				options.work_dir = path
+				try:
+					do_image_multidir_reduce(connection, options)
+				except IOError as e:
+					log.warning("No %s.ini file, skipping observer", key)
+		else:
+			raise NoUserInfoError(options.work_dir)
+
+
+# ================ #
+# MAIN ENTRY POINT #
+# ================ #
+
+
+def main():
+	'''
+	Utility entry point
+	'''
+	try:
+		options = createParser().parse_args(sys.argv[1:])
+		configureLogging()
+		log.info("======= AZOTEA HASH FIXING TOOL =======")
+		connection = open_database(DEF_DBASE)
+		image_reduce(connection, options)
+	except KeyboardInterrupt as e:
+		log.critical("[%s] Interrupted by user ", __name__)
+	except Exception as e:
+		log.critical("[%s] Fatal error => %s", __name__, str(e) )
+		traceback.print_exc()
+	finally:
+		work_dir_cleanup(connection)
+
+main()
+

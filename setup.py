@@ -50,7 +50,8 @@ PACKAGE_DATA = {
 }
 
 SCRIPTS = [
-    'files/azotea'
+    'files/azotea',
+    'files/migrate_hash',
 ]
 
 

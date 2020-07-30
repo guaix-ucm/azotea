@@ -132,13 +132,11 @@ def hash(filepath):
 	'''Compute a hash from the image'''
 	BLOCK_SIZE = 1048576 # 1MByte, the size of each read from the file
 	
-	# Using the maximun digest size of 64 bytes takes 4 times
-	# So we take a compromise of reducing to 16 bytes, 
-	# with an increasing risk of hash collisions 1/2^128 * 100%
 	# md5() was the fastest algorithm I've tried
+	# but I detected a collision, so I now use blake2b with twice the digest size
 	
-	#file_hash = hashlib.blake2b(digest_size=16)
-	file_hash = hashlib.md5()
+	file_hash = hashlib.blake2b(digest_size=32)
+	#file_hash = hashlib.md5()
 	with open(filepath, 'rb') as f:
 		block = f.read(BLOCK_SIZE) 
 		while len(block) > 0:
