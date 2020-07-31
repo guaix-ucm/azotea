@@ -390,7 +390,8 @@ def main():
 		log.critical("[%s] Fatal error => %s", __name__, str(e) )
 		traceback.print_exc()
 	finally:
-		work_dir_cleanup(connection)
+		if connection:
+			work_dir_cleanup(connection)
 
 main()
 
