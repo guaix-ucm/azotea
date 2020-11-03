@@ -1486,6 +1486,10 @@ def do_image_multidir_reduce(connection, options):
 
 
 def image_reduce(connection, options):
+	
+	def by_name(item):
+		return item[0]
+
 	if not options.multiuser:
 		do_image_multidir_reduce(connection, options)
 	else:
@@ -1493,7 +1497,7 @@ def image_reduce(connection, options):
 		with os.scandir(options.work_dir) as it:
 			dirs = [ (entry.name, entry.path) for entry in it if entry.is_dir() ]
 		if dirs:
-			for key, path in dirs:
+			for key, path in sorted(dirs, key=by_name):
 				options.config   = os.path.join(AZOTEA_CFG_DIR, key + '.ini')
 				options.work_dir = path
 				try:
