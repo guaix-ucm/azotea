@@ -1469,12 +1469,12 @@ def do_image_reduce(connection, options):
 
 def do_image_multidir_reduce(connection, options):
 	with os.scandir(options.work_dir) as it:
-		dirs  = [ entry.path for entry in it if entry.is_dir() ]
+		dirs  = [ entry.path for entry in it if entry.is_dir()  ]
 		files = [ entry.path for entry in it if entry.is_file() ]
 	if dirs:
 		if files:
 			log.warning("Ignoring files in %s", options.work_dir)
-		for item in dirs:
+		for item in sorted(dirs):
 			options.work_dir = item
 			try:
 				do_image_reduce(connection, options)
