@@ -1474,7 +1474,7 @@ def do_image_multidir_reduce(connection, options):
 	if dirs:
 		if files:
 			log.warning("Ignoring files in %s", options.work_dir)
-		for item in sorted(dirs):
+		for item in sorted(dirs, reverse=True):
 			options.work_dir = item
 			try:
 				do_image_reduce(connection, options)
