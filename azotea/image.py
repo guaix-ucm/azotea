@@ -181,6 +181,18 @@ def detect_dupl_hashes(names_hashes_list):
 					log.error("Image {0} has a clashing hash {1} ".format(name, hsh))
 
 
+def register_slow_candidates(connection, names_hashes_list):
+	cursor = connection.cursor()
+	for item in names_hashes_list:
+		try:
+			cursor.execute("INSERT INTO candidate_t (name,hash) VALUES (:name,:hash)", item)
+		except sqlite3.IntegrityError as e:
+			connection.rollback()
+			log.warning("Ignoring duplicate candidate in the same dir => %s", item['name'])
+		else:
+			connection.commit()
+
+
 def work_dir_to_session(connection, work_dir, filt):
 	file_list  = glob.glob(os.path.join(work_dir, filt))
 	log.info("Found {0} candidates matching filter {1}.".format(len(file_list), filt))
@@ -189,8 +201,13 @@ def work_dir_to_session(connection, work_dir, filt):
 	detect_dupl_hashes(names_hashes_list)
 	cursor = connection.cursor()
 	cursor.execute("CREATE TEMP TABLE candidate_t (name TEXT, hash BLOB, PRIMARY KEY(hash))")
-	cursor.executemany("INSERT INTO candidate_t (name,hash) VALUES (:name,:hash)", names_hashes_list)
-	connection.commit()
+	try:
+		cursor.executemany("INSERT INTO candidate_t (name,hash) VALUES (:name,:hash)", names_hashes_list)
+	except sqlite3.IntegrityError as e:
+		connection.rollback()
+		register_slow_candidates(connection, names_hashes_list)
+	else:
+		connection.commit()
 	# Common images to database and work-dir
 	cursor.execute(
 		'''
