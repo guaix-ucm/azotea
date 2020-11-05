@@ -161,7 +161,6 @@ class CameraImage(object):
         self.roi        = None  # foreground rectangular region where signal is estimated
         self.dkroi      = None  # dark rectangular region where bias is estimated
         self.exif       = None
-        self.image      = None
         self.metadata   = {}  # Subset of EXIF metadata we are interested in
         self.name       = os.path.basename(self.filepath)
         self.signal     = []    # Bayer array for signal ROI
@@ -221,16 +220,16 @@ class CameraImage(object):
         '''Read RAW pixels''' 
         self._lookup()
         log.debug("%s: Loading RAW data from %s", self.name, self.model)
-        self.image = rawpy.imread(self.filepath)
-        #log.debug("%s: Color description is %s", self.name, self.image.color_desc)
-        # R1 channel
-        self.signal.append(self.image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
-        # G2 channel
-        self.signal.append(self.image.raw_image[self.k[G2].x::self.step[G2], self.k[G2].y::self.step[G2]])
-        # G3 channel
-        self.signal.append(self.image.raw_image[self.k[G3].x::self.step[G3], self.k[G3].y::self.step[G3]])
-         # B4 channel
-        self.signal.append(self.image.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
+        with rawpy.imread(self.filepath) as image:
+            #log.debug("%s: Color description is %s", self.name, image.color_desc)
+            # R1 channel
+            self.signal.append(image.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
+            # G2 channel
+            self.signal.append(image.raw_image[self.k[G2].x::self.step[G2], self.k[G2].y::self.step[G2]])
+            # G3 channel
+            self.signal.append(image.raw_image[self.k[G3].x::self.step[G3], self.k[G3].y::self.step[G3]])
+             # B4 channel
+            self.signal.append(image.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
         self._center_roi()
 
 
