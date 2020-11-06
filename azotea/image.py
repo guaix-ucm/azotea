@@ -194,7 +194,7 @@ def register_slow_candidates(connection, names_hashes_list):
 
 
 def work_dir_to_session(connection, work_dir, filt):
-	file_list  = glob.glob(os.path.join(work_dir, filt))
+	file_list  = sorted(glob.glob(os.path.join(work_dir, filt)))
 	log.info("Found {0} candidates matching filter {1}.".format(len(file_list), filt))
 	log.info("Computing hashes. This may take a while")
 	names_hashes_list = [ {'name': os.path.basename(p), 'hash': hash(p)} for p in file_list ]
@@ -410,6 +410,7 @@ def register_log_kept(connection, session):
 			SELECT name
 			FROM image_t
 			WHERE hash IN (SELECT hash FROM candidate_t)
+			ORDER BY name ASC
 			LIMIT :count
 			''', row)
 		for name, in cursor:
@@ -538,6 +539,7 @@ def stats_session_iterable(connection, session):
 		FROM image_t
 		WHERE state < :state
 		AND session = :session
+		ORDER BY name ASC
 		''', row)
 	return cursor
 
