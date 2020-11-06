@@ -222,13 +222,13 @@ class CameraImage(object):
         log.debug("%s: Loading RAW data from %s", self.name, self.model)
         img = rawpy.imread(self.filepath)
         log.debug("%s: Color description is %s", self.name, img.color_desc)
-            # R1 channel
+        # R1 channel
         self.signal.append(img.raw_image[self.k[R1].x::self.step[R1], self.k[R1].y::self.step[R1]])
-            # G2 channel
+        # G2 channel
         self.signal.append(img.raw_image[self.k[G2].x::self.step[G2], self.k[G2].y::self.step[G2]])
-            # G3 channel
+        # G3 channel
         self.signal.append(img.raw_image[self.k[G3].x::self.step[G3], self.k[G3].y::self.step[G3]])
-             # B4 channel
+        # B4 channel
         self.signal.append(img.raw_image[self.k[B4].x::self.step[B4], self.k[B4].y::self.step[B4]])
         # img.close() gives a Segmentation fault, core dumped !!
         # We can't even use a context manager for this

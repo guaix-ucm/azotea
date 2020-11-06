@@ -544,10 +544,23 @@ def stats_session_iterable(connection, session):
 	return cursor
 
 
+def stats_unregister(connection, rows):
+	'''Unregister an image who gave an exception reaing the pixel data'''
+	cursor = connection.cursor()
+	cursor.executemany(
+			'''
+			DELETE FROM image_t 
+			WHERE hash  == :hash
+			''', rows)
+	connection.commit()
+	log.info("Deleted %d / %d images from database", cursor.rowcount, len(rows))
+	
+
 def do_stats(connection, session, work_dir, options):
 	stats_computed_flag = False
 	camera_cache = CameraCache(options.camera)
 	rows = []
+	rows_to_unregister = []
 	counter = LogCounter(N_COUNT)
 	CameraImage.ExiftoolFixed = False
 	log.debug("Computing image statistics")
@@ -557,19 +570,26 @@ def do_stats(connection, session, work_dir, options):
 		image.setROI(options.roi)
 		counter.tick("Statistics for %03d images done")
 		metadata = image.loadEXIF()
-		image.read()
-		row = image.stats()
-		row['hash']         = hsh
-		row['state']        = STATS_COMPUTED
-		row['model']        = metadata['model']
-		row['iso']          = metadata['iso']
-		row['tstamp']       = metadata['tstamp']
-		row['night']        = metadata['night']
-		row['exptime']      = metadata['exptime']
-		row['bias']         = metadata['bias']
-		row['focal_length'] = metadata['focal_length']
-		row['f_number']     = metadata['f_number']
-		rows.append(row)
+		try:
+			image.read()
+		except Exception as e:
+			log.warn("%s: Error while reading pixels", name)
+			rows_to_unregister.append({'name': name, 'hash': hsh, 'session':session})
+		else:
+			row = image.stats()
+			row['hash']         = hsh
+			row['state']        = STATS_COMPUTED
+			row['model']        = metadata['model']
+			row['iso']          = metadata['iso']
+			row['tstamp']       = metadata['tstamp']
+			row['night']        = metadata['night']
+			row['exptime']      = metadata['exptime']
+			row['bias']         = metadata['bias']
+			row['focal_length'] = metadata['focal_length']
+			row['f_number']     = metadata['f_number']
+			rows.append(row)
+	if rows_to_unregister:
+		stats_unregister(connection, rows_to_unregister)
 	if rows:
 		counter.end("Statistics for %03d images done")
 		stats_update_db(connection, rows)
