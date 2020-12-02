@@ -12,24 +12,46 @@
 
 import logging
 import requests
-
+import argparse
 
 #--------------
 # local imports
 # -------------
 
-
+from .packer import make_new_release
 # -----------------------
 # Module global variables
 # -----------------------
 
-log = logging.getLogger("azotenodo")
+log     = logging.getLogger("azotenodo")
 
 # -----------------------
 # Module global functions
 # -----------------------
 
-def upload_to_zenodo(context):
+def setup_context(options, file_options):
+    context = argparse.Namespace()
+
+    if options.test:
+        context.url_prefix = SANDBOX_URL_PREFIX
+        context.doi_prefix = SANDBOX_DOI_PREFIX
+    else:
+        context.url_prefix = PRODUCTION_URL_PREFIX
+        context.doi_prefix = PRODUCTION_DOI_PREFIX
+    context.access_token = file_options.api_key
+        #context.file         = options.zip_file
+    return context
+
+
+        
+
+def delete(options, file_options):
+    pass
+
+def upload(options, file_options):
+    pass
+
+def upload_publish(options, file_options):
     log.info("===== CUCUUUU ")
     print(context)
     
@@ -40,7 +62,9 @@ def upload_to_zenodo(context):
     # adds "Content-Type: application/json", because we're using
     # the "json=" keyword argument
     # headers=headers,
-    r = requests.post(context.url_prefix + 'deposit/depositions',
+    url = context.url_prefix + 'deposit/depositions'
+    log.info("===== REQUESTINT TO {0} ".format(url))
+    r = requests.post(url,
             params=params,
             json={},
             headers=headers)

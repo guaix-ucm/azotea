@@ -31,7 +31,7 @@ from .           import *
 from .exceptions import *
 from .           import __version__
 from .config     import load_config_file
-from .zipea      import upload_to_zenodo
+from .zenodo     import delete, upload, upload_publish
 
 # -----------------------
 # Module global variables
@@ -148,9 +148,34 @@ def createParser():
 	parser.add_argument('-nk','--no-console', action='store_true', help='Do not log to console.')
 	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
 	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate configuration file')
-	parser.add_argument('--csv-dir',type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
-	parser.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
-	parser.add_argument('-t', '--test',   action='store_true', help='Test. Publish in sandbox environment')
+	parser.add_argument('-t', '--test',   action='store_true', help='Use the ZENODO Sandbox environment')
+
+
+	subparser = parser.add_subparsers(dest='command')
+
+	parser_upload    = subparser.add_parser('upload', help='only upload contents, but do not publish')
+	parser_publish  = subparser.add_parser('publish', help='upload and publish')
+	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
+
+	# -------------
+	# Delete action
+	# -------------
+	parser_delete.add_argument('--id',type=int, mandatory=True,  help='Zenodo ID to delete')
+
+	# -------------
+	# Upload action
+	# -------------
+
+	parser_upload.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
+	parser_upload.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
+
+	# --------------
+	# Publish action
+	# --------------
+
+	parser_publish.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
+	parser_publish.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
+	
 	return parser
 
 
@@ -163,37 +188,14 @@ def main():
 	Utility entry point
 	'''
 	try:
-		hsh = {}
-		context = argparse.Namespace()
 		options = createParser().parse_args(sys.argv[1:])
 		configureLogging(options)
+		command  = options.command
 		log.info("============== AZOTENODO {0} ==============".format(__version__))
 		file_options = load_config_file(options.config)
 		file_options = argparse.Namespace(**file_options)
 		setup(options)
-		if options.test:
-			context.url_prefix = SANDBOX_URL_PREFIX
-			context.doi_prefix = SANDBOX_DOI_PREFIX
-		else:
-			context.url_prefix = PRODUCTION_URL_PREFIX
-			context.doi_prefix = PRODUCTION_DOI_PREFIX
-		context.access_token = file_options.api_key
-		context.file         = options.zip_file
-
-
-		if os.path.exists(options.zip_file):
-			hsh['prev'] = fingerprint(options.zip_file)
-		else:
-			hsh['prev'] = None
-		pack(options)
-		hsh['now'] = fingerprint(options.zip_file)
-		if hsh['now'] != hsh['prev']:
-			log.info("new files were added to {0}".format(options.zip_file))
-			version = datetime.datetime.utcnow().strftime(SEMANTIC_VERSIONING_FMT)
-			context.version      = version
-			upload_to_zenodo(context)
-		
-		
+		globals()[command](options, file_options)
 	except KeyboardInterrupt as e:
 		log.critical("[%s] Interrupted by user ", __name__)
 	except Exception as e:
