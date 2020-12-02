@@ -80,7 +80,7 @@ def python2_warning():
 
 
 def setup(options):
-	configureLogging(options)
+	
 	python2_warning()
 	if not os.path.exists(AZOTEA_BASE_DIR):
 		log.info("Creating {0} directory".format(AZOTEA_BASE_DIR))
@@ -295,8 +295,9 @@ def main():
 	'''
 	try:
 		options = createParser().parse_args(sys.argv[1:])
+		configureLogging(options)
+		log.info("=============== AZOTEA {0} ===============".format(__version__))
 		setup(options)
-		log.info("======= AZOTEA {0} =======".format(__version__))
 		connection = open_database(DEF_DBASE)
 		create_database(connection, SQL_SCHEMA, SQL_DATA_DIR, SQL_TEST_STRING)
 		command      = options.command
