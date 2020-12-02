@@ -39,7 +39,7 @@ from .zipea      import upload_to_zenodo
 
 log = logging.getLogger("azotenodo")
 
-SEMANTIC_VERSIONING_FMT = "%y.%m.%d"
+SEMANTIC_VERSIONING_FMT = "%y.%m"
 
 # -----------------------
 # Module global functions
@@ -150,7 +150,7 @@ def createParser():
 	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate configuration file')
 	parser.add_argument('--csv-dir',type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
 	parser.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
-	group1.add_argument('-t', '--test',   action='store_true', help='Test. Publish in sandbox environment')
+	parser.add_argument('-t', '--test',   action='store_true', help='Test. Publish in sandbox environment')
 	return parser
 
 
@@ -164,12 +164,22 @@ def main():
 	'''
 	try:
 		hsh = {}
+		context = argparse.Namespace()
 		options = createParser().parse_args(sys.argv[1:])
 		configureLogging(options)
 		log.info("============== AZOTENODO {0} ==============".format(__version__))
 		file_options = load_config_file(options.config)
 		file_options = argparse.Namespace(**file_options)
 		setup(options)
+		if options.test:
+			context.url_prefix = SANDBOX_URL_PREFIX
+			context.doi_prefix = SANDBOX_DOI_PREFIX
+		else:
+			context.url_prefix = PRODUCTION_URL_PREFIX
+			context.doi_prefix = PRODUCTION_DOI_PREFIX
+		context.access_token = file_options.api_key
+		context.file         = options.zip_file
+
 
 		if os.path.exists(options.zip_file):
 			hsh['prev'] = fingerprint(options.zip_file)
@@ -180,7 +190,8 @@ def main():
 		if hsh['now'] != hsh['prev']:
 			log.info("new files were added to {0}".format(options.zip_file))
 			version = datetime.datetime.utcnow().strftime(SEMANTIC_VERSIONING_FMT)
-			upload_to_zenodo(options.zip_file, version, "jaja")
+			context.version      = version
+			upload_to_zenodo(context)
 		
 		
 	except KeyboardInterrupt as e:
