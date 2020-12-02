@@ -50,9 +50,8 @@ def load_config_file(filepath):
     log.info("Opening configuration file %s", filepath)
 
     options = {}
-    options['prod_url']      = parser.get("zenodo","prod_url")
-    options['sandbox_url']   = parser.get("zenodo","sandbox_url")
-    options['api_key']       = parser.get("zenodo","api_key")
+    options['api_key']      = parser.get("zenodo","api_key")
+    options['record_id']    = parser.get("zenodo","record_id")
 
     return options
 

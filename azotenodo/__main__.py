@@ -22,6 +22,7 @@ import shutil
 import datetime
 import hashlib
 import zipfile
+
 #--------------
 # local imports
 # -------------
@@ -179,7 +180,7 @@ def main():
 		if hsh['now'] != hsh['prev']:
 			log.info("new files were added to {0}".format(options.zip_file))
 			version = datetime.datetime.utcnow().strftime(SEMANTIC_VERSIONING_FMT)
-			upload_to_zenodo(zip_file, version, "jaja")
+			upload_to_zenodo(options.zip_file, version, "jaja")
 		
 		
 	except KeyboardInterrupt as e:

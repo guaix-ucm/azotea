@@ -30,6 +30,12 @@ from ._version import get_versions
 # Module constants
 # ----------------
 
+PRODUCTION_DOI_PREFIX = "10.5281"
+SANDBOX_DOI_PREFIX    = "10.5072"
+
+PRODUCTION_URL_PREFIX = "https://zenodo.org/api/"
+SANDBOX_URL_PREFIX    = "https://sandbox.zenodo.org/api/"
+
 # Configuration file templates are built-in the package
 DEF_CONFIG_TPL = resource_filename(__name__, os.path.join('data', 'azotenodo.ini'))
 

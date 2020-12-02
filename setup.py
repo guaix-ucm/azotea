@@ -9,13 +9,13 @@ LONG_DESCRIPTION = open('README.md').read()
 
 
 PKG_NAME     = 'azotea'
-AUTHOR       = 'Jaime Zamorano'
-AUTHOR_EMAIL = 'jzamoran@ucm.es'
+AUTHOR       = 'Rafael González'
+AUTHOR_EMAIL = 'astrorafael@gmail.com'
 DESCRIPTION  = 'command line tool to reduce DSLR RAW images',
 LICENSE      = 'MIT'
 KEYWORDS     = 'Astronomy Python LightPollution'
 URL          = 'https://guaix.ucm.es/AZOTEA'
-PACKAGES     = ["azotea"]
+PACKAGES     = ["azotea","azotenodo"]
 DEPENDENCIES = [
                   'tabulate',
                   'numpy',
@@ -23,7 +23,8 @@ DEPENDENCIES = [
                   'rawpy',
                   'exifread',
                   'opencv-python',
-                  'jdcal'
+                  'jdcal',
+                  'requests'
 ]
 
 CLASSIFIERS  = [
@@ -32,7 +33,6 @@ CLASSIFIERS  = [
     'Intended Audience :: Developers',
     'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
-    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3.6',
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Atmospheric Science',
@@ -46,6 +46,9 @@ PACKAGE_DATA = {
                 'data/azotea.ini',
                 'data/sql/*.sql',
                 'data/sql/data/*.sql',
+              ],
+    'azotenodo': [
+                'data/azotenodo.ini',
               ],
 }
 
