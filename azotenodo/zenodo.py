@@ -78,7 +78,7 @@ def zenodo_licenses(options, file_options):
     url = context.url_prefix + 'licenses/'
     log.debug("Licenses List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
-    log.debug("Status code {0} ".format(r.status_code))
+    log.info("Licenses List Status Code {0} ".format(r.status_code))
     pp = pprint.PrettyPrinter(indent=2)
     print("="*80)
     pp.pprint(r.json())
@@ -93,7 +93,7 @@ def zenodo_list(options, file_options):
     url = context.url_prefix + 'deposit/depositions'
     log.debug("Deposition List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
-    log.debug("Status code {0} ".format(r.status_code))
+    log.info("Deposition List Status Code {0} ".format(r.status_code))
     pp = pprint.PrettyPrinter(indent=2)
     print("="*80)
     pp.pprint(r.json())
@@ -108,7 +108,7 @@ def zenodo_delete(options, file_options):
     url = context.url_prefix + 'deposit/depositions/' + str(options.id)
     log.debug("Deposition Delete  Request to {0} ".format(url))
     r = requests.delete(url, params=params, headers=headers)
-    log.debug("Status code {0} ".format(r.status_code))
+    log.info("Deposition Delete Status Code {0} ".format(r.status_code))
     #print(r.json())
 
 
@@ -130,7 +130,7 @@ def zenodo_upload(options, file_options):
     url = context.url_prefix + 'deposit/depositions'
     log.debug("Deposition Upload Request to {0} ".format(url))
     r = requests.post(url, params=params, headers=headers, json={})
-    log.debug("Status code {0} ".format(r.status_code))
+    log.info("Deposition Upload Status Code {0} ".format(r.status_code))
     
     response = r.json()
     deposition_id = response['id']
@@ -148,8 +148,9 @@ def zenodo_upload(options, file_options):
 
     url = "{0}/{1}".format(bucket_url, filename)
     with open(options.zip_file, "rb") as fp:
-        log.debug("File Upload Request to {0} ".format(url))
+        log.debug("Deposition File Upload Request to {0} ".format(url))
         r = requests.put(url, data=fp, params=params)
+        log.info("Deposition File Upload Status Code {0} ".format(r.status_code))
         pp.pprint(r.json())
         print("="*80)
 
@@ -160,7 +161,8 @@ def zenodo_upload(options, file_options):
     metadata = {
         'title' : 'AZOTEA dataset',
         'upload_type': 'dataset',
-        #'communities': [ {'identifier': 'AZOTEA'},],
+        'version' : version,
+        #'communities': [ {'identifier': 'AZOTEA'} ],
         'creators' : [
             {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
             {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
@@ -174,7 +176,7 @@ def zenodo_upload(options, file_options):
     log.debug("Deposition Metadata Request to {0} ".format(url))
     #r = requests.put(url, params=params, headers=headers, data=json.dumps(data))
     r = requests.put(url, params=params, headers=headers, json={'metadata':metadata})
-    log.debug("Status code {0} ".format(r.status_code))
+    log.info("Deposition Metadata Status Code {0} ".format(r.status_code))
     
 
 
