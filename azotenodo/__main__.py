@@ -140,14 +140,14 @@ def createParser():
 	# -------------
 
 	parser_upload.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
-	parser_upload.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
+	parser_upload.add_argument('--zip-file',type=str, default="azotea.zip",  help='ZIP File to create with all CSV files')
 
 	# --------------
 	# Publish action
 	# --------------
 
 	parser_publish.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
-	parser_publish.add_argument('--zip-file',type=str, default="rafa.zip",  help='ZIP File to create with all CSV files')
+	parser_publish.add_argument('--zip-file',type=str, default="azotea.zip",  help='ZIP File to create with all CSV files')
 	
 	return parser
 
