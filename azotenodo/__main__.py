@@ -31,7 +31,7 @@ from .           import *
 from .exceptions import *
 from .           import __version__
 from .config     import load_config_file
-from .zenodo     import delete, upload, upload_publish
+from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_list
 
 # -----------------------
 # Module global variables
@@ -153,14 +153,21 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 
-	parser_upload    = subparser.add_parser('upload', help='only upload contents, but do not publish')
+	parser_upload   = subparser.add_parser('upload',  help='only upload contents, but do not publish')
 	parser_publish  = subparser.add_parser('publish', help='upload and publish')
 	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
+	parser_list     = subparser.add_parser('list',    help='list contents')
+
+
+	# -----------
+	# List action
+	# -----------
+	parser_list.add_argument('--published', action='store_true', help='List published results only')
 
 	# -------------
 	# Delete action
 	# -------------
-	parser_delete.add_argument('--id',type=int, mandatory=True,  help='Zenodo ID to delete')
+	parser_delete.add_argument('--id',type=int, required=True,  help='Zenodo ID to delete')
 
 	# -------------
 	# Upload action
@@ -195,7 +202,7 @@ def main():
 		file_options = load_config_file(options.config)
 		file_options = argparse.Namespace(**file_options)
 		setup(options)
-		globals()[command](options, file_options)
+		globals()['zenodo_' + command](options, file_options)
 	except KeyboardInterrupt as e:
 		log.critical("[%s] Interrupted by user ", __name__)
 	except Exception as e:

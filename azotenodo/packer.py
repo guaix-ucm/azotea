@@ -13,6 +13,9 @@
 import logging
 import os
 import os.path
+import zipfile
+import hashlib
+import datetime
 
 #--------------
 # local imports
@@ -22,6 +25,8 @@ import os.path
 # -----------------------
 # Module global variables
 # -----------------------
+
+SEMANTIC_VERSIONING_FMT = "%y.%m"
 
 log     = logging.getLogger("azotenodo")
 
