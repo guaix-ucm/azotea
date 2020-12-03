@@ -31,7 +31,7 @@ from .           import *
 from .exceptions import *
 from .           import __version__
 from .config     import load_config_file
-from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_list
+from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_list, zenodo_licenses
 
 # -----------------------
 # Module global variables
@@ -39,7 +39,6 @@ from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_lis
 
 log = logging.getLogger("azotenodo")
 
-SEMANTIC_VERSIONING_FMT = "%y.%m"
 
 # -----------------------
 # Module global functions
@@ -97,40 +96,6 @@ def setup(options):
 		log.info("Created {0} file, please review it".format(DEF_CONFIG))
 
 
-
-def fingerprint(filepath):
-    '''Compute a hash from the image'''
-    file_hash = hashlib.md5()
-    with open(filepath, 'rb') as f:
-        block = f.read() 
-        while len(block) > 0:
-            file_hash.update(block)
-            block = f.read()
-    return file_hash.digest()
-
-
-def get_paths(directory):
-    '''Get all file paths in a list''' 
-  
-    file_paths = [] 
-  
-    # crawling through directory and subdirectories 
-    for root, directories, files in os.walk(directory):
-        log.info("Exploring = {0}".format(root))
-        for filename in files: 
-            filepath = os.path.join(root, filename) 
-            file_paths.append(filepath) 
-    return file_paths         
-
-
-def pack(options):
-    '''Pack all files in the ZIPF file given by options'''
-    paths = get_paths(options.csv_dir)
-    log.info("Creating {0}".format(options.zip_file))
-    with zipfile.ZipFile(options.zip_file, 'w') as myzip:
-        for myfile in paths: 
-            myzip.write(myfile) 
-
 # =================== #
 # THE ARGUMENT PARSER #
 # =================== #
@@ -157,6 +122,7 @@ def createParser():
 	parser_publish  = subparser.add_parser('publish', help='upload and publish')
 	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
 	parser_list     = subparser.add_parser('list',    help='list contents')
+	parser_licenses = subparser.add_parser('licenses', help='list Zenodo available liceneses')
 
 
 	# -----------

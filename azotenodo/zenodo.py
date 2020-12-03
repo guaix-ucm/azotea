@@ -70,6 +70,20 @@ def zenodo_upload_publish(options, file_options):
 # COMMANDS
 # ========
 
+def zenodo_licenses(options, file_options):
+    context = setup_context(options, file_options)
+    headers = {"Content-Type": "application/json"}
+    params  = {'access_token': context.access_token,}
+
+    url = context.url_prefix + 'licenses/'
+    log.debug("Licenses List Request to {0} ".format(url))
+    r = requests.get(url, params=params, headers=headers)
+    log.debug("Status code {0} ".format(r.status_code))
+    pp = pprint.PrettyPrinter(indent=2)
+    print("="*80)
+    pp.pprint(r.json())
+    print("="*80)
+
 def zenodo_list(options, file_options):
     context = setup_context(options, file_options)
     headers = {"Content-Type": "application/json"}
@@ -146,7 +160,7 @@ def zenodo_upload(options, file_options):
     metadata = {
         'title' : 'AZOTEA dataset',
         'upload_type': 'dataset',
-        'communities': [ {'identifier': 'AZOTEA'},],
+        #'communities': [ {'identifier': 'AZOTEA'},],
         'creators' : [
             {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
             {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
@@ -155,33 +169,11 @@ def zenodo_upload(options, file_options):
         'access_right': 'open',
     }
 
-    data = {
-        'metadata': {
-            'title' : 'AZOTEA dataset',
-            'upload_type': 'dataset',
-            #'communities': [ {'identifier': 'AZOTEA'},],
-            'creators' : [
-                {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
-                {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
-            ],
-            'description': 'Latest monthly AZOTEA reduced CSV files',
-            'access_right': 'open',
-        }
-    }
-
-    # data = {
-    #    'metadata': {
-    #         'title': 'My first upload',
-    #          'upload_type': 'poster',
-    #          'description': 'This is my first upload',
-    #          'creators': [{'name': 'Doe, John',
-    #                        'affiliation': 'Zenodo'}]
-    #      }
-    # }
 
     url = context.url_prefix + 'deposit/depositions/' + str(deposition_id)
     log.debug("Deposition Metadata Request to {0} ".format(url))
-    r = requests.put(url, params=params, headers=headers, data=json.dumps(data))
+    #r = requests.put(url, params=params, headers=headers, data=json.dumps(data))
+    r = requests.put(url, params=params, headers=headers, json={'metadata':metadata})
     log.debug("Status code {0} ".format(r.status_code))
     
 
