@@ -162,7 +162,7 @@ def zenodo_upload(options, file_options):
         'title' : 'AZOTEA dataset',
         'upload_type': 'dataset',
         'version' : version,
-        #'communities': [ {'identifier': 'AZOTEA'} ],
+        'communities': [ {'identifier': 'azotea'} ],
         'creators' : [
             {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
             {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
