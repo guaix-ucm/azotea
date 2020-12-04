@@ -5,7 +5,9 @@
 CREATE TABLE IF NOT EXISTS image_t
 (
     -- Observer metadata
-    observer            TEXT,             -- Observer name
+    observer            TEXT,             -- Observer full name (family name + surname)
+    obs_family_name     TEXT,             -- Observer family name (used only for dataset Zenodo publication)
+    obs_surnane         TEXT,             -- Observer family name (used only for dataset Zenodo publication)
     organization        TEXT,             -- Observer organization
     email               TEXT,             -- Observer email
     -- Location metadata

@@ -63,7 +63,11 @@ def load_config_file(filepath):
     log.info("Opening configuration file %s", filepath)
 
     options = {}
-    options['observer']      = parser.get("observer","observer")
+    
+    options['obs_family_name'] = parser.get("observer","family_name").strip()
+    options['obs_surname']   = parser.get("observer","surname").strip()
+    options['observer']      = options['obs_family_name'] + ' ' + options['obs_surname']
+
     options['organization']  = parser.get("observer","organization")
     options['email']         = parser.get("observer","email")
     options['focal_length']  = parser.get("camera","focal_length")
