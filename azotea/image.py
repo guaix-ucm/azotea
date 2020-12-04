@@ -632,6 +632,8 @@ def do_metadata(connection, session, options):
 		UPDATE image_t 
 		SET 
 			observer     = :observer,
+			obs_family_name = :obs_family_name,
+			obs_surname  = :obs_surname,
 			organization = :organization,
 			email        = :email,
 			location     = :location
