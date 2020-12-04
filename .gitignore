@@ -16,3 +16,5 @@ publica.sh
 sftp-config.json
 *.zip
 *.ini
+*.txt
+
