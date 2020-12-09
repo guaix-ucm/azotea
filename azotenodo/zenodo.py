@@ -46,26 +46,6 @@ def setup_context(options, file_options):
         #context.file         = options.zip_file
     return context
 
-def zenodo_upload_publish(options, file_options):
-    log.info("===== CUCUUUU ")
-    print(context)
-    
-    headers = {"Content-Type": "application/json"}
-    params  = {'access_token': context.access_token}
-
-    # Headers are not necessary here since "requests" automatically
-    # adds "Content-Type: application/json", because we're using
-    # the "json=" keyword argument
-    # headers=headers,
-    url = context.url_prefix + 'deposit/depositions'
-    log.debug("===== REQUESTINT TO {0} ".format(url))
-    r = requests.post(url,
-            params=params,
-            json={},
-            headers=headers)
-    log.info("===== STATUS CODE = {0}".format(r.status_code))
-    print(r.json())
-
 # ========
 # COMMANDS
 # ========
@@ -116,7 +96,7 @@ def zenodo_upload(options, file_options):
     changed, version = make_new_release(options)
     if not changed:
         log.info("No need to upload new version to Zendodo")
-        return
+        return None
 
     
     # -------------------------------------
@@ -133,7 +113,7 @@ def zenodo_upload(options, file_options):
     log.info("Deposition Upload Status Code {0} ".format(r.status_code))
     
     response = r.json()
-    deposition_id = response['id']
+    context.deposition_id = response['id']
     pp = pprint.PrettyPrinter(indent=2)
     print("="*80)
     pp.pprint(r.json())
@@ -162,7 +142,7 @@ def zenodo_upload(options, file_options):
         'title' : 'AZOTEA dataset',
         'upload_type': 'dataset',
         'version' : version,
-        'communities': [ {'identifier': 'azotea'} ],
+        'communities': [ {'identifier': options.community} ],
         'creators' : [
             {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
             {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
@@ -172,16 +152,25 @@ def zenodo_upload(options, file_options):
     }
 
 
-    url = context.url_prefix + 'deposit/depositions/' + str(deposition_id)
+    url = context.url_prefix + 'deposit/depositions/' + str(context.deposition_id)
     log.debug("Deposition Metadata Request to {0} ".format(url))
-    #r = requests.put(url, params=params, headers=headers, data=json.dumps(data))
     r = requests.put(url, params=params, headers=headers, json={'metadata':metadata})
     log.info("Deposition Metadata Status Code {0} ".format(r.status_code))
-    
 
+    return context
 
 
 def zenodo_publish(options, file_options):
-    pass
 
+    context = zenodo_upload(options, file_options)
+    if context is None:
+        log.info("No need to publish new version to Zendodo")
+        return
+
+    headers = {"Content-Type": "application/json"}
+    params  = {'access_token': context.access_token}
+    url = "{0}deposit/depositions/{1}/actions/publish".format(context.url_prefix, context.deposition_id)
+    log.debug("Deposition Publish Request to {0} ".format(url))
+    r = requests.post(url, params=params, headers=headers, json={})
+    log.info("Deposition Publish Status Code {0} ".format(r.status_code))
 

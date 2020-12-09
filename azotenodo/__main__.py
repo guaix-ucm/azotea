@@ -120,9 +120,10 @@ def createParser():
 
 	parser_upload   = subparser.add_parser('upload',  help='only upload contents, but do not publish')
 	parser_publish  = subparser.add_parser('publish', help='upload and publish')
+	parser_update   = subparser.add_parser('update',  help='upload and publish a new version')
 	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
 	parser_list     = subparser.add_parser('list',    help='list contents')
-	parser_licenses = subparser.add_parser('licenses', help='list Zenodo available liceneses')
+	parser_licenses = subparser.add_parser('licenses', help='list Zenodo available publication licenses')
 
 
 	# -----------
@@ -139,15 +140,26 @@ def createParser():
 	# Upload action
 	# -------------
 
-	parser_upload.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
-	parser_upload.add_argument('--zip-file',type=str, default="azotea.zip",  help='ZIP File to create with all CSV files')
+	parser_upload.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR, help='Optional CSV file dir')
+	parser_upload.add_argument('--zip-file' ,type=str, default="azotea.zip",   help='ZIP File to create with all CSV files')
+	parser_upload.add_argument('--community',type=str, default="azotea",       help='community where to publsih the dataset')
 
 	# --------------
 	# Publish action
 	# --------------
 
-	parser_publish.add_argument('--csv-dir', type=str, default=AZOTEA_CSV_DIR,  help='Optional CSV file dir')
-	parser_publish.add_argument('--zip-file',type=str, default="azotea.zip",  help='ZIP File to create with all CSV files')
+	parser_publish.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR, help='Optional CSV file dir')
+	parser_publish.add_argument('--zip-file' ,type=str, default="azotea.zip",   help='ZIP File to create with all CSV files')
+	parser_publish.add_argument('--community',type=str, default="azotea",       help='community where to publsih the dataset')
+
+
+	# --------------
+	# Update action
+	# --------------
+
+	parser_update.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR, help='Optional CSV file dir')
+	parser_update.add_argument('--zip-file' ,type=str, default="azotea.zip",   help='ZIP File to create with all CSV files')
+	parser_update.add_argument('--community',type=str, default="azotea",       help='community where to publsih the dataset')
 	
 	return parser
 
