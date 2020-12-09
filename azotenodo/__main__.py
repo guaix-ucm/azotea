@@ -31,7 +31,7 @@ from .           import *
 from .exceptions import *
 from .           import __version__
 from .config     import load_config_file
-from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_list, zenodo_licenses
+from .zenodo     import zenodo_delete, zenodo_upload, zenodo_publish, zenodo_list, zenodo_licenses, zenodo_newversion
 
 # -----------------------
 # Module global variables
@@ -120,7 +120,7 @@ def createParser():
 
 	parser_upload   = subparser.add_parser('upload',  help='only upload contents, but do not publish')
 	parser_publish  = subparser.add_parser('publish', help='upload and publish')
-	parser_update   = subparser.add_parser('update',  help='upload and publish a new version')
+	parser_newver   = subparser.add_parser('newversion',  help='make a snapshot of the current resource')
 	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
 	parser_list     = subparser.add_parser('list',    help='list contents')
 	parser_licenses = subparser.add_parser('licenses', help='list Zenodo available publication licenses')
@@ -153,13 +153,11 @@ def createParser():
 	parser_publish.add_argument('--community',type=str, default="azotea",       help='community where to publsih the dataset')
 
 
-	# --------------
-	# Update action
-	# --------------
+	# ------------------
+	# New version action
+	# ------------------
 
-	parser_update.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR, help='Optional CSV file dir')
-	parser_update.add_argument('--zip-file' ,type=str, default="azotea.zip",   help='ZIP File to create with all CSV files')
-	parser_update.add_argument('--community',type=str, default="azotea",       help='community where to publsih the dataset')
+	parser_newver.add_argument('--id',type=int, required=True,  help='Existing resource identifier')
 	
 	return parser
 

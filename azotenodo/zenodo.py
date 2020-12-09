@@ -55,7 +55,7 @@ def zenodo_licenses(options, file_options):
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token,}
 
-    url = context.url_prefix + 'licenses/'
+    url = "{0}/licenses/".format(context.url_prefix)
     log.debug("Licenses List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
     log.info("Licenses List Status Code {0} ".format(r.status_code))
@@ -70,7 +70,7 @@ def zenodo_list(options, file_options):
     status = 'published' if options.published else 'draft' 
     params  = {'access_token': context.access_token, 'status':status}
 
-    url = context.url_prefix + 'deposit/depositions'
+    url = "{0}/deposit/depositions/".format(context.url_prefix)
     log.debug("Deposition List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
     log.info("Deposition List Status Code {0} ".format(r.status_code))
@@ -85,7 +85,8 @@ def zenodo_delete(options, file_options):
     context = setup_context(options, file_options)
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
-    url = context.url_prefix + 'deposit/depositions/' + str(options.id)
+
+    url = "{0}/deposit/depositions/{1}".format(context.url_prefix, options.id)
     log.debug("Deposition Delete  Request to {0} ".format(url))
     r = requests.delete(url, params=params, headers=headers)
     log.info("Deposition Delete Status Code {0} ".format(r.status_code))
@@ -107,7 +108,8 @@ def zenodo_upload(options, file_options):
     context = setup_context(options, file_options)
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
-    url = context.url_prefix + 'deposit/depositions'
+
+    url = "{0}/deposit/depositions".format(context.url_prefix)
     log.debug("Deposition Upload Request to {0} ".format(url))
     r = requests.post(url, params=params, headers=headers, json={})
     log.info("Deposition Upload Status Code {0} ".format(r.status_code))
@@ -152,7 +154,7 @@ def zenodo_upload(options, file_options):
     }
 
 
-    url = context.url_prefix + 'deposit/depositions/' + str(context.deposition_id)
+    url = "{0}/deposit/depositions/{1}".format(context.url_prefix, options.id)
     log.debug("Deposition Metadata Request to {0} ".format(url))
     r = requests.put(url, params=params, headers=headers, json={'metadata':metadata})
     log.info("Deposition Metadata Status Code {0} ".format(r.status_code))
@@ -169,8 +171,24 @@ def zenodo_publish(options, file_options):
 
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
-    url = "{0}deposit/depositions/{1}/actions/publish".format(context.url_prefix, context.deposition_id)
+    url = "{0}/deposit/depositions/{1}/actions/publish".format(context.url_prefix, context.deposition_id)
     log.debug("Deposition Publish Request to {0} ".format(url))
     r = requests.post(url, params=params, headers=headers, json={})
     log.info("Deposition Publish Status Code {0} ".format(r.status_code))
 
+
+def zenodo_newversion(options, file_options):
+    context = setup_context(options, file_options)
+
+    headers = {"Content-Type": "application/json"}
+    params  = {'access_token': context.access_token,}
+
+    url = "{0}/deposit/depositions/{1}/actions/newversion".format(context.url_prefix, options.id)
+    log.debug("Deposition New Version of {1} Request to {0} ".format(url, options.id))
+    r = requests.post(url, params=params, headers=headers, json={})
+    log.info("Deposition New Version Request Status Code {0} ".format(r.status_code))
+
+    pp = pprint.PrettyPrinter(indent=2)
+    print("="*80)
+    pp.pprint(r.json())
+    print("="*80)
