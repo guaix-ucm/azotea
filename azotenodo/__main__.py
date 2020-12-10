@@ -117,60 +117,21 @@ def createParser():
 
 	subparser = parser.add_subparsers(dest='command')
 
-	parser_list     = subparser.add_parser('list',    help='list contents')
-	parser_licenses = subparser.add_parser('licenses', help='list Zenodo available publication licenses')
-
-	parser_deposit  = subparser.add_parser('deposit',  help='create a new deposition, but do not publish')
-	parser_upload   = subparser.add_parser('upload',  help='only upload file contents, but do not publish')
-
-	parser_publish  = subparser.add_parser('publish', help='upload and publish')
-	parser_newver   = subparser.add_parser('newversion',  help='make a snapshot of the current resource')
-	parser_delete   = subparser.add_parser('delete',  help='delete uploaded content')
+	parser_list     = subparser.add_parser('list',      help='list contents')
+	parser_licenses = subparser.add_parser('licenses',  help='list Zenodo available publication licenses')
+	parser_delete   = subparser.add_parser('delete',    help='delete draft Zenodo depositions')
 	parser_pipeline = subparser.add_parser('pipeline',  help='The full pipeline (deposit/upload/publish) with versioning')
 	
-
 
 	# -----------
 	# List action
 	# -----------
-	parser_list.add_argument('--published', action='store_true', help='List published results only')
+	parser_list.add_argument('--published', action='store_true', default=False, help='List published results only')
 
 	# -------------
 	# Delete action
 	# -------------
 	parser_delete.add_argument('--id',type=int, required=True,  help='Zenodo ID to delete')
-
-	# -------------
-	# Deposit action
-	# -------------
-
-	parser_deposit.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,   help='Optional CSV file dir')
-	parser_deposit.add_argument('--zip-file' ,type=str, default=AZOTEA_ZIP_FILE,  help='ZIP File to create with all CSV files')
-	parser_deposit.add_argument('--community',type=str, default=AZOTEA_COMMUNITY, help='community where to publish the dataset')
-
-
-	# -------------
-	# Upload action
-	# -------------
-
-	parser_upload.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,   help='Optional CSV file dir')
-	parser_upload.add_argument('--zip-file' ,type=str, default=AZOTEA_ZIP_FILE,  help='ZIP File to create with all CSV files')
-	parser_upload.add_argument('--community',type=str, default=AZOTEA_COMMUNITY, help='community where to publish the dataset')
-
-	# --------------
-	# Publish action
-	# --------------
-
-	parser_publish.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,   help='Optional CSV file dir')
-	parser_publish.add_argument('--zip-file' ,type=str, default=AZOTEA_ZIP_FILE,  help='ZIP File to create with all CSV files')
-	parser_publish.add_argument('--community',type=str, default=AZOTEA_COMMUNITY, help='community where to publish the dataset')
-
-
-	# ------------------
-	# New version action
-	# ------------------
-
-	parser_newver.add_argument('--id',type=int, required=True,  help='Existing resource identifier')
 
 	# --------------
 	# Pipeline action

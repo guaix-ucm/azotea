@@ -71,7 +71,7 @@ def do_zenodo_list(context):
     headers = {"Content-Type": "application/json"}
     status  = 'published' if context.published else 'draft' 
     params  = {'access_token': context.access_token, 'status':status}
-    url = "{0}/deposit/depositions/".format(context.url_prefix)
+    url = "{0}/deposit/depositions".format(context.url_prefix)
     log.debug("Deposition List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
     log.info("Deposition List Status Code {0} ".format(r.status_code))
@@ -215,8 +215,9 @@ def zenodo_licenses(options, file_options):
 
 def zenodo_list(options, file_options):
     context = setup_context(options, file_options)
-    context.verbose  = options.verbose
-    context.pprinter = pprint.PrettyPrinter(indent=2)
+    context.verbose   = options.verbose
+    context.published = options.published
+    context.pprinter  = pprint.PrettyPrinter(indent=2)
     do_zenodo_list(context)
 
 
