@@ -67,11 +67,15 @@ def do_zenodo_licenses(context):
     return response
 
 
-def do_zenodo_list(context):
+def do_zenodo_list(context, title, published):
     headers = {"Content-Type": "application/json"}
-    status  = 'published' if context.published else 'draft' 
-    params  = {'access_token': context.access_token, 'status':status}
+    status  = 'published' if published else 'draft' 
+    query = 'type:dataset AND title:{0}'.format(title)
+    query = 'title:{0}'.format(title)
+    
+    params  = {'access_token': context.access_token, 'status':status, 'sort': 'mostrecent', 'q': query}
     url = "{0}/deposit/depositions".format(context.url_prefix)
+    
     log.debug("Deposition List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
     log.info("Deposition List Status Code {0} ".format(r.status_code))
@@ -83,6 +87,25 @@ def do_zenodo_list(context):
     if 400 <= r.status_code <= 599:
         raise Exception(response)
     return response
+
+def do_zenodo_search(context, title, published):
+    headers = {"Content-Type": "application/json"}
+    status  = 'published'
+    params  = {'access_token': context.access_token, 'status':status, 'sort': 'mostrecent',}
+    url = "{0}/deposit/depositions".format(context.url_prefix)
+    
+    log.debug("Deposition List Request to {0} ".format(url))
+    r = requests.get(url, params=params, headers=headers)
+    log.info("Deposition List Status Code {0} ".format(r.status_code))
+    response = r.json()
+    response = list(filter(lambda item: item['title'] == title, response))
+    if context.verbose:
+        print("=============== BEGIN DEPOSITION SEARCH BY TITLE RESPONSE ===============")
+        context.pprinter.pprint(response)
+        print("=============== END DEPOSITION SEARCH BY TITLE RESPONSE ===============")
+    if 400 <= r.status_code <= 599:
+        raise Exception(response)
+    return response[0]
 
 
 def do_zenodo_delete(context, identifier):
@@ -216,9 +239,8 @@ def zenodo_licenses(options, file_options):
 def zenodo_list(options, file_options):
     context = setup_context(options, file_options)
     context.verbose   = options.verbose
-    context.published = options.published
     context.pprinter  = pprint.PrettyPrinter(indent=2)
-    do_zenodo_list(context)
+    do_zenodo_list2(context, options.title, options.published)
 
 
 def zenodo_delete(options, file_options):
@@ -251,7 +273,8 @@ def zenodo_pipeline(options, file_options):
         response = do_zenodo_upload(context, zip_file, bucket_url)
         response = do_zenodo_publish(context, new_id)
     else:
-        latest_id = options.id if options.id is not None else file_options.record_id
+        response = do_zenodo_search(context, context.title, True)
+        latest_id = response['id']
         response = do_zenodo_newversion(context, latest_id)
         new_id   = os.path.basename(response['links']['latest_draft'])
         response = do_zenodo_metadata(context, new_id)

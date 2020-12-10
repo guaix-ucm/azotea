@@ -127,6 +127,7 @@ def createParser():
 	# List action
 	# -----------
 	parser_list.add_argument('--published', action='store_true', default=False, help='List published results only')
+	parser_list.add_argument('--title', type=str, default=None,  help='Search by title')
 
 	# -------------
 	# Delete action
@@ -142,8 +143,6 @@ def createParser():
 	parser_pipeline.add_argument('--zip-file' ,type=str, default=AZOTEA_ZIP_FILE,   help='Optional ZIP File to create with all CSV files')
 	parser_pipeline.add_argument('--community',type=str, default=AZOTEA_COMMUNITY,  help='Optional community where to publish the dataset')
 	parser_pipeline.add_argument('--version',  type=str, default=None,              help='Optional version string to tag, useful for tests')
-	parser_pipeline.add_argument('--id',       type=int, default=None,              help='Optional Zenodo ID to update new version')
-
 	
 	return parser
 
