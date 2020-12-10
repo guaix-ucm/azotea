@@ -51,7 +51,6 @@ def load_config_file(filepath):
 
     options = {}
     options['api_key']      = parser.get("zenodo","api_key")
-    options['record_id']    = parser.get("zenodo","record_id")
 
     return options
 
