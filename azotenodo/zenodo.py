@@ -94,11 +94,12 @@ def do_zenodo_search(context, title, published):
     params  = {'access_token': context.access_token, 'status':status, 'sort': 'mostrecent',}
     url = "{0}/deposit/depositions".format(context.url_prefix)
     
+    log.info("Searching dataset with title {0}".format(title))
     log.debug("Deposition List Request to {0} ".format(url))
     r = requests.get(url, params=params, headers=headers)
-    log.info("Deposition List Status Code {0} ".format(r.status_code))
     response = r.json()
     response = list(filter(lambda item: item['title'] == title, response))
+    log.info("Deposition search OK, HTTP status code {0} ".format(r.status_code))
     if context.verbose:
         print("=============== BEGIN DEPOSITION SEARCH BY TITLE RESPONSE ===============")
         context.pprinter.pprint(response)
@@ -126,13 +127,12 @@ def do_zenodo_delete(context, identifier):
 
 
 def do_zenodo_deposit(context):
-    log.info("Deposit new version {0} to Zendodo".format(context.version))
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
+    log.info("Creating new Deposition for title {0}, version {1} ".format(context.title, context.version))
     url = "{0}/deposit/depositions".format(context.url_prefix)
     log.debug("Deposition Request to {0} ".format(url))
     r = requests.post(url, params=params, headers=headers, json={})
-    log.info("Deposition Status Code {0} ".format(r.status_code))
     response = r.json()
     if context.verbose:
         print("=============== BEGIN DEPOSIT CREATION RESPONSE ===============")
@@ -140,6 +140,7 @@ def do_zenodo_deposit(context):
         print("=============== END DEPOSIT CREATION RESPONSE ===============")
     if 400 <= r.status_code <= 599:
         raise Exception(response)
+    log.info("Deposition created with id {0}, HTTP status code {1}".format(response['id'], r.status_code))
     return response
 
 
@@ -162,7 +163,6 @@ def do_zenodo_metadata(context, identifier):
     url = "{0}/deposit/depositions/{1}".format(context.url_prefix, identifier)
     log.debug("Deposition Metadata Request to {0} ".format(url))
     r = requests.put(url, params=params, headers=headers, json={'metadata':metadata})
-    log.info("Deposition Metadata Status Code {0} ".format(r.status_code))
     response = r.json()
     if context.verbose:
         print("=============== BEGIN METADATA RESPONSE ===============")
@@ -170,6 +170,7 @@ def do_zenodo_metadata(context, identifier):
         print("=============== END METADATA RESPONSE ===============")
     if 400 <= r.status_code <= 599:
         raise Exception(response)
+    log.info("Metadata updated for id {0}, HTTP status code {1}".format(identifier, r.status_code))
     return response
 
 
@@ -181,7 +182,6 @@ def do_zenodo_upload(context, zip_file, bucket_url):
     with open(zip_file, "rb") as fp:
         log.debug("Deposition File Upload Request to {0} ".format(url))
         r = requests.put(url, data=fp, params=params)
-        log.info("Deposition File Upload Status Code {0} ".format(r.status_code))
     response = r.json()
     if context.verbose:
         print("=============== BEGIN FILE UPLOAD RESPONSE ===============")
@@ -189,6 +189,7 @@ def do_zenodo_upload(context, zip_file, bucket_url):
         print("=============== END FILE UPLOAD RESPONSE ===============")
     if 400 <= r.status_code <= 599:
         raise Exception(response)
+    log.info("Deposition File Upload succesful for {0}, HTTP status code {1} ".format(zip_file, r.status_code))
     return response
 
 
@@ -196,9 +197,9 @@ def do_zenodo_publish(context, identifier):
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
     url = "{0}/deposit/depositions/{1}/actions/publish".format(context.url_prefix, identifier)
+    log.info("Publish new dataset for {0}".format(identifier))
     log.debug("Deposition Publish Request to {0} ".format(url))
     r = requests.post(url, params=params, headers=headers, json={})
-    log.info("Deposition Publish Status Code {0} ".format(r.status_code))
     response = r.json()
     if context.verbose:
         print("=============== BEGIN PUBLISH RESPONSE ===============")
@@ -206,6 +207,7 @@ def do_zenodo_publish(context, identifier):
         print("=============== END PUBLISH RESPONSE ===============")
     if 400 <= r.status_code <= 599:
         raise Exception(response)
+    log.info("Publication succesful doi = {0}, HTTP status code {1} ".format(response['doi'], r.status_code))
     return context
 
 
@@ -213,9 +215,9 @@ def do_zenodo_newversion(context, latest_id):
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token,}
     url = "{0}/deposit/depositions/{1}/actions/newversion".format(context.url_prefix, latest_id)
+    log.info("Creating New Version deposition from {0}".format(latest_id))
     log.debug("Deposition New Version of {1} Request to {0} ".format(url, latest_id))
     r = requests.post(url, params=params, headers=headers, json={})
-    log.info("Deposition New Version Request Status Code {0} ".format(r.status_code))
     response = r.json()
     if context.verbose:
         print("=============== BEGIN DEPOSITION NEW VERSION RESPONSE ===============")
@@ -223,6 +225,8 @@ def do_zenodo_newversion(context, latest_id):
         print("=============== END DEPOSITION NEW VERSION RESPONSE ===============")
     if 400 <= r.status_code <= 599:
         raise Exception(response)
+    new_id   = os.path.basename(response['links']['latest_draft'])
+    log.info("Deposition New Version succesful, new id = {0}, HTTP status code {1} ".format(new_id, r.status_code))
     return response
 
 # ========
