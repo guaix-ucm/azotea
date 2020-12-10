@@ -60,7 +60,7 @@ def get_paths(directory):
 
 
 def pack(options):
-    '''Pack all files in the ZIPF file given by options'''
+    '''Pack all files in the ZIP file given by options'''
     paths = get_paths(options.csv_dir)
     log.info("Creating {0}".format(options.zip_file))
     with zipfile.ZipFile(options.zip_file, 'w') as myzip:
@@ -70,17 +70,19 @@ def pack(options):
 
 
 def make_new_release(options):
-    hsh = {}
+    hsh        = {}
+    first_time = False
+    version    = None
+    changed    = False
     if os.path.exists(options.zip_file):
         hsh['prev'] = fingerprint(options.zip_file)
     else:
         hsh['prev'] = None
+        first_time = True
     pack(options)
     hsh['now'] = fingerprint(options.zip_file)
-    version = None
-    changed = False
     if hsh['now'] != hsh['prev']:
         log.info("new files were added to {0}".format(options.zip_file))
         version = datetime.datetime.utcnow().strftime(SEMANTIC_VERSIONING_FMT)
         changed = True
-    return changed, version
+    return first_time, changed, version
