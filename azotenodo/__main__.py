@@ -87,6 +87,9 @@ def setup(options):
 	if not os.path.exists(AZOTEA_CSV_DIR):
 		log.info("Creating {0} directory".format(AZOTEA_CSV_DIR))
 		os.mkdir(AZOTEA_CSV_DIR)
+	if not os.path.exists(AZOTEA_ZIP_DIR):
+		log.info("Creating {0} directory".format(AZOTEA_ZIP_DIR))
+		os.mkdir(AZOTEA_ZIP_DIR)
 	if not os.path.exists(AZOTEA_LOG_DIR):
 		log.info("Creating {0} directory".format(AZOTEA_LOG_DIR))
 		os.mkdir(AZOTEA_LOG_DIR)
@@ -140,11 +143,13 @@ def createParser():
 
 	parser_pipeline.add_argument('--title',    type=str, default=AZOTEA_PUBL_TITLE, help='Optional Publication Title')
 	parser_pipeline.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,    help='Optional CSV file dir')
-	parser_pipeline.add_argument('--zip-file' ,type=str, default=AZOTEA_ZIP_FILE,   help='Optional ZIP File to create with all CSV files')
+	parser_pipeline.add_argument('--zip-file' ,type=str, default=DEF_ZIP_FILE,      help='Optional ZIP File to create with all CSV files')
 	parser_pipeline.add_argument('--community',type=str, default=AZOTEA_COMMUNITY,  help='Optional community where to publish the dataset')
 	parser_pipeline.add_argument('--version',  type=str, default=None,              help='Optional version string to tag, useful for tests')
 	
 	return parser
+
+
 
 
 # ================ #

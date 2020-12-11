@@ -16,13 +16,14 @@ import argparse
 import os.path
 import pprint
 import json
+import sqlite3
 
 #--------------
 # local imports
 # -------------
 
 from .packer import make_new_release
-from . import SANDBOX_DOI_PREFIX, SANDBOX_URL_PREFIX, PRODUCTION_URL_PREFIX, PRODUCTION_DOI_PREFIX
+from . import SANDBOX_DOI_PREFIX, SANDBOX_URL_PREFIX, PRODUCTION_URL_PREFIX, PRODUCTION_DOI_PREFIX, DEF_DBASE
 # -----------------------
 # Module global variables
 # -----------------------
@@ -39,12 +40,47 @@ def setup_context(options, file_options):
     if options.test:
         context.url_prefix = SANDBOX_URL_PREFIX
         context.doi_prefix = SANDBOX_DOI_PREFIX
+        context.access_token = file_options.api_key_sandbox
     else:
         context.url_prefix = PRODUCTION_URL_PREFIX
         context.doi_prefix = PRODUCTION_DOI_PREFIX
-    context.access_token = file_options.api_key
-        #context.file         = options.zip_file
+        context.access_token = file_options.api_key_production
     return context
+
+
+def open_database(dbase_path):
+    if not os.path.exists(dbase_path):
+        with open(dbase_path, 'w') as f:
+            pass
+        log.info("Created database file {0}".format(dbase_path))
+    return sqlite3.connect(dbase_path)
+
+
+def select_contributors(connection):
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT DISTINCT obs_surname, obs_family_name, organization
+        FROM image_t
+        WHERE obs_surname IS NOT NULL
+        AND obs_family_name IS NOT NULL
+        ORDER BY obs_surname ASC
+        ''')
+    return cursor
+
+
+def get_contributors(connection):
+    contributors = []
+    for surname, family_name, organization in select_contributors(connection):
+        record = {
+            'name': "{0}, {1}".format(surname, family_name),
+            'type': 'DataCollector',
+            }
+        if organization is not None:
+            record['affiliation'] = organization
+        contributors.append(record)
+    return contributors
+
 
 # ------------
 # Real actions
@@ -145,7 +181,11 @@ def do_zenodo_deposit(context):
 
 
 def do_zenodo_metadata(context, identifier):
-    log.info("Deposit Metadata for id {0} to Zendodo".format(identifier))
+    log.info("Deposit Metadata for id {0} to Zenodo".format(identifier))
+
+    connection   = open_database(DEF_DBASE)
+    contributors = get_contributors(connection)
+
     headers = {"Content-Type": "application/json"}
     params  = {'access_token': context.access_token}
     metadata = {
@@ -157,6 +197,7 @@ def do_zenodo_metadata(context, identifier):
             {'name': 'Zamorano, Jaime', 'affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-8993-5894'},
             {'name': 'González, Rafael','affiliation': 'UCM', 'orcid': 'https://orcid.org/0000-0002-3725-0586'}
         ],
+        'contributors': contributors,
         'description': 'Latest monthly AZOTEA reduced CSV files',
         'access_right': 'open',
     }
@@ -268,7 +309,7 @@ def zenodo_pipeline(options, file_options):
     context.community = options.community
     context.version   = version if options.version is None else options.version
     zip_file          = options.zip_file
-
+   
     if first_time:
         response = do_zenodo_deposit(context)
         new_id = response['id']

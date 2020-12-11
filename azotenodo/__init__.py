@@ -38,7 +38,6 @@ SANDBOX_URL_PREFIX    = "https://sandbox.zenodo.org/api"
 
 AZOTEA_PUBL_TITLE     = 'AZOTEA dataset'
 AZOTEA_COMMUNITY      = 'azotea'
-AZOTEA_ZIP_FILE       = 'azotea.zip'
 
 
 # Configuration file templates are built-in the package
@@ -49,10 +48,12 @@ AZOTEA_BASE_DIR = os.path.join(os.path.expanduser("~"), "azotea")
 AZOTEA_CFG_DIR  = os.path.join(AZOTEA_BASE_DIR, "config")
 AZOTEA_LOG_DIR  = os.path.join(AZOTEA_BASE_DIR, "log")
 AZOTEA_CSV_DIR  = os.path.join(AZOTEA_BASE_DIR, "csv")
+AZOTEA_ZIP_DIR  = os.path.join(AZOTEA_BASE_DIR, "zip")
+AZOTEA_DB_DIR   = os.path.join(AZOTEA_BASE_DIR, "dbase")
 
-# These are in the user's file system
+DEF_DBASE      = os.path.join(AZOTEA_DB_DIR, "azotea.db")
 DEF_CONFIG     = os.path.join(AZOTEA_CFG_DIR, os.path.basename(DEF_CONFIG_TPL))
-DEF_GLOBAL_CSV = os.path.join(AZOTEA_BASE_DIR, "azotea.csv")
+DEF_ZIP_FILE   = os.path.join(AZOTEA_ZIP_DIR, "azotea.zip")
 
 DEF_TSTAMP = "%Y-%m-%dT%H:%M:%S"
 # -----------------------
