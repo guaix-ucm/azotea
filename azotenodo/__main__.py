@@ -141,7 +141,7 @@ def createParser():
 	# Pipeline action
 	# --------------
 
-	parser_pipeline.add_argument('--title',    type=str, default=AZOTEA_PUBL_TITLE, help='Optional Publication Title')
+	parser_pipeline.add_argument('--title',    type=str, nargs='+', default=AZOTEA_PUBL_TITLE, help='Optional Publication Title')
 	parser_pipeline.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,    help='Optional CSV file dir')
 	parser_pipeline.add_argument('--zip-file' ,type=str, default=DEF_ZIP_FILE,      help='Optional ZIP File to create with all CSV files')
 	parser_pipeline.add_argument('--community',type=str, default=AZOTEA_COMMUNITY,  help='Optional community where to publish the dataset')
