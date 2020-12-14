@@ -64,7 +64,7 @@ def configureLogging(options):
 	# Create a file handler
 	if options.log_file:
 		#fh = logging.handlers.WatchedFileHandler(options.log_file)
-		fh = logging.handlers.FileHandler(options.log_file)
+		fh = logging.FileHandler(options.log_file)
 		fh.setFormatter(fmt)
 		fh.setLevel(level)
 		log.addHandler(fh)
