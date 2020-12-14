@@ -285,7 +285,8 @@ def zenodo_list(options, file_options):
     context = setup_context(options, file_options)
     context.verbose   = options.verbose
     context.pprinter  = pprint.PrettyPrinter(indent=2)
-    do_zenodo_list2(context, options.title, options.published)
+    context.title     = ' '.join(options.title) # allows Multiword titles
+    do_zenodo_list2(context, context.title, options.published)
 
 
 def zenodo_delete(options, file_options):
@@ -305,7 +306,7 @@ def zenodo_pipeline(options, file_options):
     context = setup_context(options, file_options)
     context.verbose   = options.verbose
     context.pprinter  = pprint.PrettyPrinter(indent=2)
-    context.title     = options.title
+    context.title     = ' '.join(options.title) # allows Multiword titles
     context.community = options.community
     context.version   = version if options.version is None else options.version
     zip_file          = options.zip_file
