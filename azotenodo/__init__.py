@@ -20,7 +20,7 @@ from pkg_resources import resource_filename
 # local imports
 # -------------
 
-from ._version import get_versions
+from azotea._version import get_versions
 
 # ----------------
 # Module constants

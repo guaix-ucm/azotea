@@ -1,4 +1,3 @@
 include versioneer.py
 include azotea/_version.py
 recursive-include files *
-recursive-include data *
