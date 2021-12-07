@@ -79,6 +79,7 @@ def python2_warning():
 def setup(options):
 	
 	python2_warning()
+	return
 	if not os.path.exists(AZOTEA_BASE_DIR):
 		log.info("Creating {0} directory".format(AZOTEA_BASE_DIR))
 		os.mkdir(AZOTEA_BASE_DIR)
