@@ -29,6 +29,7 @@ import zipfile
 
 from .           import *
 from .           import __version__
+
 from .exceptions import *
 from .config     import load_config_file
 from .zenodo     import zenodo_licenses, zenodo_list, zenodo_delete, zenodo_pipeline
@@ -114,6 +115,7 @@ def createParser():
 	group1.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
 	parser.add_argument('-nk','--no-console', action='store_true', help='Do not log to console.')
 	parser.add_argument('--log-file', type=str, default=None, help='Optional log file')
+	parser.add_argument('--dbase', type=str, default=DEF_DBASE, help='Optional SQLite3 database file')
 	parser.add_argument('--config', type=str, default=DEF_CONFIG, help='Optional alternate configuration file')
 	parser.add_argument('-t', '--test',   action='store_true', help='Use the ZENODO Sandbox environment')
 
@@ -144,6 +146,7 @@ def createParser():
 	parser_pipeline.add_argument('--title',    type=str, nargs='+', default=AZOTEA_PUBL_TITLE, help='Optional Publication Title')
 	parser_pipeline.add_argument('--csv-dir',  type=str, default=AZOTEA_CSV_DIR,    help='Optional CSV file dir')
 	parser_pipeline.add_argument('--zip-file' ,type=str, default=DEF_ZIP_FILE,      help='Optional ZIP File to create with all CSV files')
+	parser_pipeline.add_argument('--zip-only', action='store_true',  help='Generate ZIP and exit (no publishing)')
 	parser_pipeline.add_argument('--community',type=str, default=AZOTEA_COMMUNITY,  help='Optional community where to publish the dataset')
 	parser_pipeline.add_argument('--version',  type=str, default=None,              help='Optional version string to tag, useful for tests')
 	

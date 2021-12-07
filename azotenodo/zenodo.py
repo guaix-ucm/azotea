@@ -37,6 +37,7 @@ log     = logging.getLogger("azotenodo")
 def setup_context(options, file_options):
     context = argparse.Namespace()
 
+    context.dbase = options.dbase
     if options.test:
         context.url_prefix = SANDBOX_URL_PREFIX
         context.doi_prefix = SANDBOX_DOI_PREFIX
@@ -60,11 +61,10 @@ def select_contributors(connection):
     cursor = connection.cursor()
     cursor.execute(
         '''
-        SELECT DISTINCT obs_surname, obs_family_name, organization
-        FROM image_t
-        WHERE obs_surname IS NOT NULL
-        AND obs_family_name IS NOT NULL
-        ORDER BY obs_surname ASC
+        SELECT DISTINCT o.surname, o.family_name
+        FROM image_t AS i
+        JOIN observer_t AS o USING(observer_id)
+        ORDER BY o.surname ASC
         ''')
     return cursor
 
@@ -183,7 +183,7 @@ def do_zenodo_deposit(context):
 def do_zenodo_metadata(context, identifier):
     log.info("Deposit Metadata for id {0} to Zenodo".format(identifier))
 
-    connection   = open_database(DEF_DBASE)
+    connection   = open_database(context.dbase)
     contributors = get_contributors(connection)
 
     headers = {"Content-Type": "application/json"}
@@ -302,6 +302,9 @@ def zenodo_pipeline(options, file_options):
     if not changed:
         log.info("No need to upload new version to Zendodo")
         return
+    if options.zip_only:
+        log.info("Generated ZIP file only. Exiting")
+        return
 
     context = setup_context(options, file_options)
     context.verbose   = options.verbose
@@ -310,6 +313,7 @@ def zenodo_pipeline(options, file_options):
     context.community = options.community
     context.version   = version if options.version is None else options.version
     zip_file          = options.zip_file
+
    
     if first_time:
         response = do_zenodo_deposit(context)

@@ -44,19 +44,18 @@ def fingerprint(filepath):
             block = f.read()
     return file_hash.digest()
 
-
 def get_paths(directory):
     '''Get all file paths in a list''' 
-  
     file_paths = [] 
-  
     # crawling through directory and subdirectories 
     for root, directories, files in os.walk(directory):
-        log.info("Exploring = {0}".format(root))
+        root = os.path.basename(root) # Needs a change of cwd later on if we do this
+        log.debug("Exploring directory '{0}'".format(root))
         for filename in files: 
             filepath = os.path.join(root, filename) 
             file_paths.append(filepath) 
     return file_paths         
+
 
 
 def pack(options):
@@ -66,7 +65,6 @@ def pack(options):
     with zipfile.ZipFile(options.zip_file, 'w') as myzip:
         for myfile in paths: 
             myzip.write(myfile) 
-
 
 
 def make_new_release(options):
