@@ -12,3 +12,9 @@ TO DO
 - backup restore
 - modulo de reports: informes a lo IDA con plantilla JINJA
 - patch management (list, apply) ?
+
+# RawPy
+rgb_base_linear = raw_base.postprocess(output_color=rawpy.ColorSpace.raw, gamma=(1, 1),
+                                       user_wb=[1.0, 1.0, 1.0, 1.0], no_auto_bright=True)
+
+                                       
